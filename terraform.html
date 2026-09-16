@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HashiCorp Terraform Associate 004 Exam Simulator</title>
+
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ===== APP SHELL LAYOUT ===== */
+    html, body { height: 100%; }
+
+    body {
+      font-family: "Inter", sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      overflow: hidden; /* prevent full page scroll */
+      padding: 0;
+    }
+
+    /* CENTERED + FIXED HEIGHT APP */
+    .app {
+      height: 100vh;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header always visible */
+    .app-header {
+      flex: 0 0 auto;
+      z-index: 1000;
+      padding: 16px 16px 0;
+    }
+
+    /* Footer always visible */
+    .app-footer {
+      flex: 0 0 auto;
+      z-index: 1000;
+      padding: 0 16px 12px;
+    }
+
+    /* Only content scrolls */
+    .app-content {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 12px 16px 18px; /* extra bottom space so last card never touches footer */
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ===== MODERN DARK SCROLLBAR ===== */
+
+    /* Firefox */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.22) rgba(255,255,255,0.06);
+    }
+
+    /* Chrome / Edge / Safari */
+    .app-content::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .app-content::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.04);
+      border-radius: 999px;
+    }
+
+    .app-content::-webkit-scrollbar-thumb {
+      background: linear-gradient(
+        180deg,
+        rgba(8,145,178,0.65),
+        rgba(14,116,144,0.45)
+      );
+      border-radius: 999px;
+      border: 2px solid rgba(15,15,26,0.9);
+    }
+
+    .app-content::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(
+        180deg,
+        rgba(8,145,178,0.9),
+        rgba(14,116,144,0.75)
+      );
+    }
+
+    /* ===== HEADER CARD ===== */
+    .page-header {
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .page-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .page-header::after {
+      content: "";
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: -14px;
+      height: 20px;
+      border-radius: 0 0 12px 12px;
+      pointer-events: none;
+      background: linear-gradient(to bottom, rgba(14,116,144,0.45), rgba(15,15,26,0));
+      filter: blur(8px);
+    }
+
+    .page-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .page-header h1 {
+      font-size: 16px;
+      color: #fff;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .company-name { color: rgba(255,255,255,0.6); font-weight: 600; }
+    .header-separator { color: rgba(255,255,255,0.3); font-weight: 400; }
+
+    .page-header .badge {
+      background: rgba(255,255,255,0.2);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .score-display {
+      color: rgba(255,255,255,0.85);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .btn-restart {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-family: "Inter", sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-restart:hover {
+      background: rgba(255,255,255,0.25);
+      transform: translateY(-1px);
+    }
+
+    .btn-restart:active { transform: scale(0.97); }
+
+    /* SEARCH */
+    .search-wrapper { width: 100%; position: relative; }
+    .search-wrapper .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 9px 36px 9px 34px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      font-family: "Inter", sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      outline: none;
+      transition: all 0.25s;
+    }
+
+    .search-input::placeholder { color: rgba(255,255,255,0.5); }
+
+    .search-input:focus {
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.15);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+    }
+
+    .search-clear {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 11px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-family: "Inter", sans-serif;
+    }
+
+    .search-clear.show { display: flex; }
+    .search-clear:hover { background: rgba(255,255,255,0.35); }
+
+    .search-stats {
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+      margin-top: 6px;
+      display: none;
+      padding-left: 2px;
+    }
+
+    .search-stats.show { display: block; }
+
+    /* NO RESULTS */
+    .no-results { text-align: center; padding: 40px 20px; display: none; }
+    .no-results.show { display: block; }
+    .no-results-icon { font-size: 36px; margin-bottom: 10px; }
+    .no-results-text { color: #666; font-weight: 600; font-size: 14px; }
+    .no-results-hint { color: #444; font-size: 12px; margin-top: 4px; }
+
+    /* QUESTIONS LIST */
+    .questions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .q-card {
+      background: #1a1a2e;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.05);
+      overflow: hidden;
+      transition: box-shadow 0.3s;
+    }
+
+    .q-card.hidden-by-search { display: none; }
+    .q-card.highlight-match { border-color: rgba(8,145,178,0.3); }
+    .q-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+
+    .q-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .q-number {
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .q-preview {
+      font-size: 12px;
+      color: #a0a0c0;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .q-preview mark, .q-text mark, .opt-text mark {
+      background: rgba(250,204,21,0.3);
+      color: #fde047;
+      border-radius: 2px;
+      padding: 0 2px;
+    }
+
+    .q-status {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      line-height: 1;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.04);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      opacity: 0;
+      transform: scale(0.92);
+      transition: opacity 0.22s ease, transform 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+      pointer-events: none;
+    }
+
+    .q-status.has-state {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .q-status[data-state="correct"] {
+      background: rgba(34,197,94,0.16);
+      border-color: rgba(74,222,128,0.28);
+    }
+
+    .q-status[data-state="wrong"] {
+      background: rgba(239,68,68,0.16);
+      border-color: rgba(248,113,113,0.28);
+    }
+
+    .q-status[data-state="peek"] {
+      background: rgba(59,130,246,0.16);
+      border-color: rgba(96,165,250,0.28);
+    }
+
+    .q-toggle { font-size: 10px; color: #666; transition: transform 0.3s; flex-shrink: 0; }
+    .q-card.open .q-toggle { transform: rotate(180deg); }
+
+    .q-body { display: none; padding: 14px 16px; }
+    .q-card.open .q-body { display: block; }
+
+    .q-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #c8c8e0;
+      margin-bottom: 14px;
+    }
+
+    .q-text strong { color: #e0e0ff; }
+
+    /* EXHIBIT IMAGE */
+    .q-exhibit {
+      margin: 10px 0 14px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: #12121e;
+      position: relative;
+    }
+
+    .q-exhibit img { display: block; max-width: 100%; height: auto; cursor: zoom-in; }
+
+    .q-exhibit-label {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      color: #ccc;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .q-exhibit-zoom {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.7);
+      color: #ccc;
+      font-size: 16px;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .q-exhibit-zoom:hover { background: rgba(255,255,255,0.15); }
+
+    /* ANSWER BLOCK (HOTSPOT / DRAG-DROP image answers) */
+    .answer-block {
+      border: 1px solid rgba(120, 200, 140, 0.35);
+      background: rgba(40, 80, 50, 0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin: 4px 0 8px;
+    }
+
+    .answer-block-title {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #9be0a8;
+    }
+
+    .answer-exhibit {
+      position: relative;
+      margin: 6px 0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #12121e;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .answer-exhibit img { display: block; max-width: 100%; height: auto; cursor: zoom-in; }
+
+    /* Canonical answer (from /exams/.../view/ Reveal Solution) */
+    .answer-block-canonical {
+      border-color: rgba(120, 200, 140, 0.5);
+      background: rgba(40, 80, 50, 0.22);
+    }
+    .answer-letter {
+      display: inline-block;
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: 700;
+      background: rgba(120, 200, 140, 0.25);
+      color: #d6ffd6;
+      padding: 3px 10px;
+      border-radius: 6px;
+      margin: 4px 0 8px;
+    }
+    .answer-description {
+      color: #d8d8e8;
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 8px 0 4px;
+      white-space: normal;
+    }
+    .answer-description a { color: #a4cfff; word-break: break-all; }
+    .answer-desc-image {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: 8px 0;
+      border-radius: 6px;
+      cursor: zoom-in;
+    }
+    .answer-references {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #c8c8e0;
+    }
+    .answer-references ul { margin: 4px 0 0 18px; padding: 0; }
+    .answer-references a { color: #a4cfff; word-break: break-all; }
+
+    /* Hot Area fallback (no canonical solution available) */
+    .answer-block-fallback {
+      border-color: rgba(220, 180, 80, 0.45);
+      background: rgba(80, 65, 30, 0.22);
+    }
+    .answer-block-fallback .answer-block-title { color: #f1c97a; }
+    .answer-block-note {
+      font-size: 12px;
+      color: #d8c79b;
+      margin: 0 0 8px;
+    }
+
+    /* OPTIONS */
+    .opts { display: flex; flex-direction: column; gap: 6px; }
+
+    .opt {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.015);
+      cursor: pointer;
+      transition: all 0.25s;
+      font-size: 13px;
+    }
+
+    .opt:hover:not(.disabled) {
+      border-color: rgba(8,145,178,0.35);
+      background: rgba(8,145,178,0.05);
+    }
+
+    .opt.disabled { cursor: default; }
+
+    .opt-letter {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+      background: rgba(255,255,255,0.06);
+      color: #888;
+      flex-shrink: 0;
+      transition: all 0.25s;
+    }
+
+    .opt-text { color: #b0b0cc; line-height: 1.4; transition: color 0.25s; }
+
+    .opt.selected {
+      border-color: rgba(8,145,178,0.5);
+      background: rgba(8,145,178,0.08);
+    }
+
+    .opt.selected .opt-letter {
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      color: #fff;
+    }
+
+    .opt.selected .opt-text { color: #d0e8f0; }
+
+    .opt.correct {
+      border-color: rgba(74,222,128,0.5) !important;
+      background: rgba(74,222,128,0.07) !important;
+    }
+
+    .opt.correct .opt-letter {
+      background: linear-gradient(135deg,#22c55e,#16a34a) !important;
+      color: #fff !important;
+    }
+
+    .opt.correct .opt-text { color: #86efac !important; font-weight: 600; }
+
+    .opt.wrong {
+      border-color: rgba(248,113,113,0.5) !important;
+      background: rgba(248,113,113,0.07) !important;
+      animation: shake 0.4s ease-out;
+    }
+
+    .opt.wrong .opt-letter {
+      background: linear-gradient(135deg,#ef4444,#dc2626) !important;
+      color: #fff !important;
+    }
+
+    .opt.wrong .opt-text { color: #fca5a5 !important; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-3px); }
+    }
+
+    .result-bar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .result-bar.show { display: flex; }
+    .result-bar.is-correct { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25); color: #86efac; }
+    .result-bar.is-wrong { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: #fca5a5; }
+    .result-bar.is-cheat { background: rgba(250,204,21,0.1); border: 1px solid rgba(250,204,21,0.25); color: #fde047; }
+
+    .q-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 13px;
+      border-radius: 8px;
+      border: none;
+      font-family: "Inter", sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+      text-decoration: none;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .btn-submit { background: linear-gradient(135deg,#0891b2,#0e7490); color: #fff; }
+    .btn-submit:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    .btn-cheat { background: rgba(250,204,21,0.1); color: #fde047; border: 1px solid rgba(250,204,21,0.2); }
+    .btn-discuss { background: rgba(74,222,128,0.1); color: #86efac; border: 1px solid rgba(74,222,128,0.2); }
+    .btn-comments { background: rgba(168,85,247,0.1); color: #c4b5fd; border: 1px solid rgba(168,85,247,0.2); }
+    .btn-reset { background: rgba(255,255,255,0.05); color: #888; border: 1px solid rgba(255,255,255,0.08); }
+
+    .hidden { display: none !important; }
+
+    /* FOOTER STYLE (ALWAYS VISIBLE) */
+    .page-footer {
+      text-align: center;
+      padding: 12px 0 0;
+      font-size: 11px;
+      color: #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .page-footer a {
+      color: #667;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s;
+    }
+
+    .page-footer a:hover { color: #aaa; }
+
+    .page-footer svg { width: 14px; height: 14px; fill: currentColor; }
+
+    /* IMAGE ZOOM MODAL */
+    .img-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      cursor: zoom-out;
+    }
+
+    .img-modal-overlay.show { display: flex; }
+    .img-modal-overlay img {
+      max-width: 95%;
+      max-height: 90vh;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    /* COMMENTS MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal {
+      background: #1e1e32;
+      border-radius: 16px;
+      max-width: 560px;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .modal-header h3 {
+      font-size: 14px;
+      color: #e0e0ff;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-close {
+      background: rgba(255,255,255,0.06);
+      border: none;
+      color: #888;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-family: "Inter", sans-serif;
+    }
+
+    .modal-close:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    .modal-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .modal-body::-webkit-scrollbar { width: 5px; }
+    .modal-body::-webkit-scrollbar-track { background: transparent; }
+    .modal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+    .comment-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .comment-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+
+    .comment-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: linear-gradient(135deg,#0891b2,#0e7490);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .comment-user { font-size: 12px; font-weight: 700; color: #c4b5fd; }
+
+    .comment-answer {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: rgba(74,222,128,0.12);
+      color: #86efac;
+    }
+
+    .comment-body { font-size: 12px; color: #a0a0c0; line-height: 1.6; }
+    .no-comments { text-align: center; padding: 24px; color: #555; font-size: 13px; }
+
+    /* MOBILE */
+    @media (max-width: 500px) {
+      .app-header { padding: 8px 8px 0; }
+      .app-content { padding: 10px 8px 18px; }
+      .app-footer { padding: 0 8px 10px; }
+
+      .page-header { padding: 14px 16px; }
+      .page-header h1 { font-size: 13px; }
+
+      .company-name { display: none; }
+      .header-separator { display: none; }
+      .header-right { gap: 6px; }
+
+      .btn-restart { padding: 4px 8px; font-size: 10px; }
+      .q-body { padding: 10px 12px; }
+      .q-text { font-size: 12px; }
+      .opt { padding: 8px 10px; font-size: 12px; }
+      .modal { margin: 10px; max-height: 85vh; }
+    }
+  
+    /* ===== GITHUB PAGES HUB ADDITIONS ===== */
+    .hub-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 2px;
+    }
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255,255,255,0.92);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.16);
+      transition: all .2s ease;
+    }
+    .home-link:hover {
+      background: rgba(255,255,255,0.22);
+      transform: translateY(-1px);
+    }
+    .save-indicator {
+      color: rgba(255,255,255,0.65);
+      font-size: 10px;
+      font-weight: 600;
+    }
+    @media (max-width: 520px) {
+      .save-indicator { display: none; }
+    }
+    
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- FIXED HEADER -->
+    <header class="app-header">
+      <div class="page-header">
+    <div class="hub-row">
+      <a class="home-link" href="index.html" aria-label="Back to exam list">← Egzaminy</a>
+      <span class="save-indicator" id="saveIndicator">Postęp zapisuje się na tym urządzeniu</span>
+    </div>
+    
+        <div class="page-header-top">
+          <div class="page-header-left">
+            <h1>
+              <span class="company-name">HashiCorp</span>
+              <span class="header-separator">|</span>
+              Terraform Associate 004 Exam Simulator
+            </h1>
+            <span class="badge">TERRAFORM ASSOCIATE 004</span>
+          </div>
+
+          <div class="header-right">
+            <div class="score-display" id="scoreDisplay">0 ✓ · 0 answered</div>
+            <button class="btn-restart" onclick="confirmRestart()">🔄 Restart</button>
+          </div>
+        </div>
+
+        <div class="search-wrapper">
+          <span class="search-icon">🔍</span>
+          <input
+            type="text"
+            class="search-input"
+            id="searchInput"
+            placeholder="Search questions… e.g. 'provider', 'state', 'Q2'"
+            oninput="handleSearch()"
+            autocomplete="off"
+          />
+          <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+          <div class="search-stats" id="searchStats"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ONLY THIS AREA SCROLLS -->
+    <main class="app-content">
+
+      <div class="no-results" id="noResults">
+        <div class="no-results-icon">🔎</div>
+        <div class="no-results-text">No questions found</div>
+        <div class="no-results-hint">Try different keywords or clear the search</div>
+      </div>
+
+      <div class="questions-list" id="questionsList">
+        <!-- QUESTION 1 -->
+        <div class="q-card open" id="q1" data-correct="A"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385616-exam-terraform-associate-004-topic-1-question-1-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;YashAy&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;Yes, it can be stored in version control&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q1')">
+                <span class="q-number">Q1</span>
+                <span class="q-preview" id="q1-preview">IaC (Infrastructure as Code) can be stored in a version control system along with applicatio...</span>
+                <span class="q-status" id="q1-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q1-text">IaC (Infrastructure as Code) can be stored in a version control system along with application code.</div>
+                <div class="opts" id="q1-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q1')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q1')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q1-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q1-submit" onclick="submit('q1')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q1-cheat" onclick="cheat('q1')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q1-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q1-comments" onclick="openComments('q1')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q1-reset" onclick="reset('q1')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 2 -->
+        <div class="q-card" id="q2" data-correct="C"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385238-exam-terraform-associate-004-topic-1-question-4-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;TechWithHer&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;Immutable infrastructure means that once infrastructure is deployed, you don&#39;t modify the existing resource in place.\nInstead, when you need a change:\nCreate new infrastructure → validate it → switch traffic → remove old infrastructure&#34;},{&#34;user&#34;:&#34;ykamal&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;AI said its D.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;D. Less complex infrastructure upgrades is the correct advantage of immutable infrastructure.\nImmutable infrastructure treats servers, VMs, or resources as immutable (unchanging once deployed). To apply updates, fixes, or changes, you create entirely new instances from a known, versioned image or template and then replace (or decommission) the old ones, rather than modifying them in place. This contrasts with mutable infrastructure, where you update existing resources directly (e.g., via patches, config changes, or SSH).&#34;},{&#34;user&#34;:&#34;mai_will&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;Embora \&#34;mais rápido\&#34; possa parecer subjetivo, refere-se à previsibilidade e à velocidade de implementação inerentes ao modelo imutável. Em vez de acessar servidores e executar scripts de atualização que podem travar ou falhar, você simplesmente substitui a versão antiga por uma nova pré-configurada.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q2')">
+                <span class="q-number">Q2</span>
+                <span class="q-preview" id="q2-preview">What is an advantage of immutable infrastructure?</span>
+                <span class="q-status" id="q2-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q2-text">What is an advantage of immutable infrastructure?</div>
+                <div class="opts" id="q2-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q2')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="Automatic infrastructure upgrades">Automatic infrastructure upgrades</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q2')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="In-place infrastructure upgrades">In-place infrastructure upgrades</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q2')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="Quicker infrastructure upgrades">Quicker infrastructure upgrades</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q2')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="Less complex infrastructure upgrades">Less complex infrastructure upgrades</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q2-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q2-submit" onclick="submit('q2')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q2-cheat" onclick="cheat('q2')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q2-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q2-comments" onclick="openComments('q2')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q2-reset" onclick="reset('q2')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 3 -->
+        <div class="q-card" id="q3" data-correct="A"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385614-exam-terraform-associate-004-topic-1-question-6-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;pverma20&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;Cloud formation is specifically for AWS, therefore when deploying to Azure, we will require azure specific tool and have to utilize azure templates.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q3')">
+                <span class="q-number">Q3</span>
+                <span class="q-preview" id="q3-preview">Your team adopts an AWS CloudFormation as the standardized method for provisioning public cl...</span>
+                <span class="q-status" id="q3-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q3-text">Your team adopts an AWS CloudFormation as the standardized method for provisioning public cloud resources.Which scenario presents a challenge for your team?</div>
+                <div class="opts" id="q3-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q3')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="Deploying new infrastructure into Microsoft Azure.">Deploying new infrastructure into Microsoft Azure.</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q3')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="Automating a manual, web console-based provisioning process.">Automating a manual, web console-based provisioning process.</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q3')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="Building a reusable code base that can deploy resources into any AWS region.">Building a reusable code base that can deploy resources into any AWS region.</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q3')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="Managing a new application stack built on AWS-native services.">Managing a new application stack built on AWS-native services.</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q3-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q3-submit" onclick="submit('q3')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q3-cheat" onclick="cheat('q3')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q3-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q3-comments" onclick="openComments('q3')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q3-reset" onclick="reset('q3')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 4 -->
+        <div class="q-card" id="q4" data-correct="A"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385599-exam-terraform-associate-004-topic-2-question-2-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;This is the correct command for experimenting with Terraform expressions.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q4')">
+                <span class="q-number">Q4</span>
+                <span class="q-preview" id="q4-preview">Which command lets you experiment with Terraform expressions?</span>
+                <span class="q-status" id="q4-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q4-text">Which command lets you experiment with Terraform expressions?</div>
+                <div class="opts" id="q4-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q4')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="terraform console">terraform console</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q4')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="terraform env">terraform env</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q4')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="terraform validate">terraform validate</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q4')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="terraform test">terraform test</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q4-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q4-submit" onclick="submit('q4')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q4-cheat" onclick="cheat('q4')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q4-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q4-comments" onclick="openComments('q4')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q4-reset" onclick="reset('q4')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 5 -->
+        <div class="q-card" id="q5" data-correct="A"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385610-exam-terraform-associate-004-topic-2-question-3-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;terraform init does install Community and Partner plugins (providers).&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q5')">
+                <span class="q-number">Q5</span>
+                <span class="q-preview" id="q5-preview">You can install Community/Partner plugins using terraform init.</span>
+                <span class="q-status" id="q5-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q5-text">You can install Community/Partner plugins using terraform init.</div>
+                <div class="opts" id="q5-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q5')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q5')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q5-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q5-submit" onclick="submit('q5')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q5-cheat" onclick="cheat('q5')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q5-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q5-comments" onclick="openComments('q5')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q5-reset" onclick="reset('q5')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 6 -->
+        <div class="q-card" id="q6" data-correct="B,C,E"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385598-exam-terraform-associate-004-topic-2-question-4-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;B. Provision resources for public cloud infrastructure services.\nProviders (e.g., aws, azurerm, google) let you create, update, and delete resources in AWS, Azure, GCP, etc.\nC. Interact with cloud provider APIs.\nThis is the core job of a provider: it handles authentication, makes the actual API calls (create/read/update/delete), and translates Terraform’s declarative configuration into real infrastructure changes.\nE. Provision resources for on-premises infrastructure services.\nProviders also support self-hosted/on-prem platforms (e.g., vsphere for VMware, openstack, bare-metal providers, Kubernetes, databases, etc.). Terraform is not limited to public cloud.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q6')">
+                <span class="q-number">Q6</span>
+                <span class="q-preview" id="q6-preview">What functionality do providers offer in Terraform? (Choose three.)</span>
+                <span class="q-status" id="q6-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q6-text">What functionality do providers offer in Terraform? (Choose three.)</div>
+                <div class="opts" id="q6-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q6')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="Group a collection of Terraform configuration files that map to a single state file.">Group a collection of Terraform configuration files that map to a single state file.</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q6')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="Provision resources for public cloud infrastructure services.">Provision resources for public cloud infrastructure services.</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q6')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="Interact with cloud provider APIs.">Interact with cloud provider APIs.</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q6')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="Enforce security and compliance policies.">Enforce security and compliance policies.</div>
+                    </div>
+                    <div class="opt" data-val="E" onclick="pick(this,'q6')">
+                        <div class="opt-letter">E</div>
+                        <div class="opt-text" data-original="Provision resources for on-premises infrastructure services.">Provision resources for on-premises infrastructure services.</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q6-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q6-submit" onclick="submit('q6')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q6-cheat" onclick="cheat('q6')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q6-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q6-comments" onclick="openComments('q6')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q6-reset" onclick="reset('q6')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 7 -->
+        <div class="q-card" id="q7" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385606-exam-terraform-associate-004-topic-2-question-5-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Terraform can (and usually does) manage resource dependencies automatically through implicit dependencies — no depends_on required in most cases.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q7')">
+                <span class="q-number">Q7</span>
+                <span class="q-preview" id="q7-preview">Terraform can only manage resource dependencies if you set them explicitly with the depends_...</span>
+                <span class="q-status" id="q7-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q7-text">Terraform can only manage resource dependencies if you set them explicitly with the depends_on argument.</div>
+                <div class="opts" id="q7-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q7')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q7')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q7-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q7-submit" onclick="submit('q7')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q7-cheat" onclick="cheat('q7')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q7-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q7-comments" onclick="openComments('q7')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q7-reset" onclick="reset('q7')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 8 -->
+        <div class="q-card" id="q8" data-correct="C"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385605-exam-terraform-associate-004-topic-2-question-7-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;C. aws\nThe provider for this resource is aws.\nHow Terraform identifies the provider\nIn a Terraform resource block, the syntax is always:\nhclresource \&#34;\u003cRESOURCE_TYPE\u003e\&#34; \&#34;\u003cRESOURCE_NAME\u003e\&#34; { ... }\nRESOURCE_TYPE = aws_vpc\nThe part before the first underscore (aws) tells Terraform which provider is responsible for this resource.\nThe part after the underscore (vpc) is the specific resource type offered by that provider.\nRESOURCE_NAME = main\nThis is just a local identifier (used for referencing the resource inside your configuration). It has nothing to do with the provider.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q8')">
+                <span class="q-number">Q8</span>
+                <span class="q-preview" id="q8-preview">A resource block is shown in the Exhibit space of this page.resource “aws_vpc” “main” {name ...</span>
+                <span class="q-status" id="q8-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q8-text">A resource block is shown in the Exhibit space of this page.resource “aws_vpc” “main” {name = “test”}What is the provider for this resource?</div>
+                <div class="opts" id="q8-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q8')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="main">main</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q8')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="vpc">vpc</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q8')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="aws">aws</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q8')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="test">test</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q8-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q8-submit" onclick="submit('q8')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q8-cheat" onclick="cheat('q8')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q8-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q8-comments" onclick="openComments('q8')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q8-reset" onclick="reset('q8')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 9 -->
+        <div class="q-card" id="q9" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385603-exam-terraform-associate-004-topic-2-question-9-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;B. False\nTerraform providers are not always installed from the internet. While the default behavior (when you run terraform init) is to download providers from the public Terraform Registry at registry.terraform.io (or a private registry), Terraform provides built-in support for offline / air-gapped installations through provider mirrors.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q9')">
+                <span class="q-number">Q9</span>
+                <span class="q-preview" id="q9-preview">Terraform providers are always installed from the internet.</span>
+                <span class="q-status" id="q9-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q9-text">Terraform providers are always installed from the internet.</div>
+                <div class="opts" id="q9-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q9')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q9')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q9-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q9-submit" onclick="submit('q9')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q9-cheat" onclick="cheat('q9')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q9-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q9-comments" onclick="openComments('q9')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q9-reset" onclick="reset('q9')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 10 -->
+        <div class="q-card" id="q10" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385601-exam-terraform-associate-004-topic-2-question-10-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;B. Set the environment variable TF_LOG=TRACE.\nThis is the official, recommended way to enable detailed logging in Terraform so you can see exactly which filesystem paths it is searching for and loading providers from (including the plugin cache, filesystem mirrors, dev overrides, and any custom directories)&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q10')">
+                <span class="q-number">Q10</span>
+                <span class="q-preview" id="q10-preview">You need to determine from which paths Terraform is loading the providers referenced in your...</span>
+                <span class="q-status" id="q10-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q10-text">You need to determine from which paths Terraform is loading the providers referenced in your *.tf files.How can you enable additional logging to see this information?</div>
+                <div class="opts" id="q10-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q10')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="Set the environment variable TF_VAR_log=TRACE.">Set the environment variable TF_VAR_log=TRACE.</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q10')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="Set the environment variable TF_LOG=TRACE.">Set the environment variable TF_LOG=TRACE.</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q10')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="Set the environment variable TF_LOG=PATH.">Set the environment variable TF_LOG=PATH.</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q10')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="Set verbose logging for each provider in your Terraform configuration.">Set verbose logging for each provider in your Terraform configuration.</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q10-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q10-submit" onclick="submit('q10')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q10-cheat" onclick="cheat('q10')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q10-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q10-comments" onclick="openComments('q10')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q10-reset" onclick="reset('q10')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 11 -->
+        <div class="q-card" id="q11" data-correct="A"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/402395-exam-terraform-associate-004-topic-2-question-14-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;A. Providers and modules\nThe hidden .terraform directory (created automatically by terraform init) is Terraform’s local cache for providers and modules.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q11')">
+                <span class="q-number">Q11</span>
+                <span class="q-preview" id="q11-preview">Which of these is stored in the .terraform directory?</span>
+                <span class="q-status" id="q11-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q11-text">Which of these is stored in the .terraform directory?</div>
+                <div class="opts" id="q11-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q11')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="Providers and modules">Providers and modules</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q11')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="Lock file">Lock file</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q11')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="State file">State file</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q11')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="Configuration files">Configuration files</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q11-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q11-submit" onclick="submit('q11')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q11-cheat" onclick="cheat('q11')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q11-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q11-comments" onclick="openComments('q11')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q11-reset" onclick="reset('q11')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 12 -->
+        <div class="q-card" id="q12" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/407270-exam-terraform-associate-004-topic-2-question-17-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;ShreyRai20&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Terraform providers are developed and distributed independently typically via terraform registry. Whereas core binary is responsible for managing dependency graph, planning, etc&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q12')">
+                <span class="q-number">Q12</span>
+                <span class="q-preview" id="q12-preview">Terraform providers are part of the Terraform core binary.</span>
+                <span class="q-status" id="q12-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q12-text">Terraform providers are part of the Terraform core binary.</div>
+                <div class="opts" id="q12-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q12')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q12')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q12-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q12-submit" onclick="submit('q12')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q12-cheat" onclick="cheat('q12')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q12-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q12-comments" onclick="openComments('q12')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q12-reset" onclick="reset('q12')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 13 -->
+        <div class="q-card" id="q13" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/407271-exam-terraform-associate-004-topic-2-question-18-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Dash&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;B - Terraform providers are separate compiled executable binaries (written in Go). Terraform core interacts with these binaries via RPC (Remote Procedure Call). It cannot dynamically execute or load raw provider source code directly.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q13')">
+                <span class="q-number">Q13</span>
+                <span class="q-preview" id="q13-preview">Where can Terraform not load a provider from?</span>
+                <span class="q-status" id="q13-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q13-text">Where can Terraform not load a provider from?</div>
+                <div class="opts" id="q13-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q13')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="Provider plugin cache">Provider plugin cache</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q13')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="Source code">Source code</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q13')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="Official HashiCorp distribution on releases.hashicorp.com">Official HashiCorp distribution on releases.hashicorp.com</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q13')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="Plugins directory">Plugins directory</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q13-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q13-submit" onclick="submit('q13')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q13-cheat" onclick="cheat('q13')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q13-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q13-comments" onclick="openComments('q13')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q13-reset" onclick="reset('q13')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 14 -->
+        <div class="q-card" id="q14" data-correct="D"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385597-exam-terraform-associate-004-topic-3-question-2-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;terraform init is the mandatory first command you must run in any new Terraform workspace (or after you add new providers/modules). It does three critical things before plan or apply can succeed:\nDownloads and installs all providers referenced in your *.tf files (populating the .terraform/providers/ cache).\nDownloads any child modules declared with module blocks.\nInitializes the backend (local by default) and creates the lock file .terraform.lock.hcl.\nWithout it, terraform plan or terraform apply will immediately fail with an error&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q14')">
+                <span class="q-number">Q14</span>
+                <span class="q-preview" id="q14-preview">Which command must you run before you run a plan or apply for the first time?</span>
+                <span class="q-status" id="q14-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q14-text">Which command must you run before you run a plan or apply for the first time?</div>
+                <div class="opts" id="q14-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q14')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="terraform validate">terraform validate</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q14')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="terraform workspace">terraform workspace</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q14')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="terraform import">terraform import</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q14')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="terraform init">terraform init</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q14-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q14-submit" onclick="submit('q14')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q14-cheat" onclick="cheat('q14')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q14-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q14-comments" onclick="openComments('q14')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q14-reset" onclick="reset('q14')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 15 -->
+        <div class="q-card" id="q15" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385593-exam-terraform-associate-004-topic-3-question-5-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;B. False\nThe execution plan that terraform apply generates (and then executes) will not be the same as the one you saw from your earlier terraform plan.\nWhy the plans differ\nRefresh happens again\nBy default, both terraform plan and terraform apply perform a refresh before calculating the diff. This means Terraform queries the real infrastructure (via the provider) to update the in-memory state with current values.\nYour teammate’s manual change = drift\nBetween the time you ran terraform plan and when you run terraform apply, the live resource has changed. The refresh during apply will pick up that new reality, so the computed diff (what needs to be created/changed/destroyed) is now different.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q15')">
+                <span class="q-number">Q15</span>
+                <span class="q-preview" id="q15-preview">You modified your local Terraform configuration and ran terraform plan to review the changes...</span>
+                <span class="q-status" id="q15-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q15-text">You modified your local Terraform configuration and ran terraform plan to review the changes. Simultaneously, your teammate manually modified the infrastructure component you are working on.Since you already ran terraform plan locally, the execution plan for terraform apply will be the same.</div>
+                <div class="opts" id="q15-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q15')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q15')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q15-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q15-submit" onclick="submit('q15')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q15-cheat" onclick="cheat('q15')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q15-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q15-comments" onclick="openComments('q15')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q15-reset" onclick="reset('q15')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 16 -->
+        <div class="q-card" id="q16" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385587-exam-terraform-associate-004-topic-3-question-12-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Annuore&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;I tried it\ntf validate\n╷\n│ Error: Reference to undeclared input variable\n│\n│   on main.tf line 42, in resource \&#34;aws_instance\&#34; \&#34;tf_ec2\&#34;:\n│   42:         Name = var.ec2name\n│\n│ An input variable with the name \&#34;ec2name\&#34; has not been declared. This variable can be declared with a variable \&#34;ec2name\&#34; {} block.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Why \&#34;B\&#34; is the Answer\nIf your code references a variable—for example, using var.instance_type—but you haven&#39;t actually defined that variable using a variable \&#34;instance_type\&#34; {} block, the configuration is considered incomplete.\nTerraform cannot proceed because it doesn&#39;t know the type or constraints of that reference, so validate will catch this and throw an error.\nWhy the others are incorrect:\nC (State file mismatch): This is handled by terraform plan or terraform refresh. Validation doesn&#39;t look at the state file or your real-world resources at all.\nD (Tabs vs. Spaces): While the Terraform standard is two spaces, using tabs is not a syntax error. terraform fmt is the tool used to fix indentation, but validate won&#39;t fail because of it.\nA: Since B is a legitimate syntax/configuration error, A is incorrect.&#34;},{&#34;user&#34;:&#34;markbotros&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Here’s why your explanation for A doesn’t hold up:\nterraform validate checks internal consistency, not just syntax.\nIf your configuration references a variable that is not declared anywhere, Terraform will raise an error during validation.\nWhile values can be provided at runtime (CLI, env vars, tfvars), the variable itself must still be declared with a variable block.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q16')">
+                <span class="q-number">Q16</span>
+                <span class="q-preview" id="q16-preview">Which syntax check returns an error when you run terraform validate?</span>
+                <span class="q-status" id="q16-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q16-text">Which syntax check returns an error when you run terraform validate?</div>
+                <div class="opts" id="q16-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q16')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="None of these will return an error.">None of these will return an error.</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q16')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="There is a missing variable block.">There is a missing variable block.</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q16')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="The state file does not match the current infrastructure.">The state file does not match the current infrastructure.</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q16')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="The code contains tabs for indentation instead of spaces.">The code contains tabs for indentation instead of spaces.</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q16-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q16-submit" onclick="submit('q16')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q16-cheat" onclick="cheat('q16')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q16-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q16-comments" onclick="openComments('q16')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q16-reset" onclick="reset('q16')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 17 -->
+        <div class="q-card" id="q17" data-correct="A"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385073-exam-terraform-associate-004-topic-4-question-2-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;A. True\nIn Terraform, the required_providers block (inside the terraform {} block) is the only place where you ever reference a provider by its full source address and version constraint. Example:\nhclterraform {\nrequired_providers {\naws = {\nsource  = \&#34;hashicorp/aws\&#34;\nversion = \&#34;~\u003e 5.0\&#34;\n}\n}\n}\nEverywhere else in the configuration — resource blocks, data sources, provider configuration blocks, provider meta-arguments, modules, etc. — Terraform uses only the local name (the key from required_providers, which defaults to the provider type if the block is omitted)&#34;},{&#34;user&#34;:&#34;AZJunkie&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Terraform may use:\nThe default provider name, or\nAn alias, if you configured one.\nhttps://developer.hashicorp.com/terraform/language/block/provider&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;Alias is used when you need to define multiple provider blocks for the same provider&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q17')">
+                <span class="q-number">Q17</span>
+                <span class="q-preview" id="q17-preview">Outside of the required_providers block, Terraform configurations always refer to providers ...</span>
+                <span class="q-status" id="q17-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q17-text">Outside of the required_providers block, Terraform configurations always refer to providers by their local names.</div>
+                <div class="opts" id="q17-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q17')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q17')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q17-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q17-submit" onclick="submit('q17')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q17-cheat" onclick="cheat('q17')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q17-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q17-comments" onclick="openComments('q17')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q17-reset" onclick="reset('q17')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 18 -->
+        <div class="q-card" id="q18" data-correct="D"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385568-exam-terraform-associate-004-topic-4-question-17-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;D. Dynamic blocks\nDynamic blocks are the exact Terraform feature designed for this use case: they let you generate repeating nested blocks (such as multiple data_disk, storage_data_disk, attached_disk, etc.) inside a single resource based on the contents of a variable.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q18')">
+                <span class="q-number">Q18</span>
+                <span class="q-preview" id="q18-preview">You want to define multiple data disks as nested blocks inside the resource block for a virt...</span>
+                <span class="q-status" id="q18-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q18-text">You want to define multiple data disks as nested blocks inside the resource block for a virtual machine.What Terraform feature would help you define the blocks using the values in a variable?</div>
+                <div class="opts" id="q18-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q18')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="Count arguments">Count arguments</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q18')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="Collection functions">Collection functions</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q18')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="Local values">Local values</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q18')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="Dynamic blocks">Dynamic blocks</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q18-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q18-submit" onclick="submit('q18')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q18-cheat" onclick="cheat('q18')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q18-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q18-comments" onclick="openComments('q18')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q18-reset" onclick="reset('q18')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 19 -->
+        <div class="q-card" id="q19" data-correct="A"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385567-exam-terraform-associate-004-topic-4-question-18-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Grandslam&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;B is invalid: The optional() modifier can only be used inside complex type constraints like object() or tuple(). It cannot be used as the top-level type for a standard variable.&#34;},{&#34;user&#34;:&#34;gpfs&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;A is wrong as terraform always add a value of \&#34;\&#34; every time.\nCorrect is B as type = optional(string) means the variable type is string, but the variable itself is optional, thus the caller can omit it.\nIf you don&#39;t set the billing_dept the variable has a \&#34;null\&#34; value.\nIf you do set it, terraform expects a string value.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q19')">
+                <span class="q-number">Q19</span>
+                <span class="q-preview" id="q19-preview">You are creating a reusable Terraform configuration and want to include an optional billing_...</span>
+                <span class="q-status" id="q19-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q19-text">You are creating a reusable Terraform configuration and want to include an optional billing_dept tag so your Finance team can track team-specific spending on resources.Which of the following billing_dept variable declarations will achieve this?</div>
+                <div class="opts" id="q19-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q19')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="variable “billing_dept” {default = “”}">variable “billing_dept” {default = “”}</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q19')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="variable “billing_dept” {type = optional(string)}">variable “billing_dept” {type = optional(string)}</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q19')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="variable “billing_dept” {optional = true}">variable “billing_dept” {optional = true}</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q19')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="variable “billing_dept” {type = default}">variable “billing_dept” {type = default}</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q19-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q19-submit" onclick="submit('q19')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q19-cheat" onclick="cheat('q19')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q19-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q19-comments" onclick="openComments('q19')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q19-reset" onclick="reset('q19')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 20 -->
+        <div class="q-card" id="q20" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385563-exam-terraform-associate-004-topic-5-question-4-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;When you run terraform apply, the Terraform CLI only prints the output values defined in the root module. Outputs from child modules are not automatically displayed.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q20')">
+                <span class="q-number">Q20</span>
+                <span class="q-preview" id="q20-preview">When you run terraform apply, the Terraform CLI will print output values from both the root ...</span>
+                <span class="q-status" id="q20-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q20-text">When you run terraform apply, the Terraform CLI will print output values from both the root module and any child modules.</div>
+                <div class="opts" id="q20-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q20')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q20')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q20-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q20-submit" onclick="submit('q20')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q20-cheat" onclick="cheat('q20')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q20-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q20-comments" onclick="openComments('q20')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q20-reset" onclick="reset('q20')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 21 -->
+        <div class="q-card" id="q21" data-correct="D"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385557-exam-terraform-associate-004-topic-5-question-10-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Grandslam&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;D. version = \&#34;~\u003e3.1.4\&#34; (Incorrect but important): This uses the pessimistic constraint operator. It tells Terraform to allow patch updates but prevent minor updates. It would allow newer versions like 3.1.5 or 3.1.9 but prevent 3.2.0. While this is a common best practice for allowing safe updates, it is incorrect here because it still allows newer versions to be used, which the scenario explicitly wants to prevent.&#34;},{&#34;user&#34;:&#34;FlacoX&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;The question isn&#39;t really asking to prevent every newer version. It&#39;s asking which version constraint prevents newer versions that could introduce breaking changes.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q21')">
+                <span class="q-number">Q21</span>
+                <span class="q-preview" id="q21-preview">Your team is using a version 3.1.4 of a module from the public Terraform Registry, and they’...</span>
+                <span class="q-status" id="q21-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q21-text">Your team is using a version 3.1.4 of a module from the public Terraform Registry, and they’re worried about possible breaking changes in future versions of the module.Which version argument should you add to the module block to prevent newer versions from being used?</div>
+                <div class="opts" id="q21-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q21')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="version = “3.1.4”">version = “3.1.4”</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q21')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="version = “&lt; 3.2”">version = “&lt; 3.2”</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q21')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="version = “!=3.1.5”">version = “!=3.1.5”</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q21')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="version = “~&gt;3.1.4”">version = “~&gt;3.1.4”</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q21-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q21-submit" onclick="submit('q21')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q21-cheat" onclick="cheat('q21')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q21-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q21-comments" onclick="openComments('q21')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q21-reset" onclick="reset('q21')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 22 -->
+        <div class="q-card" id="q22" data-correct="A"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385539-exam-terraform-associate-004-topic-6-question-16-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;TexMachina&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;I think it&#39;s \&#34;C\&#34; as well, even though it&#39;s poorly written (&#39;=lock&#39; instead of &#39;-lock&#39;), \&#34;plan -refresh-only\&#34; reads the infra and creates a plan showing how the state would need to change, but doesn&#39;t commit that info to the state file.\nIf it was &#39;apply -refresh-only&#39; I&#39;d definietly go for that, but since we don&#39;t have that option, &#39;C&#39; makes more sense.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;Terraform Plan is the right answer as it shows the difference&#34;},{&#34;user&#34;:&#34;BrutexLau&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;I don&#39;t think any of them are correct, since the State File is updated only with the `terraform apply` command, but option C contains an error; it should be `terraform apply -lock=false`.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;I would chose A because the changes are made outside the terraform and by applying terraform configuration the outside changes would be overwritten&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q22')">
+                <span class="q-number">Q22</span>
+                <span class="q-preview" id="q22-preview">What Terraform command always causes a state file to be updated with changes that might have...</span>
+                <span class="q-status" id="q22-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q22-text">What Terraform command always causes a state file to be updated with changes that might have been made outside of Terraform?</div>
+                <div class="opts" id="q22-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q22')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="terraform plan -refresh-only">terraform plan -refresh-only</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q22')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="terraform show -json">terraform show -json</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q22')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="terraform apply =lock=false">terraform apply =lock=false</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q22')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="terraform plan -target=state">terraform plan -target=state</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q22-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q22-submit" onclick="submit('q22')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q22-cheat" onclick="cheat('q22')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q22-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q22-comments" onclick="openComments('q22')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q22-reset" onclick="reset('q22')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 23 -->
+        <div class="q-card" id="q23" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385538-exam-terraform-associate-004-topic-6-question-18-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;FlacoX&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;It is false since terraform plan only checks/preview the changes between tfstate file and the real world infrastructure, but the terraform plan -refresh-only is the one that previews the changes with the real world infrastructure and updates the tfstate files.&#34;},{&#34;user&#34;:&#34;Dash&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;The terraform plan -refresh-only command operates entirely in memory. It performs a dry run that inspects your live infrastructure for drift, calculates what updates are required, and generates an execution plan. However, it does not write or permanently save those changes to the physical .tfstate file&#34;},{&#34;user&#34;:&#34;markbotros&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;A. True\nExplanation:\nThe -refresh-only flag tells Terraform to:\nCheck the real infrastructure (via provider APIs)\nCompare it with the current state file\nUpdate the state file to match reality if there are external changes\nBut not propose or apply configuration changes&#34;},{&#34;user&#34;:&#34;FlacoX&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;It is false since terraform plan only checks/preview the changes between tfstate file and the real world infrastructure, but the terraform plan -refresh-only is the one that previews the changes with the real world infrastructure and updates the tfstate files.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;In the context of certification exams (like the HashiCorp Terraform Associate), when they ask if the -refresh-only parameter \&#34;will update your state file,\&#34; they are referring to the functionality of the refresh-only mode.\nWhile the plan phase is just a preview, the specific purpose of using that flag is to perform a state-only update. If you were to run a standard terraform apply (without the flag), Terraform would try to undo the manual changes to match your code. By using -refresh-only, you are telling Terraform to keep the manual changes and just update the state file to acknowledge them.&#34;},{&#34;user&#34;:&#34;yhalim&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;The -refresh-only parameter does not update the state file when used with the terraform plan command. Instead, it allows you to preview the changes to the Terraform state file that would occur if you were to run terraform apply -refresh-only. The state file itself is only updated when you run the terraform apply -refresh-only command.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q23')">
+                <span class="q-number">Q23</span>
+                <span class="q-preview" id="q23-preview">The -refresh-only parameter will update your state file when used with terraform plan.</span>
+                <span class="q-status" id="q23-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q23-text">The -refresh-only parameter will update your state file when used with terraform plan.</div>
+                <div class="opts" id="q23-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q23')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q23')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q23-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q23-submit" onclick="submit('q23')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q23-cheat" onclick="cheat('q23')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q23-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q23-comments" onclick="openComments('q23')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q23-reset" onclick="reset('q23')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 24 -->
+        <div class="q-card" id="q24" data-correct="A"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/402414-exam-terraform-associate-004-topic-6-question-23-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;FlacoX&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;It is optional, since by default it uses local backend, it is good to use a remote backend but not neccesary. So it is not mandatory, not impossible, not discouraged, it is optional&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;Gemini said\nThe correct answer is D. optional.\nWhy it is optional\nYou are never forced to change your backend, but it is a best practice for teams or production environments.\nInitial State: When you run your first terraform apply, Terraform creates a terraform.tfstate file on your local disk (the local backend).\nThe Transition: You can move to a remote backend (like AWS S3, Azure Blob Storage, or Terraform Cloud) at any point in the project lifecycle. This process is called migration.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q24')">
+                <span class="q-number">Q24</span>
+                <span class="q-preview" id="q24-preview">It is _________ to change the Terraform backend from the default local backend to a differen...</span>
+                <span class="q-status" id="q24-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q24-text">It is _________ to change the Terraform backend from the default local backend to a different one after performing your first terraform apply.</div>
+                <div class="opts" id="q24-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q24')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="discouraged">discouraged</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q24')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="mandatory">mandatory</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q24')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="impossible">impossible</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q24')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="optional">optional</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q24-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q24-submit" onclick="submit('q24')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q24-cheat" onclick="cheat('q24')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q24-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q24-comments" onclick="openComments('q24')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q24-reset" onclick="reset('q24')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 25 -->
+        <div class="q-card" id="q25" data-correct="C"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385534-exam-terraform-associate-004-topic-7-question-4-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;yhalim&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;Why C is Correct:\n1) Remove the Resource Definition:\nIf the resource has been manually destroyed, you should remove its definition from your Terraform configuration files (e.g., .tf files).\nThis tells Terraform that the resource is no longer part of the desired state.\n2) Run terraform apply -refresh-only:\nThis command updates the Terraform state file to reflect the current state of your infrastructure without making any changes to resources.\nSince the resource definition has been removed, Terraform will remove the corresponding resource from the state file.&#34;},{&#34;user&#34;:&#34;Zam88&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;correct answer is: C. Remove the resource definition from your file and run terraform apply -refresh-only.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q25')">
+                <span class="q-number">Q25</span>
+                <span class="q-preview" id="q25-preview">If you manually destroy resources within your infrastructure, what is the best practice for ...</span>
+                <span class="q-status" id="q25-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q25-text">If you manually destroy resources within your infrastructure, what is the best practice for reflecting this change in Terraform?</div>
+                <div class="opts" id="q25-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q25')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="Run terraform import to reflect the changes in Terraform state.">Run terraform import to reflect the changes in Terraform state.</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q25')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="Manually update the state file to remove the destroyed resources.">Manually update the state file to remove the destroyed resources.</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q25')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="Remove the resource definition from your file and run terraform apply -refresh-only.">Remove the resource definition from your file and run terraform apply -refresh-only.</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q25')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="The change will happen automatically during the next terraform apply.">The change will happen automatically during the next terraform apply.</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q25-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q25-submit" onclick="submit('q25')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q25-cheat" onclick="cheat('q25')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q25-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q25-comments" onclick="openComments('q25')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q25-reset" onclick="reset('q25')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 26 -->
+        <div class="q-card" id="q26" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385533-exam-terraform-associate-004-topic-7-question-5-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;The correct answer is B. False.\nWhen a check block’s assertion fails, Terraform reports a warning (including the error_message you defined) but continues executing the current operation (plan or apply) without blocking it.\nThis is the only type of custom validation in Terraform that is intentionally non-blocking. It runs as the final step of a plan or apply (after resources have been planned or provisioned) and is meant for ongoing health/monitoring checks rather than strict enforcement.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q26')">
+                <span class="q-number">Q26</span>
+                <span class="q-preview" id="q26-preview">When a check block’s assertion fails, Terraform blocks the current operation from executing.</span>
+                <span class="q-status" id="q26-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q26-text">When a check block’s assertion fails, Terraform blocks the current operation from executing.</div>
+                <div class="opts" id="q26-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q26')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q26')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q26-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q26-submit" onclick="submit('q26')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q26-cheat" onclick="cheat('q26')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q26-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q26-comments" onclick="openComments('q26')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q26-reset" onclick="reset('q26')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 27 -->
+        <div class="q-card" id="q27" data-correct="B,C"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385527-exam-terraform-associate-004-topic-8-question-2-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;he correct answers are B. Resource drift detection and D. Check block validation.\nWhat is an HCP Terraform Health Assessment?\nA health assessment is a background process in HCP Terraform (formerly Terraform Cloud) that monitors your infrastructure for \&#34;correctness\&#34; without you having to manually trigger a plan. It is specifically designed to catch two things:\nB. Resource drift detection: It checks if the actual infrastructure has been changed outside of Terraform (e.g., someone manually edited a setting in the AWS Console).\nD. Check block validation: It executes any check blocks you have defined in your code. This is used to verify functional status, such as whether a website is returning a 200 OK status or if a certificate is nearing expiration.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q27')">
+                <span class="q-number">Q27</span>
+                <span class="q-preview" id="q27-preview">Which of the following does HCP Terraform perform during a health assessment for a workspace...</span>
+                <span class="q-status" id="q27-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q27-text">Which of the following does HCP Terraform perform during a health assessment for a workspace? (Choose two.)</div>
+                <div class="opts" id="q27-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q27')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="Sentinel policy checks">Sentinel policy checks</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q27')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="Resource drift detection">Resource drift detection</div>
+                    </div>
+                    <div class="opt" data-val="C" onclick="pick(this,'q27')">
+                        <div class="opt-letter">C</div>
+                        <div class="opt-text" data-original="Estimate infrastructure cost">Estimate infrastructure cost</div>
+                    </div>
+                    <div class="opt" data-val="D" onclick="pick(this,'q27')">
+                        <div class="opt-letter">D</div>
+                        <div class="opt-text" data-original="Check block validation">Check block validation</div>
+                    </div>
+                    <div class="opt" data-val="E" onclick="pick(this,'q27')">
+                        <div class="opt-letter">E</div>
+                        <div class="opt-text" data-original="Terraform test execution">Terraform test execution</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q27-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q27-submit" onclick="submit('q27')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q27-cheat" onclick="cheat('q27')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q27-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q27-comments" onclick="openComments('q27')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q27-reset" onclick="reset('q27')">Retry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTION 28 -->
+        <div class="q-card" id="q28" data-correct="B"
+             data-link="https://www.examtopics.com/discussions/hashicorp/view/385525-exam-terraform-associate-004-topic-8-question-4-discussion/"
+             data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;The correct answer is B. False.\nYou can only provide one cloud block per Terraform configuration.\nThe cloud block (nested inside the top-level terraform block) is how you connect a workspace to either HCP Terraform or a Terraform Enterprise instance. It is not repeatable — Terraform explicitly forbids multiple cloud blocks in the same configuration.&#34;}]'>
+            <div class="q-top" onclick="toggleCard('q28')">
+                <span class="q-number">Q28</span>
+                <span class="q-preview" id="q28-preview">You can configure multiple cloud blocks in your Terraform configuration to connect your work...</span>
+                <span class="q-status" id="q28-status"></span>
+                <span class="q-toggle">&#9662;</span>
+            </div>
+            <div class="q-body">
+                <div class="q-text" id="q28-text">You can configure multiple cloud blocks in your Terraform configuration to connect your workspace to both HCP Terraform and your Terraform Enterprise instance.</div>
+                <div class="opts" id="q28-opts">
+                    <div class="opt" data-val="A" onclick="pick(this,'q28')">
+                        <div class="opt-letter">A</div>
+                        <div class="opt-text" data-original="True">True</div>
+                    </div>
+                    <div class="opt" data-val="B" onclick="pick(this,'q28')">
+                        <div class="opt-letter">B</div>
+                        <div class="opt-text" data-original="False">False</div>
+                    </div>
+                </div>
+                <div class="result-bar" id="q28-result"></div>
+                <div class="q-actions">
+                    <button class="btn btn-submit" id="q28-submit" onclick="submit('q28')" disabled>Submit</button>
+                    <button class="btn btn-cheat" id="q28-cheat" onclick="cheat('q28')">Sneak Peek</button>
+                    <a class="btn btn-discuss hidden" id="q28-discuss" href="#" target="_blank">ExamTopics</a>
+                    <button class="btn btn-comments" id="q28-comments" onclick="openComments('q28')">Comments</button>
+                    <button class="btn btn-reset hidden" id="q28-reset" onclick="reset('q28')">Retry</button>
+                </div>
+            </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- FIXED FOOTER -->
+    <footer class="app-footer">
+      <div class="page-footer">
+        Made by
+        <a href="https://github.com/npapatheodorou" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          npapatheodorou
+        </a>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- IMAGE ZOOM MODAL -->
+  <div class="img-modal-overlay" id="imgModal" onclick="closeImageModal()">
+    <img id="imgModalSrc" src="" alt="Zoomed exhibit" />
+  </div>
+
+  <!-- COMMENTS MODAL -->
+  <div class="modal-overlay" id="commentsModal" onclick="closeCommentsOutside(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>🗨️ Community Discussion</h3>
+        <button class="modal-close" onclick="closeComments()">✕</button>
+      </div>
+      <div class="modal-body" id="commentsBody"></div>
+    </div>
+  </div>
+
+  <!-- RESTART CONFIRM MODAL -->
+  <div class="confirm-overlay" id="confirmOverlay" onclick="closeConfirmOutside(event)">
+    <div class="confirm-box">
+      <div class="confirm-icon">🔄</div>
+      <div class="confirm-title">Restart Exam?</div>
+      <div class="confirm-text">
+        This will reset all your answers and score.<br />
+        Are you sure you want to start over?
+      </div>
+      <div class="confirm-actions">
+        <button class="confirm-btn confirm-cancel" onclick="closeConfirm()">Cancel</button>
+        <button class="confirm-btn confirm-yes" onclick="restartExam()">Yes, Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {};
+    let totalAnswered = 0, totalCorrect = 0;
+
+    const originals = {};
+    document.querySelectorAll(".q-card").forEach((card) => {
+      const id = card.id;
+      originals[id] = {
+        preview: document.getElementById(`${id}-preview`).innerHTML,
+        text: document.getElementById(`${id}-text`).innerHTML,
+        opts: [],
+      };
+      card.querySelectorAll(".opt-text").forEach((o) => {
+        originals[id].opts.push(o.getAttribute("data-original"));
+      });
+    });
+
+    /* ===== SEARCH ===== */
+    let searchTimeout;
+    function handleSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(doSearch, 150);
+      document
+        .getElementById("searchClear")
+        .classList.toggle(
+          "show",
+          document.getElementById("searchInput").value.length > 0
+        );
+    }
+
+    function doSearch() {
+      const raw = document.getElementById("searchInput").value.trim();
+      const cards = document.querySelectorAll(".q-card");
+      const stats = document.getElementById("searchStats");
+      const noRes = document.getElementById("noResults");
+
+      cards.forEach((card) => {
+        const id = card.id;
+        document.getElementById(`${id}-preview`).innerHTML = originals[id].preview;
+        document.getElementById(`${id}-text`).innerHTML = originals[id].text;
+        card.querySelectorAll(".opt-text").forEach((o, i) => {
+          o.innerHTML = originals[id].opts[i];
+        });
+        card.classList.remove("highlight-match");
+      });
+
+      if (!raw) {
+        cards.forEach((c) => c.classList.remove("hidden-by-search"));
+        stats.classList.remove("show");
+        noRes.classList.remove("show");
+        return;
+      }
+
+      const query = raw.toLowerCase();
+      const qNumMatch = raw.match(/^q(\d+)$/i);
+      let visible = 0;
+
+      cards.forEach((card) => {
+        const id = card.id;
+        const bodyText = document.getElementById(`${id}-text`).textContent;
+        const optsText = originals[id].opts.join(" ");
+        const qNum = id.replace("q", "");
+        const fullText = `Q${qNum} ${originals[id].preview} ${bodyText} ${optsText}`.toLowerCase();
+
+        const match = qNumMatch ? qNum === qNumMatch[1] : fullText.includes(query);
+
+        if (match) {
+          card.classList.remove("hidden-by-search");
+          card.classList.add("highlight-match");
+          visible++;
+
+          if (!qNumMatch) {
+            document.getElementById(`${id}-preview`).innerHTML = hl(originals[id].preview, raw);
+            document.getElementById(`${id}-text`).innerHTML = hlHTML(originals[id].text, raw);
+            card.querySelectorAll(".opt-text").forEach((o, i) => {
+              o.innerHTML = hl(originals[id].opts[i], raw);
+            });
+          }
+        } else {
+          card.classList.add("hidden-by-search");
+        }
+      });
+
+      stats.textContent = `${visible} of ${cards.length} questions`;
+      stats.classList.add("show");
+      noRes.classList.toggle("show", visible === 0);
+    }
+
+    function hl(text, q) {
+      if (!q) return text;
+      const e = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return text.replace(new RegExp(`(${e})`, "gi"), "<mark>$1</mark>");
+    }
+
+    function hlHTML(html, q) {
+      if (!q) return html;
+      const e = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return html.replace(/>([^<]+)</g, (m, t) => ">" + t.replace(new RegExp(`(${e})`, "gi"), "<mark>$1</mark>") + "<");
+    }
+
+    function clearSearch() {
+      const input = document.getElementById("searchInput");
+      input.value = "";
+      input.focus();
+      handleSearch();
+      doSearch();
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        document.getElementById("searchInput").focus();
+      }
+      if (e.key === "Escape") {
+        closeComments();
+        closeImageModal();
+        closeConfirm();
+        document.getElementById("searchInput").blur();
+      }
+    });
+
+    /* ===== QUIZ ===== */
+    function toggleCard(id) {
+      document.getElementById(id).classList.toggle("open");
+    }
+
+    function getCorrectAnswers(card) {
+      const raw = (card.dataset.correct || "").toUpperCase().trim();
+      if (!raw) return [];
+
+      let parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+      if (parts.length === 1 && parts[0].length > 1) {
+        parts = parts[0].split("");
+      }
+
+      const seen = new Set();
+      return parts.filter(
+        (letter) => /^[A-F]$/.test(letter) && !seen.has(letter) && seen.add(letter)
+      );
+    }
+
+    function sameAnswers(a, b) {
+      if (a.length !== b.length) return false;
+      const setB = new Set(b);
+      return a.every((item) => setB.has(item));
+    }
+
+    function setQuestionStatus(qid, nextState) {
+      const status = document.getElementById(`${qid}-status`);
+      if (!status) return;
+
+      const states = {
+        correct: { icon: "✅", label: "Correct" },
+        wrong: { icon: "❌", label: "Incorrect" },
+        peek: { icon: "👀", label: "Peeked answer" }
+      };
+
+      const meta = states[nextState];
+      if (!meta) {
+        status.textContent = "";
+        status.classList.remove("has-state");
+        status.removeAttribute("data-state");
+        status.removeAttribute("title");
+        status.removeAttribute("aria-label");
+        return;
+      }
+
+      status.textContent = meta.icon;
+      status.classList.add("has-state");
+      status.dataset.state = nextState;
+      status.title = meta.label;
+      status.setAttribute("aria-label", meta.label);
+    }
+
+    function pick(el, qid) {
+      if (state[qid]?.answered) return;
+
+      const card = document.getElementById(qid);
+      const correctAnswers = getCorrectAnswers(card);
+      const isMulti = correctAnswers.length > 1;
+      const picked = el.getAttribute("data-val");
+
+      if (!state[qid]) state[qid] = { selected: [], answered: false, wasCorrect: false, counted: false };
+      if (!Array.isArray(state[qid].selected)) state[qid].selected = [];
+
+      if (isMulti) {
+        if (el.classList.contains("selected")) {
+          el.classList.remove("selected");
+          state[qid].selected = state[qid].selected.filter((v) => v !== picked);
+        } else {
+          el.classList.add("selected");
+          if (!state[qid].selected.includes(picked)) state[qid].selected.push(picked);
+        }
+      } else {
+        document.querySelectorAll(`#${qid}-opts .opt`).forEach((o) => o.classList.remove("selected"));
+        el.classList.add("selected");
+        state[qid].selected = [picked];
+      }
+
+      document.getElementById(`${qid}-submit`).disabled = state[qid].selected.length === 0;
+    }
+
+    function submit(qid) {
+      const card = document.getElementById(qid);
+      const correctAnswers = getCorrectAnswers(card);
+      const selectedAnswers = Array.isArray(state[qid]?.selected) ? state[qid].selected : [];
+      if (!selectedAnswers.length || state[qid]?.answered) return;
+
+      state[qid].answered = true;
+      state[qid].counted = true;
+
+      document.querySelectorAll(`#${qid}-opts .opt`).forEach((o) => o.classList.add("disabled"));
+      const res = document.getElementById(`${qid}-result`);
+      const correctSet = new Set(correctAnswers);
+      const selectedSet = new Set(selectedAnswers);
+      const answersText = correctAnswers.join(", ");
+      const isCorrect = sameAnswers(selectedAnswers, correctAnswers);
+
+      document.querySelectorAll(`#${qid}-opts .opt`).forEach((opt) => {
+        const val = opt.getAttribute("data-val");
+        if (correctSet.has(val)) {
+          opt.classList.add("correct");
+        } else if (selectedSet.has(val)) {
+          opt.classList.add("wrong");
+        }
+      });
+
+      if (isCorrect) {
+        res.className = "result-bar show is-correct";
+        res.innerHTML =
+          correctAnswers.length > 1
+            ? `Correct! Answers: <strong>${answersText}</strong>`
+            : "Correct!";
+        setQuestionStatus(qid, "correct");
+        totalCorrect++;
+        state[qid].wasCorrect = true;
+      } else {
+        res.className = "result-bar show is-wrong";
+        res.innerHTML = `Wrong - answer${correctAnswers.length > 1 ? "s are" : " is"} <strong>${answersText}</strong>`;
+        setQuestionStatus(qid, "wrong");
+        state[qid].wasCorrect = false;
+      }
+
+      totalAnswered++;
+      showPost(qid, card.dataset.link);
+      updateScore();
+    }
+
+    function cheat(qid) {
+      if (state[qid]?.answered) return;
+      if (!state[qid]) state[qid] = { selected: [], answered: false, wasCorrect: false, counted: false };
+
+      state[qid].answered = true;
+      state[qid].counted = false;
+
+      const card = document.getElementById(qid);
+      const correctAnswers = getCorrectAnswers(card);
+      const answersText = correctAnswers.join(", ");
+
+      document.querySelectorAll(`#${qid}-opts .opt`).forEach((o) => o.classList.add("disabled"));
+
+      correctAnswers.forEach((letter) => {
+        const el = document.querySelector(`#${qid}-opts .opt[data-val="${letter}"]`);
+        if (el) el.classList.add("correct");
+      });
+
+      const res = document.getElementById(`${qid}-result`);
+      res.className = "result-bar show is-cheat";
+      res.innerHTML = `Answer${correctAnswers.length > 1 ? "s" : ""}: <strong>${answersText}</strong>`;
+
+      setQuestionStatus(qid, "peek");
+      state[qid].wasCorrect = false;
+      showPost(qid, card.dataset.link);
+    }
+
+    function showPost(qid, link) {
+      document.getElementById(`${qid}-submit`).classList.add("hidden");
+      document.getElementById(`${qid}-cheat`).classList.add("hidden");
+
+      const d = document.getElementById(`${qid}-discuss`);
+      d.classList.remove("hidden");
+      d.href = link;
+
+      document.getElementById(`${qid}-reset`).classList.remove("hidden");
+    }
+
+    function reset(qid) {
+      if (state[qid]?.answered && state[qid]?.counted) {
+        totalAnswered--;
+        if (state[qid].wasCorrect) totalCorrect--;
+        updateScore();
+      }
+
+      state[qid] = { answered: false, selected: [], wasCorrect: false, counted: false };
+
+      document.querySelectorAll(`#${qid}-opts .opt`).forEach((o) =>
+        o.classList.remove("selected", "correct", "wrong", "disabled")
+      );
+
+      document.getElementById(`${qid}-result`).className = "result-bar";
+      document.getElementById(`${qid}-result`).innerHTML = "";
+      setQuestionStatus(qid, "");
+
+      document.getElementById(`${qid}-submit`).classList.remove("hidden");
+      document.getElementById(`${qid}-submit`).disabled = true;
+
+      document.getElementById(`${qid}-cheat`).classList.remove("hidden");
+      document.getElementById(`${qid}-discuss`).classList.add("hidden");
+      document.getElementById(`${qid}-reset`).classList.add("hidden");
+    }
+
+    function updateScore() {
+      document.getElementById("scoreDisplay").textContent = `${totalCorrect} ✓ · ${totalAnswered} answered`;
+    }
+
+    /* ===== RESTART ===== */
+    function confirmRestart() {
+      if (totalAnswered === 0) {
+        restartExam();
+        return;
+      }
+      document.getElementById("confirmOverlay").classList.add("show");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeConfirm() {
+      document.getElementById("confirmOverlay").classList.remove("show");
+      document.body.style.overflow = "";
+    }
+
+    function closeConfirmOutside(e) {
+      if (e.target === document.getElementById("confirmOverlay")) closeConfirm();
+    }
+
+    function restartExam() {
+      closeConfirm();
+      document.querySelectorAll(".q-card").forEach((card) => {
+        reset(card.id);
+        card.classList.remove("open");
+      });
+
+      const first = document.querySelector(".q-card");
+      if (first) first.classList.add("open");
+
+      totalAnswered = 0;
+      totalCorrect = 0;
+      updateScore();
+      clearSearch();
+
+      document.querySelector(".app-content")?.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    /* ===== COMMENTS MODAL ===== */
+    function openComments(qid) {
+      const card = document.getElementById(qid);
+      let comments = [];
+      try { comments = JSON.parse(card.dataset.comments); } catch (e) {}
+
+      const body = document.getElementById("commentsBody");
+
+      if (!comments.length) {
+        body.innerHTML = '<div class="no-comments">💤 No comments yet</div>';
+      } else {
+        body.innerHTML = comments
+          .map((c) => {
+            const initials = (c.user || "?").substring(0, 2).toUpperCase();
+            const answerBadge = c.answer ? `<span class="comment-answer">Answer: ${c.answer}</span>` : "";
+            const textFormatted = (c.text || "").replace(/\n/g, "<br>");
+            return `
+              <div class="comment-card">
+                <div class="comment-header">
+                  <div class="comment-avatar">${initials}</div>
+                  <span class="comment-user">${c.user || "Anonymous"}</span>
+                  ${answerBadge}
+                </div>
+                <div class="comment-body">${textFormatted}</div>
+              </div>`;
+          })
+          .join("");
+      }
+
+      document.getElementById("commentsModal").classList.add("show");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeComments() {
+      document.getElementById("commentsModal").classList.remove("show");
+      document.body.style.overflow = "";
+    }
+
+    function closeCommentsOutside(e) {
+      if (e.target === document.getElementById("commentsModal")) closeComments();
+    }
+
+    /* ===== IMAGE ZOOM ===== */
+    function zoomImage(src) {
+      document.getElementById("imgModalSrc").src = src;
+      document.getElementById("imgModal").classList.add("show");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeImageModal() {
+      document.getElementById("imgModal").classList.remove("show");
+      document.body.style.overflow = "";
+    }
+  </script>
+
+  <script>
+  /* ===== LOCAL PROGRESS (added for GitHub Pages version) ===== */
+  (() => {
+    const STORAGE_KEY = "exam-progress:terraform-associate-004:v1";
+
+    function saveProgress() {
+      try {
+        const cards = Array.from(document.querySelectorAll(".q-card"));
+        const payload = {
+          state: {},
+          open: cards.filter(c => c.classList.contains("open")).map(c => c.id),
+          savedAt: Date.now()
+        };
+        cards.forEach(card => {
+          const qid = card.id;
+          if (state[qid]) payload.state[qid] = state[qid];
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        const el = document.getElementById("saveIndicator");
+        if (el) el.textContent = "✓ Postęp zapisany na tym urządzeniu";
+      } catch (e) {
+        console.warn("Could not save progress", e);
+      }
+    }
+
+    function restoreProgress() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const payload = JSON.parse(raw);
+        const savedState = payload.state || {};
+
+        totalAnswered = 0;
+        totalCorrect = 0;
+
+        document.querySelectorAll(".q-card").forEach(card => {
+          const qid = card.id;
+          const saved = savedState[qid];
+          if (!saved) return;
+
+          state[qid] = {
+            answered: !!saved.answered,
+            selected: Array.isArray(saved.selected) ? saved.selected : [],
+            wasCorrect: !!saved.wasCorrect,
+            counted: !!saved.counted
+          };
+
+          const selectedSet = new Set(state[qid].selected);
+          card.querySelectorAll(".opt").forEach(opt => {
+            const val = opt.getAttribute("data-val");
+            if (selectedSet.has(val)) opt.classList.add("selected");
+          });
+
+          const submitBtn = document.getElementById(`${qid}-submit`);
+          if (submitBtn) submitBtn.disabled = state[qid].selected.length === 0;
+
+          if (!state[qid].answered) return;
+
+          const correctAnswers = getCorrectAnswers(card);
+          const correctSet = new Set(correctAnswers);
+          card.querySelectorAll(".opt").forEach(opt => {
+            opt.classList.add("disabled");
+            const val = opt.getAttribute("data-val");
+            if (correctSet.has(val)) opt.classList.add("correct");
+            else if (state[qid].counted && selectedSet.has(val)) opt.classList.add("wrong");
+          });
+
+          const res = document.getElementById(`${qid}-result`);
+          const answersText = correctAnswers.join(", ");
+
+          if (state[qid].counted) {
+            totalAnswered++;
+            if (state[qid].wasCorrect) {
+              totalCorrect++;
+              if (res) {
+                res.className = "result-bar show is-correct";
+                res.innerHTML = correctAnswers.length > 1
+                  ? `Correct! Answers: <strong>${answersText}</strong>`
+                  : "Correct!";
+              }
+              setQuestionStatus(qid, "correct");
+            } else {
+              if (res) {
+                res.className = "result-bar show is-wrong";
+                res.innerHTML = `Wrong - answer${correctAnswers.length > 1 ? "s are" : " is"} <strong>${answersText}</strong>`;
+              }
+              setQuestionStatus(qid, "wrong");
+            }
+          } else {
+            if (res) {
+              res.className = "result-bar show is-cheat";
+              res.innerHTML = correctAnswers.length
+                ? `Answer${correctAnswers.length > 1 ? "s" : ""}: <strong>${answersText}</strong>`
+                : "Answer area — use the exhibit/discussion for this question.";
+            }
+            setQuestionStatus(qid, "peek");
+          }
+
+          showPost(qid, card.dataset.link);
+        });
+
+        const openIds = new Set(Array.isArray(payload.open) ? payload.open : []);
+        if (openIds.size) {
+          document.querySelectorAll(".q-card").forEach(card =>
+            card.classList.toggle("open", openIds.has(card.id))
+          );
+        }
+
+        updateScore();
+        const el = document.getElementById("saveIndicator");
+        if (el) el.textContent = "✓ Przywrócono zapisany postęp";
+      } catch (e) {
+        console.warn("Could not restore progress", e);
+      }
+    }
+
+    const originalPick = pick;
+    pick = function(...args) {
+      const result = originalPick.apply(this, args);
+      saveProgress();
+      return result;
+    };
+
+    const originalSubmit = submit;
+    submit = function(...args) {
+      const result = originalSubmit.apply(this, args);
+      saveProgress();
+      return result;
+    };
+
+    const originalCheat = cheat;
+    cheat = function(...args) {
+      const result = originalCheat.apply(this, args);
+      saveProgress();
+      return result;
+    };
+
+    const originalReset = reset;
+    reset = function(...args) {
+      const result = originalReset.apply(this, args);
+      saveProgress();
+      return result;
+    };
+
+    const originalToggleCard = toggleCard;
+    toggleCard = function(...args) {
+      const result = originalToggleCard.apply(this, args);
+      saveProgress();
+      return result;
+    };
+
+    const originalRestartExam = restartExam;
+    restartExam = function(...args) {
+      const result = originalRestartExam.apply(this, args);
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      const el = document.getElementById("saveIndicator");
+      if (el) el.textContent = "Postęp wyzerowany";
+      return result;
+    };
+
+    restoreProgress();
+  })();
+  </script>
+
+</body>
+</html>
