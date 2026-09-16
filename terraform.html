@@ -850,6 +850,88 @@
       .save-indicator { display: none; }
     }
     
+  
+    /* ===== STUDY / EXAM MODE V2 ===== */
+    .study-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+      margin-top: 9px;
+      padding-top: 9px;
+      border-top: 1px solid rgba(255,255,255,.10);
+    }
+    .study-toolbar button, .study-toolbar select {
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.09);
+      color: #fff;
+      border-radius: 8px;
+      min-height: 30px;
+      padding: 5px 9px;
+      font: 700 10px/1.2 "Inter", sans-serif;
+      outline: none;
+    }
+    .study-toolbar button { cursor: pointer; transition: all .2s ease; }
+    .study-toolbar button:hover { background: rgba(255,255,255,.16); }
+    .study-toolbar button.active {
+      background: rgba(103,232,249,.20);
+      border-color: rgba(103,232,249,.48);
+      color: #cffafe;
+    }
+    .study-toolbar select option { color: #111827; background: #fff; }
+    .toolbar-spacer { flex: 1 1 auto; }
+    .finish-exam-btn {
+      background: rgba(250,204,21,.18) !important;
+      border-color: rgba(250,204,21,.40) !important;
+      color: #fef08a !important;
+      display: none;
+    }
+    body.exam-mode .finish-exam-btn { display: inline-flex; }
+    body.exam-finished .finish-exam-btn { opacity: .55; pointer-events: none; }
+    .progress-wrap { width: 100%; margin-top: 1px; }
+    .progress-meta {
+      display: flex; justify-content: space-between; gap: 12px;
+      color: rgba(255,255,255,.70); font-size: 10px; font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .progress-track {
+      width: 100%; height: 6px; overflow: hidden; border-radius: 999px;
+      background: rgba(255,255,255,.10);
+    }
+    .progress-fill {
+      width: 0%; height: 100%; border-radius: inherit;
+      background: linear-gradient(90deg,#22d3ee,#0891b2);
+      transition: width .25s ease;
+    }
+    .q-star {
+      border: 0; background: transparent; color: #5f6073;
+      font-size: 18px; line-height: 1; padding: 2px 3px; cursor: pointer;
+      flex: 0 0 auto; transition: transform .15s ease,color .15s ease;
+    }
+    .q-star:hover { transform: scale(1.12); color: #fde047; }
+    .q-star.active { color: #facc15; }
+    .q-card.hidden-by-study { display: none; }
+    body.exam-mode:not(.exam-finished) .q-status,
+    body.exam-mode:not(.exam-finished) .result-bar,
+    body.exam-mode:not(.exam-finished) .btn-submit,
+    body.exam-mode:not(.exam-finished) .btn-cheat,
+    body.exam-mode:not(.exam-finished) .btn-discuss,
+    body.exam-mode:not(.exam-finished) .btn-reset { display: none !important; }
+    body.exam-mode.exam-finished .btn-submit,
+    body.exam-mode.exam-finished .btn-cheat { display: none !important; }
+    .exam-summary {
+      display: none; width: 100%;
+      padding: 8px 10px; border-radius: 9px;
+      background: rgba(250,204,21,.10); border: 1px solid rgba(250,204,21,.24);
+      color: #fef3c7; font-size: 11px; font-weight: 700;
+    }
+    body.exam-finished .exam-summary { display: block; }
+    @media (max-width: 560px) {
+      .study-toolbar { gap: 6px; }
+      .study-toolbar button, .study-toolbar select { flex: 1 1 auto; }
+      .toolbar-spacer { display:none; }
+    }
+
   </style>
 </head>
 
@@ -892,6 +974,23 @@
           />
           <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
           <div class="search-stats" id="searchStats"></div>
+        </div>
+
+        <div class="study-toolbar" id="studyToolbar">
+          <button type="button" id="modeStudy" class="active" onclick="setStudyMode('study')">📚 Nauka</button>
+          <button type="button" id="modeExam" onclick="setStudyMode('exam')">📝 Egzamin</button>
+          <select id="questionCount" aria-label="Liczba pytań"></select>
+          <button type="button" onclick="randomizeQuestions()">🎲 Losuj zestaw</button>
+          <span class="toolbar-spacer"></span>
+          <button type="button" id="filterAll" class="active" onclick="setStudyFilter('all')">Wszystkie</button>
+          <button type="button" id="filterWrong" onclick="setStudyFilter('wrong')">❌ Błędne</button>
+          <button type="button" id="filterStar" onclick="setStudyFilter('star')">★ Gwiazdki</button>
+          <button type="button" class="finish-exam-btn" id="finishExam" onclick="finishExamSession()">Zakończ egzamin</button>
+          <div class="progress-wrap">
+            <div class="progress-meta"><span id="progressLabel">Postęp</span><span id="progressText">0 / 0</span></div>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          </div>
+          <div class="exam-summary" id="examSummary"></div>
         </div>
       </div>
     </header>
@@ -2591,6 +2690,363 @@
     };
 
     restoreProgress();
+  })();
+  </script>
+
+
+  <script>
+  /* ===== STUDY / EXAM MODE V2 ===== */
+  (() => {
+    const V2_KEY = "exam-ui-v2:terraform-associate-004";
+    const allCards = () => Array.from(document.querySelectorAll(".q-card"));
+    const allIds = () => allCards().map(c => c.id);
+    let mode = "study";
+    let filter = "all";
+    let pool = null; // null = all questions
+    let stars = new Set();
+    let examFinished = false;
+
+    function loadV2() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(V2_KEY) || "{}");
+        mode = saved.mode === "exam" ? "exam" : "study";
+        filter = ["all","wrong","star"].includes(saved.filter) ? saved.filter : "all";
+        stars = new Set(Array.isArray(saved.stars) ? saved.stars : []);
+        pool = Array.isArray(saved.pool) && saved.pool.length ? saved.pool.filter(id => document.getElementById(id)) : null;
+        examFinished = !!saved.examFinished && mode === "exam";
+      } catch (e) {}
+    }
+
+    function saveV2() {
+      try {
+        localStorage.setItem(V2_KEY, JSON.stringify({
+          mode, filter, stars: Array.from(stars), pool, examFinished
+        }));
+      } catch (e) {}
+    }
+
+    function injectStars() {
+      allCards().forEach(card => {
+        const top = card.querySelector(".q-top");
+        if (!top || top.querySelector(".q-star")) return;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "q-star";
+        btn.textContent = "★";
+        btn.title = "Oznacz pytanie gwiazdką";
+        btn.setAttribute("aria-label", "Oznacz pytanie gwiazdką");
+        btn.onclick = (event) => {
+          event.stopPropagation();
+          toggleStar(card.id);
+        };
+        const status = top.querySelector(".q-status");
+        top.insertBefore(btn, status || top.lastElementChild);
+      });
+    }
+
+    function renderStars() {
+      allCards().forEach(card => {
+        const btn = card.querySelector(".q-star");
+        if (!btn) return;
+        btn.classList.toggle("active", stars.has(card.id));
+        btn.title = stars.has(card.id) ? "Usuń gwiazdkę" : "Oznacz pytanie gwiazdką";
+      });
+    }
+
+    window.toggleStar = function(qid) {
+      if (stars.has(qid)) stars.delete(qid); else stars.add(qid);
+      renderStars();
+      applyStudyVisibility();
+      saveV2();
+    };
+
+    function populateCountOptions() {
+      const sel = document.getElementById("questionCount");
+      if (!sel) return;
+      const previous = sel.value;
+      const n = eligibleIds().length;
+      const candidates = n <= 30 ? [10,20] : [10,20,50,100];
+      const allLabel = mode === "exam" ? `Wszystkie oceniane (${n})` : `Wszystkie (${n})`;
+      sel.innerHTML = `<option value="all">${allLabel}</option>` + candidates
+        .filter(x => x < n)
+        .map(x => `<option value="${x}">${x} pytań</option>`).join("");
+      const desired = pool && activePoolIds().length < n ? String(activePoolIds().length) : previous;
+      if (Array.from(sel.options).some(o => o.value === desired)) sel.value = desired;
+      else sel.value = "all";
+    }
+
+    function eligibleIds() {
+      const ids = allIds();
+      if (mode !== "exam") return ids;
+      return ids.filter(id => {
+        const card = document.getElementById(id);
+        return card && getCorrectAnswers(card).length > 0;
+      });
+    }
+
+    function activePoolIds() {
+      const eligible = new Set(eligibleIds());
+      if (pool && pool.length) return pool.filter(id => eligible.has(id));
+      return Array.from(eligible);
+    }
+
+    function cardMatchesFilter(card) {
+      if (filter === "star") return stars.has(card.id);
+      if (filter === "wrong") return !!(state[card.id]?.answered && state[card.id]?.counted && !state[card.id]?.wasCorrect);
+      return true;
+    }
+
+    window.applyStudyVisibility = function() {
+      const allowed = new Set(activePoolIds());
+      allCards().forEach(card => {
+        const show = allowed.has(card.id) && cardMatchesFilter(card);
+        card.classList.toggle("hidden-by-study", !show);
+      });
+      updateStudyProgress();
+    };
+
+    window.setStudyFilter = function(next) {
+      filter = ["all","wrong","star"].includes(next) ? next : "all";
+      ["all","wrong","star"].forEach(k => {
+        const id = k === "all" ? "filterAll" : k === "wrong" ? "filterWrong" : "filterStar";
+        document.getElementById(id)?.classList.toggle("active", filter === k);
+      });
+      applyStudyVisibility();
+      saveV2();
+    };
+
+    function resetPoolForExam() {
+      activePoolIds().forEach(id => {
+        if (state[id]?.answered || (state[id]?.selected || []).length) reset(id);
+      });
+      examFinished = false;
+      document.body.classList.remove("exam-finished");
+      const summary = document.getElementById("examSummary");
+      if (summary) summary.textContent = "";
+    }
+
+    window.setStudyMode = function(next) {
+      const target = next === "exam" ? "exam" : "study";
+      const changingIntoExam = target === "exam" && mode !== "exam";
+      mode = target;
+      if (changingIntoExam) {
+        resetPoolForExam();
+        totalAnswered = 0;
+        totalCorrect = 0;
+        updateScore();
+      }
+      if (mode === "study") {
+        examFinished = false;
+        totalAnswered = 0;
+        totalCorrect = 0;
+        allIds().forEach(id => {
+          if (state[id]?.answered && state[id]?.counted) {
+            totalAnswered++;
+            if (state[id]?.wasCorrect) totalCorrect++;
+          }
+        });
+        updateScore();
+      } else if (examFinished) {
+        totalAnswered = 0;
+        totalCorrect = 0;
+        activePoolIds().forEach(id => {
+          if (state[id]?.answered && state[id]?.counted) {
+            totalAnswered++;
+            if (state[id]?.wasCorrect) totalCorrect++;
+          }
+        });
+        updateScore();
+      }
+      populateCountOptions();
+      document.body.classList.toggle("exam-mode", mode === "exam");
+      document.body.classList.toggle("exam-finished", mode === "exam" && examFinished);
+      document.getElementById("modeStudy")?.classList.toggle("active", mode === "study");
+      document.getElementById("modeExam")?.classList.toggle("active", mode === "exam");
+      applyStudyVisibility();
+      updateStudyProgress();
+      saveV2();
+    };
+
+    window.randomizeQuestions = function() {
+      const sel = document.getElementById("questionCount");
+      const value = sel?.value || "all";
+      if (value === "all") {
+        pool = null;
+      } else {
+        const count = Math.max(1, Math.min(parseInt(value,10) || 10, eligibleIds().length));
+        const ids = eligibleIds();
+        for (let i = ids.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [ids[i], ids[j]] = [ids[j], ids[i]];
+        }
+        pool = ids.slice(0, count);
+      }
+      if (mode === "exam") {
+        resetPoolForExam();
+        totalAnswered = 0;
+        totalCorrect = 0;
+        updateScore();
+      }
+      filter = "all";
+      window.setStudyFilter("all");
+      clearSearch();
+      applyStudyVisibility();
+      const firstVisible = allCards().find(c => !c.classList.contains("hidden-by-study"));
+      if (firstVisible) {
+        allCards().forEach(c => c.classList.remove("open"));
+        firstVisible.classList.add("open");
+        firstVisible.scrollIntoView({behavior:"smooth", block:"start"});
+      }
+      saveV2();
+    };
+
+    function attemptedCount() {
+      const ids = activePoolIds();
+      if (mode === "exam" && !examFinished) {
+        return ids.filter(id => Array.isArray(state[id]?.selected) && state[id].selected.length > 0).length;
+      }
+      return ids.filter(id => state[id]?.answered && state[id]?.counted).length;
+    }
+
+    window.updateStudyProgress = function() {
+      const ids = activePoolIds();
+      const total = ids.length;
+      const done = attemptedCount();
+      const pct = total ? Math.round(done / total * 100) : 0;
+      const text = document.getElementById("progressText");
+      const fill = document.getElementById("progressFill");
+      const label = document.getElementById("progressLabel");
+      if (text) text.textContent = `${done} / ${total} (${pct}%)`;
+      if (fill) fill.style.width = `${pct}%`;
+      if (label) label.textContent = mode === "exam" && !examFinished ? "Odpowiedziano" : "Postęp";
+    };
+
+    function revealExamCard(card, selectedAnswers, correctAnswers, isCorrect) {
+      const qid = card.id;
+      const selectedSet = new Set(selectedAnswers);
+      const correctSet = new Set(correctAnswers);
+      card.querySelectorAll(".opt").forEach(opt => {
+        opt.classList.add("disabled");
+        const val = opt.getAttribute("data-val");
+        if (correctSet.has(val)) opt.classList.add("correct");
+        else if (selectedSet.has(val)) opt.classList.add("wrong");
+      });
+      const res = document.getElementById(`${qid}-result`);
+      const answersText = correctAnswers.join(", ");
+      if (res) {
+        if (isCorrect) {
+          res.className = "result-bar show is-correct";
+          res.innerHTML = correctAnswers.length > 1 ? `Correct! Answers: <strong>${answersText}</strong>` : "Correct!";
+        } else {
+          res.className = "result-bar show is-wrong";
+          res.innerHTML = `Wrong - answer${correctAnswers.length > 1 ? "s are" : " is"} <strong>${answersText || "—"}</strong>`;
+        }
+      }
+      setQuestionStatus(qid, isCorrect ? "correct" : "wrong");
+      showPost(qid, card.dataset.link);
+    }
+
+    window.finishExamSession = function() {
+      if (mode !== "exam" || examFinished) return;
+      const ids = activePoolIds();
+      let correct = 0;
+      ids.forEach(id => {
+        const card = document.getElementById(id);
+        if (!card) return;
+        if (!state[id]) state[id] = { selected: [], answered: false, wasCorrect: false, counted: false };
+        const selected = Array.isArray(state[id].selected) ? state[id].selected : [];
+        const answers = getCorrectAnswers(card);
+        const ok = sameAnswers(selected, answers);
+        state[id].answered = true;
+        state[id].counted = true;
+        state[id].wasCorrect = ok;
+        if (ok) correct++;
+        revealExamCard(card, selected, answers, ok);
+      });
+      totalAnswered = ids.length;
+      totalCorrect = correct;
+      updateScore();
+      examFinished = true;
+      document.body.classList.add("exam-finished");
+      const pct = ids.length ? Math.round(correct / ids.length * 100) : 0;
+      const summary = document.getElementById("examSummary");
+      if (summary) summary.textContent = `Wynik egzaminu: ${correct}/${ids.length} (${pct}%). Błędne pytania możesz od razu wyświetlić filtrem „Błędne”.`;
+      // Trigger the existing progress persistence wrapper without changing selection.
+      const first = ids.map(id => document.querySelector(`#${id} .opt`)).find(Boolean);
+      if (first) {
+        try { previousPick(first, first.closest('.q-card').id); } catch (e) {}
+      } else if (ids[0]) {
+        try { window.toggleCard(ids[0]); window.toggleCard(ids[0]); } catch (e) {}
+      }
+      updateStudyProgress();
+      saveV2();
+    };
+
+    // Extend existing functions without replacing their core behavior.
+    const previousPick = window.pick;
+    window.pick = function(...args) {
+      if (mode === "exam" && examFinished) return;
+      const result = previousPick.apply(this, args);
+      updateStudyProgress();
+      return result;
+    };
+
+    const previousSubmit = window.submit;
+    window.submit = function(...args) {
+      if (mode === "exam") return;
+      const result = previousSubmit.apply(this, args);
+      updateStudyProgress();
+      applyStudyVisibility();
+      return result;
+    };
+
+    const previousCheat = window.cheat;
+    window.cheat = function(...args) {
+      if (mode === "exam") return;
+      const result = previousCheat.apply(this, args);
+      updateStudyProgress();
+      return result;
+    };
+
+    const previousReset = window.reset;
+    window.reset = function(...args) {
+      const result = previousReset.apply(this, args);
+      updateStudyProgress();
+      applyStudyVisibility();
+      return result;
+    };
+
+    const previousRestartExam = window.restartExam;
+    window.restartExam = function(...args) {
+      const result = previousRestartExam.apply(this, args);
+      pool = null;
+      filter = "all";
+      examFinished = false;
+      document.body.classList.remove("exam-finished");
+      const sel = document.getElementById("questionCount");
+      if (sel) sel.value = "all";
+      setStudyFilter("all");
+      updateStudyProgress();
+      saveV2();
+      return result;
+    };
+
+    // Existing search and filters use separate classes, so they compose cleanly.
+    const previousDoSearch = window.doSearch;
+    window.doSearch = function(...args) {
+      const result = previousDoSearch.apply(this, args);
+      applyStudyVisibility();
+      return result;
+    };
+
+    loadV2();
+    injectStars();
+    populateCountOptions();
+    renderStars();
+    setStudyFilter(filter);
+    setStudyMode(mode);
+    document.body.classList.toggle("exam-finished", mode === "exam" && examFinished);
+    updateStudyProgress();
   })();
   </script>
 
