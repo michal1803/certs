@@ -1,138 +1,65 @@
 <!doctype html>
 <html lang="pl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0f0f1a">
-  <title>Exam Hub</title>
-  <style>
-    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-    * { box-sizing: border-box; }
-    html, body { min-height: 100%; }
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, sans-serif;
-      background:
-        radial-gradient(circle at 20% 10%, rgba(8,145,178,.15), transparent 32rem),
-        radial-gradient(circle at 80% 90%, rgba(124,58,237,.12), transparent 32rem),
-        #0f0f1a;
-      color: #e8e8f2;
-    }
-    .wrap {
-      min-height: 100vh;
-      width: min(920px, calc(100% - 32px));
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 42px 0;
-    }
-    .eyebrow {
-      color: #67e8f9;
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: .14em;
-      text-transform: uppercase;
-    }
-    h1 {
-      margin: 10px 0 8px;
-      font-size: clamp(30px, 7vw, 54px);
-      line-height: 1;
-      letter-spacing: -.04em;
-    }
-    .lead {
-      color: #9fa0b8;
-      max-width: 620px;
-      line-height: 1.65;
-      margin: 0 0 28px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-    .card {
-      position: relative;
-      overflow: hidden;
-      min-height: 220px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,.08);
-      background: rgba(26,26,46,.9);
-      padding: 24px;
-      color: inherit;
-      text-decoration: none;
-      box-shadow: 0 16px 45px rgba(0,0,0,.22);
-      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
-    }
-    .card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(103,232,249,.35);
-      box-shadow: 0 20px 55px rgba(0,0,0,.34);
-    }
-    .card::after {
-      content: "";
-      position: absolute;
-      width: 180px; height: 180px;
-      border-radius: 50%;
-      right: -75px; bottom: -85px;
-      background: rgba(8,145,178,.15);
-      filter: blur(2px);
-    }
-    .card.azure::after { background: rgba(59,130,246,.18); }
-    .tag {
-      display: inline-flex;
-      padding: 5px 9px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.07);
-      color: #cfd0df;
-      font-size: 11px;
-      font-weight: 700;
-    }
-    .card h2 { margin: 18px 0 8px; font-size: 23px; }
-    .card p { margin: 0; color: #9294ad; line-height: 1.55; font-size: 14px; max-width: 32ch; }
-    .go { margin-top: 24px; color: #67e8f9; font-weight: 800; font-size: 13px; }
-    .note {
-      margin-top: 18px;
-      padding: 13px 15px;
-      border-radius: 12px;
-      background: rgba(255,255,255,.035);
-      border: 1px solid rgba(255,255,255,.06);
-      color: #77798e;
-      font-size: 11px;
-      line-height: 1.5;
-    }
-    @media (max-width: 680px) {
-      .grid { grid-template-columns: 1fr; }
-      .wrap { justify-content: flex-start; }
-      .card { min-height: 190px; }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1020">
+<title>Exam Hub</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+*{box-sizing:border-box} :root{--bg:#0b1020;--line:rgba(255,255,255,.09);--text:#eef2ff;--muted:#99a3bd}
+html,body{min-height:100%} body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--text);background:radial-gradient(circle at 14% 0%,rgba(34,211,238,.14),transparent 30rem),radial-gradient(circle at 100% 100%,rgba(139,92,246,.12),transparent 34rem),var(--bg)}
+button,select{font:inherit}.shell{width:min(1080px,calc(100% - 28px));margin:0 auto;padding:48px 0 56px}.hero{margin-bottom:28px}.kicker{color:#67e8f9;text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:800}
+h1{margin:10px 0;font-size:clamp(34px,7vw,58px);line-height:.98;letter-spacing:-.045em}.hero p{margin:0;max-width:720px;color:var(--muted);line-height:1.65;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.exam-card{border:1px solid var(--line);background:linear-gradient(180deg,rgba(24,33,56,.94),rgba(16,23,40,.96));border-radius:22px;padding:22px;box-shadow:0 20px 55px rgba(0,0,0,.24)}
+.card-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.vendor{font-size:11px;color:#7dd3fc;font-weight:800;text-transform:uppercase;letter-spacing:.08em}h2{margin:6px 0 7px;font-size:22px;line-height:1.15}.desc{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
+.count-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.045);color:#cbd5e1;font-size:11px;font-weight:800}
+.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:20px;padding:5px;border-radius:13px;background:rgba(0,0,0,.20);border:1px solid rgba(255,255,255,.06)}
+.mode-switch button{border:0;border-radius:9px;min-height:38px;cursor:pointer;color:#9099b3;font-size:12px;font-weight:800;background:transparent;transition:.18s ease}.mode-switch button.active{color:#ecfeff;background:linear-gradient(135deg,rgba(8,145,178,.68),rgba(14,116,144,.55));box-shadow:inset 0 0 0 1px rgba(103,232,249,.18)}
+.config{margin-top:14px}.config label{color:#8792ad;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}select{width:100%;margin-top:6px;min-height:42px;border-radius:11px;padding:0 12px;border:1px solid var(--line);background:#0f172a;color:#e5e7eb;outline:none;font-size:12px;font-weight:700}
+.blueprint{margin-top:14px;padding:13px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);border-radius:13px}.blueprint-title{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px}.blueprint-title strong{font-size:11px}.blueprint-title span{color:#78839d;font-size:10px}.domains{display:flex;flex-wrap:wrap;gap:6px}.chip{padding:5px 7px;border-radius:7px;background:rgba(255,255,255,.05);color:#aeb8cf;border:1px solid rgba(255,255,255,.055);font-size:9px;font-weight:700}
+.warning{margin-top:12px;padding:10px 11px;border-radius:10px;font-size:10px;line-height:1.45;color:#fcdca3;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.17)}
+.start{width:100%;margin-top:15px;min-height:46px;border:0;border-radius:12px;cursor:pointer;color:#fff;font-weight:800;font-size:13px;letter-spacing:.01em;background:linear-gradient(135deg,#0891b2,#0e7490);box-shadow:0 10px 28px rgba(8,145,178,.18)}.start:hover{filter:brightness(1.08);transform:translateY(-1px)}.secondary{background:linear-gradient(135deg,#2563eb,#4f46e5);box-shadow:0 10px 28px rgba(37,99,235,.16)}
+.footnote{margin-top:18px;color:#68738d;font-size:10px;line-height:1.55;text-align:center}.study-copy,.exam-copy{display:none}.exam-card[data-mode="study"] .study-copy{display:block}.exam-card[data-mode="exam"] .exam-copy{display:block}
+@media(max-width:760px){.shell{padding-top:30px}.grid{grid-template-columns:1fr}.exam-card{padding:18px;border-radius:18px}}
+</style>
 </head>
 <body>
-  <main class="wrap">
-    <div class="eyebrow">Exam Hub</div>
-    <h1>Wybierz egzamin</h1>
-    <p class="lead">Dwa symulatory w jednym miejscu — z trybem nauki i egzaminu, losowaniem zestawów, filtrem błędów, gwiazdkami i zapisem postępu w przeglądarce.</p>
+<main class="shell">
+<section class="hero"><div class="kicker">Certification practice</div><h1>Wybierz egzamin i tryb</h1><p>Ustaw wszystko tutaj, zanim wejdziesz do pytań. Tryb egzaminu uruchamia świeży zestaw i dopiero na końcu pokazuje wynik.</p></section>
+<section class="grid">
+<article class="exam-card" id="terraformCard" data-mode="study">
+<div class="card-head"><div><div class="vendor">HashiCorp</div><h2>Terraform Associate 004</h2><p class="desc">Terraform 1.12 · 8 domen egzaminacyjnych.</p></div><div class="count-badge">28 w bazie</div></div>
+<div class="mode-switch"><button class="active" data-mode-btn="study" onclick="setCardMode('terraform','study')">📚 Nauka</button><button data-mode-btn="exam" onclick="setCardMode('terraform','exam')">📝 Egzamin</button></div>
+<div class="study-copy config"><label>Zestaw do nauki</label><select id="terraformStudyCount"><option value="all">Wszystkie 28 pytań</option><option value="10">Losowe 10</option><option value="20">Losowe 20</option></select>
+<div class="blueprint"><div class="blueprint-title"><strong>Obecna baza</strong><span>28 pytań</span></div><div class="domains"><span class="chip">IaC 3</span><span class="chip">Fundamentals 10</span><span class="chip">Workflow 3</span><span class="chip">Configuration 3</span><span class="chip">Modules 2</span><span class="chip">State 3</span><span class="chip">Maintenance 2</span><span class="chip">HCP 2</span></div></div></div>
+<div class="exam-copy config"><label>Symulacja</label><select id="terraformExamCount"><option value="14">14 pytań · zbalansowany mini mock</option><option value="28">28 pytań · cała obecna baza</option></select>
+<div class="blueprint"><div class="blueprint-title"><strong>Docelowy pełny mock</strong><span>~57 pytań / 60 min</span></div><div class="domains"><span class="chip">IaC ~5</span><span class="chip">Fund. ~6</span><span class="chip">Workflow ~11</span><span class="chip">Config ~12</span><span class="chip">Modules ~6</span><span class="chip">State ~6</span><span class="chip">Maintain ~5</span><span class="chip">HCP ~6</span></div></div>
+<div class="warning">Pełnego, miarodajnego mocka nie da się zbudować z obecnych 28 bez powtarzania pytań. Polecany jest teraz mini mock 14 pytań z możliwie równym pokryciem domen.</div></div>
+<button class="start" onclick="launchExam('terraform')">Start Terraform →</button></article>
 
-    <section class="grid">
-      <a class="card" href="terraform.html">
-        <span class="tag">28 pytań</span>
-        <h2>HashiCorp Terraform Associate 004</h2>
-        <p>Terraform, providerzy, state, workflow i pozostałe zagadnienia z zestawu.</p>
-        <div class="go">Otwórz egzamin →</div>
-      </a>
-
-      <a class="card azure" href="az104.html">
-        <span class="tag">256 pytań</span>
-        <h2>Microsoft AZ-104</h2>
-        <p>Azure Administrator — pytania tekstowe, wielokrotnego wyboru oraz zadania z exhibitami.</p>
-        <div class="go">Otwórz egzamin →</div>
-      </a>
-    </section>
-
-    <div class="note">
-      Postęp jest zapisany tylko na aktualnym urządzeniu/przeglądarce. GitHub Pages zapewnia dostęp do strony z dowolnego miejsca, ale nie synchronizuje wyniku między telefonem i komputerem.
-    </div>
-  </main>
-</body>
-</html>
+<article class="exam-card" id="az104Card" data-mode="study">
+<div class="card-head"><div><div class="vendor">Microsoft</div><h2>AZ-104 Azure Administrator</h2><p class="desc">5 oficjalnych domen · symulacja zgodna z aktualnym blueprintem.</p></div><div class="count-badge">256 w bazie</div></div>
+<div class="mode-switch"><button class="active" data-mode-btn="study" onclick="setCardMode('az104','study')">📚 Nauka</button><button data-mode-btn="exam" onclick="setCardMode('az104','exam')">📝 Egzamin</button></div>
+<div class="study-copy config"><label>Zestaw do nauki</label><select id="az104StudyCount"><option value="all">Wszystkie 256 pytań</option><option value="20">Losowe 20</option><option value="50">Losowe 50</option><option value="100">Losowe 100</option></select>
+<div class="blueprint"><div class="blueprint-title"><strong>Oficjalne domeny</strong><span>Microsoft Learn</span></div><div class="domains"><span class="chip">Identity/Governance 20–25%</span><span class="chip">Storage 15–20%</span><span class="chip">Compute 20–25%</span><span class="chip">Networking 15–20%</span><span class="chip">Monitoring 10–15%</span></div></div></div>
+<div class="exam-copy config"><label>Liczba pytań</label><select id="az104ExamCount" onchange="renderAzQuota()"><option value="40">40 pytań</option><option value="50" selected>50 pytań · polecane</option><option value="60">60 pytań</option></select>
+<div class="blueprint"><div class="blueprint-title"><strong>Zbalansowany zestaw</strong><span>100 min</span></div><div class="domains" id="azQuota"></div></div>
+<div class="warning">Egzamin losuje tylko pytania z jednoznacznym kluczem odpowiedzi. Hotspoty i część drag-and-drop zostają w trybie Nauka, żeby nie fałszować wyniku automatycznego.</div></div>
+<button class="start secondary" onclick="launchExam('az104')">Start AZ-104 →</button></article>
+</section>
+<div class="footnote">Postęp i gwiazdki są zapisywane lokalnie w tej przeglądarce. Start nowego trybu Egzamin rozpoczyna świeżą próbę dla wybranego certyfikatu; gwiazdki zostają zachowane.</div>
+</main>
+<script>
+const EXAMS = {"terraform":{"key":"exam-ui-v2:terraform-associate-004","href":"terraform.html","all":["q1","q2","q3","q4","q5","q6","q7","q8","q9","q10","q11","q12","q13","q14","q15","q16","q17","q18","q19","q20","q21","q22","q23","q24","q25","q26","q27","q28"],"domains":{"1":["q1","q2","q3"],"2":["q4","q5","q6","q7","q8","q9","q10","q11","q12","q13"],"3":["q14","q15","q16"],"4":["q17","q18","q19"],"5":["q20","q21"],"6":["q22","q23","q24"],"7":["q25","q26"],"8":["q27","q28"]},"balanced14":{"1":1,"2":2,"3":3,"4":3,"5":1,"6":2,"7":1,"8":1}},"az104":{"key":"exam-ui-v2:microsoft-az-104","href":"az104.html","all":["q1","q2","q3","q4","q5","q6","q7","q8","q9","q10","q11","q12","q13","q14","q15","q16","q17","q18","q19","q20","q21","q22","q23","q24","q25","q26","q27","q28","q29","q30","q31","q32","q33","q34","q35","q36","q37","q38","q39","q40","q41","q42","q43","q44","q45","q46","q47","q48","q49","q50","q51","q52","q53","q54","q55","q56","q57","q58","q59","q60","q61","q62","q63","q64","q65","q66","q67","q68","q69","q70","q71","q72","q73","q74","q75","q76","q77","q78","q79","q80","q81","q82","q83","q84","q85","q86","q87","q88","q89","q90","q91","q92","q93","q94","q95","q96","q97","q98","q99","q100","q101","q102","q103","q104","q105","q106","q107","q108","q109","q110","q111","q112","q113","q114","q115","q116","q117","q118","q119","q120","q121","q122","q123","q124","q125","q126","q127","q128","q129","q130","q131","q132","q133","q134","q135","q136","q137","q138","q139","q140","q141","q142","q143","q144","q145","q146","q147","q148","q149","q150","q151","q152","q153","q154","q155","q156","q157","q158","q159","q160","q161","q162","q163","q164","q165","q166","q167","q168","q169","q170","q171","q172","q173","q174","q175","q176","q177","q178","q179","q180","q181","q182","q183","q184","q185","q186","q187","q188","q189","q190","q191","q192","q193","q194","q195","q196","q197","q198","q199","q200","q201","q202","q203","q204","q205","q206","q207","q208","q209","q210","q211","q212","q213","q214","q215","q216","q217","q218","q219","q220","q221","q222","q223","q224","q225","q226","q227","q228","q229","q230","q231","q232","q233","q234","q235","q236","q237","q238","q239","q240","q241","q242","q243","q244","q245","q246","q247","q248","q249","q250","q251","q252","q253","q254","q255","q256"],"domains":{"2":["q38","q39","q41","q42","q45","q48","q49","q52","q53","q54","q55","q56","q58","q61","q62","q63","q65","q66","q70","q71","q72","q76","q80","q82","q84"],"3":["q85","q86","q90","q91","q94","q95","q98","q99","q104","q105","q108","q113","q114"],"4":["q115","q117","q118","q119","q120","q121","q123","q125","q128","q129","q133","q134","q135","q136","q137","q138","q139","q143","q145","q147","q148","q149","q150","q153","q155","q156","q157","q158","q159"],"5":["q161","q162","q164","q165","q166","q168","q169","q170","q171","q172","q174","q176","q179","q180","q181","q182","q183","q185","q186","q189","q192","q194","q195","q197","q199","q201","q203","q204","q205","q206","q207","q208","q209","q210","q211","q213","q215","q216","q218","q219","q220","q221"],"6":["q222","q226","q227","q228","q230","q232","q234","q235","q236","q238","q239","q241","q242","q245","q246","q247","q249"]},"quotas":{"40":{"2":10,"3":7,"4":10,"5":8,"6":5},"50":{"2":12,"3":10,"4":12,"5":9,"6":7},"60":{"2":15,"3":11,"4":15,"5":10,"6":9}}}};
+const cardModes={terraform:"study",az104:"study"};
+function setCardMode(exam,mode){cardModes[exam]=mode;const card=document.getElementById(exam+"Card");card.dataset.mode=mode;card.querySelectorAll("[data-mode-btn]").forEach(btn=>btn.classList.toggle("active",btn.dataset.modeBtn===mode))}
+function shuffled(arr){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function sample(arr,n){return shuffled(arr).slice(0,Math.min(n,arr.length))}
+function makeTerraformPool(count){const cfg=EXAMS.terraform;if(String(count)==="28")return shuffled(cfg.all);let result=[];Object.entries(cfg.balanced14).forEach(([topic,n])=>result.push(...sample(cfg.domains[topic]||[],n)));return shuffled(result)}
+function makeAzPool(count){const cfg=EXAMS.az104,quotas=cfg.quotas[String(count)]||cfg.quotas["50"];let result=[];Object.entries(quotas).forEach(([topic,n])=>result.push(...sample(cfg.domains[topic]||[],n)));return shuffled(result)}
+function renderAzQuota(){const n=document.getElementById("az104ExamCount").value,q=EXAMS.az104.quotas[n],labels={"2":"Identity/Gov.","3":"Storage","4":"Compute","5":"Networking","6":"Monitoring"};document.getElementById("azQuota").innerHTML=Object.entries(q).map(([k,v])=>`<span class="chip">${labels[k]} ${v}</span>`).join("")}
+function launchExam(exam){const cfg=EXAMS[exam],mode=cardModes[exam];let pool=null;if(mode==="study"){const select=document.getElementById(exam==="terraform"?"terraformStudyCount":"az104StudyCount"),value=select.value;if(value!=="all")pool=sample(cfg.all,parseInt(value,10));const prev=JSON.parse(localStorage.getItem(cfg.key)||"{}");localStorage.setItem(cfg.key,JSON.stringify({...prev,mode:"study",filter:"all",pool,examFinished:false}))}else{pool=exam==="terraform"?makeTerraformPool(document.getElementById("terraformExamCount").value):makeAzPool(document.getElementById("az104ExamCount").value);const prev=JSON.parse(localStorage.getItem(cfg.key)||"{}");const progressKey=exam==="terraform"?"exam-progress:terraform-associate-004:v1":"exam-progress:microsoft-az-104:v1";localStorage.removeItem(progressKey);localStorage.setItem(cfg.key,JSON.stringify({...prev,mode:"exam",filter:"all",pool,examFinished:false}))}location.href=cfg.href}
+renderAzQuota();
+</script>
+</body></html>
