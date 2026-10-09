@@ -22,6 +22,7 @@
   --card: #ffffff;
   --border: #e7dacb;
   --border-strong: #cdbca8;
+  --control-border: #8f7d6c; /* ≥3:1 on card and surface for control boundaries (WCAG 1.4.11) */
   --text: #2b241f;
   --text-2: #6f625a;
   --action: #cf4417;
@@ -111,7 +112,7 @@ button.pill:hover { background: var(--surface); }
 .field label { font-weight: 700; font-size: 14px; color: var(--text-2); }
 .select {
   appearance: none; width: 100%; min-height: 48px; padding: 0 40px 0 14px;
-  border-radius: var(--radius-sm); border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm); border: 1.5px solid var(--control-border);
   background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236f625a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
   font: 600 16px/1 var(--font); color: var(--text); cursor: pointer;
 }
@@ -186,7 +187,7 @@ body.xf-active > .app { display: none !important; }
 .xf-exhibit figure { margin: 0; padding: 8px; border-radius: var(--radius-sm); background: var(--surface); }
 .xf-exhibit figcaption { font-size: 13px; color: var(--text-2); padding: 0 4px 6px; }
 .xf-imgfail { padding: 12px; font-size: 14px; color: var(--text-2); }
-.xf-imgfail a { color: var(--action); font-weight: 700; }
+.xf-imgfail a { color: var(--action-hover); font-weight: 700; }
 .xf-hint { margin-top: 12px; font-weight: 700; font-size: 15px; }
 
 .xf-opts { margin: 12px 0 0; padding: 0; border: 0; display: grid; gap: 10px; }
@@ -203,7 +204,7 @@ body.xf-active > .app { display: none !important; }
 .xf-opt input { position: absolute; opacity: 0; pointer-events: none; }
 .xf-mark {
   width: 24px; height: 24px; flex: none; margin-top: 1px;
-  border: 2px solid var(--border-strong); background: var(--card);
+  border: 2px solid var(--control-border); background: var(--card);
   display: grid; place-items: center; transition: border-width .15s var(--ease), border-color .15s;
 }
 .xf-opt input[type="radio"] + .xf-mark { border-radius: 50%; }
@@ -256,7 +257,7 @@ body.xf-active > .app { display: none !important; }
 .xf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
   min-height: 40px; padding: 0 14px; border-radius: 999px;
-  border: 1.5px solid var(--border-strong); background: var(--card);
+  border: 1.5px solid var(--control-border); background: var(--card);
   font: 700 15px/1 var(--font); color: var(--text); cursor: pointer;
 }
 .chip[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: #fff; }
@@ -293,7 +294,7 @@ body.xf-active > .app { display: none !important; }
 .xf-sheet-head h2 { font-size: 20px; font-weight: 700; }
 .xf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
 .xf-cell {
-  position: relative; height: 52px; border-radius: 12px; border: 1.5px solid var(--border-strong);
+  position: relative; height: 52px; border-radius: 12px; border: 1.5px solid var(--control-border);
   background: var(--card); font: 800 16px/1 var(--font); color: var(--text); cursor: pointer;
 }
 .xf-cell.done { background: var(--text); border-color: var(--text); color: #fff; }
