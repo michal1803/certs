@@ -401,6 +401,11 @@ body.xf-active { overflow: hidden !important; }
 .xf-dialog p { margin-top: 8px; color: var(--text-2); }
 .xf-dialog .xf-actions { grid-template-columns: 1fr 1fr; }
 
+.xf-break { margin-top: 15vh; text-align: center; justify-items: center; }
+.xf-break h1 { font-size: 28px; font-weight: 700; }
+.xf-break-clock { font-size: 28px; min-height: 56px; padding: 12px 22px; }
+.xf-break .btn { max-width: 360px; }
+
 /* toast */
 .xf-toast {
   position: fixed; left: 50%; top: 16px; z-index: 10; transform: translateX(-50%);

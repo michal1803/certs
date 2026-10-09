@@ -75,7 +75,8 @@
     root.hidden = false;
     document.title = `${P.title} · egzamin`;
     if (A && A.status === "running" && remaining() !== null && remaining() <= 0) finish(true);
-    if (A && A.status === "running" && A.seen.length) showQuestion(A.current);
+    if (A && A.status === "running" && A.onBreak) showBreak();
+    else if (A && A.status === "running" && A.seen.length) showQuestion(A.current);
     else if (A && A.status === "finished" && A.showResults) showResults();
     else showStart();
   }
@@ -166,6 +167,7 @@
             <li>Typy pytań: ${esc(P.exam.questionTypes)}. Pytania bez klucza odpowiedzi (hotspot, drag &amp; drop) zostają w trybie Nauka.</li>
             ${P.exam.rules?.seriesNoReturn ? "<li>Do pytań z serii Tak/Nie nie można wrócić po przejściu dalej, tak jak na egzaminie Microsoft.</li>" : ""}
             ${P.exam.rules?.learnUrl ? "<li>Możesz otworzyć Microsoft Learn w nowej karcie. Zegar w tym czasie biegnie.</li>" : ""}
+            ${P.exam.rules?.breaks ? "<li>Możesz zrobić przerwę (poza serią Tak/Nie). Zegar biegnie dalej, a po przerwie nie wrócisz do pytań widzianych przed nią.</li>" : ""}
             <li>Zamknięcie strony nie przerywa egzaminu: po powrocie wracasz do tego samego pytania.</li>
           </ul>
         </section>
@@ -205,6 +207,7 @@
   }
 
   function prevIndex() { for (let i = A.current - 1; i >= 0; i--) if (!isLocked(i)) return i; return -1; }
+  function nextIndex() { for (let i = A.current + 1; i < A.count; i++) if (!isLocked(i)) return i; return -1; }
 
   function showQuestion(i) {
     screen = "question";
@@ -218,7 +221,7 @@
     const chosen = A.answers[id] || [];
     const multi = q.correct.length > 1;
     const flagged = A.flags.includes(id);
-    const last = i === A.count - 1;
+    const last = nextIndex() < 0;
     const prev = prevIndex();
     const parts = q.parts.map(p => p.kind === "text"
       ? `<div class="xf-qtext">${p.html}</div>`
@@ -228,6 +231,7 @@
         <div class="xf-top">
           <button class="pill xf-pos" data-act="nav" aria-haspopup="dialog" aria-label="Pytanie ${i + 1} z ${A.count}. Otwórz listę pytań">${icon("grid")}<b>${i + 1}</b><span>z ${A.count}</span></button>
           <div class="right">
+            ${P.exam.rules?.breaks ? `<button class="pill icon-btn" data-act="break" aria-label="Zrób przerwę" title="Przerwa"${q.series ? " disabled" : ""}>${icon("coffee")}</button>` : ""}
             ${P.exam.rules?.learnUrl ? `<a class="pill icon-btn" href="${esc(P.exam.rules.learnUrl)}" target="_blank" rel="noopener" aria-label="Otwórz Microsoft Learn w nowej karcie" title="Microsoft Learn">${icon("book")}</a>` : ""}
             <div class="pill xf-clock" role="timer"></div>
           </div>
@@ -387,6 +391,68 @@
     $("[data-no]", dlg).focus();
   }
 
+  /* ---------- breaks (AZ-104: clock keeps running, seen questions lock) ---------- */
+  function confirmBreak() {
+    const id = A.pool[A.current];
+    if (questions[id].series) return;
+    flushTime();
+    const seen = A.seen.length;
+    const unanswered = A.seen.filter(x => !A.answers[x]).length;
+    const flagged = A.flags.filter(x => A.seen.includes(x) && !A.locked.includes(x)).length;
+    const dlg = document.createElement("dialog");
+    dlg.className = "xf-dialog";
+    dlg.setAttribute("aria-labelledby", "xf-br-h");
+    dlg.innerHTML = `<h2 id="xf-br-h">Zrobić przerwę?</h2>
+      <p>Widziane pytania: ${seen}. Bez odpowiedzi: ${unanswered}. Oznaczone: ${flagged}.</p>
+      <p><b>Po przerwie nie wrócisz do żadnego z tych pytań.</b> Zegar biegnie dalej w czasie przerwy.</p>
+      <div class="xf-actions"><button class="btn" data-no>Wróć</button><button class="btn btn-primary" data-yes>Zacznij przerwę</button></div>`;
+    root.appendChild(dlg);
+    dlg.addEventListener("click", e => {
+      if (e.target.closest("[data-yes]")) { dlg.close(); startBreak(); }
+      else if (e.target.closest("[data-no]") || e.target === dlg) dlg.close();
+    });
+    dlg.addEventListener("close", () => dlg.remove());
+    dlg.showModal();
+    $("[data-no]", dlg).focus();
+  }
+
+  function startBreak() {
+    leaveCurrent();
+    A.locked = Array.from(new Set([...A.locked, ...A.seen]));
+    A.onBreak = { at: Date.now() };
+    save();
+    showBreak();
+  }
+
+  function showBreak() {
+    screen = "break";
+    const left = A.pool.filter(id => !A.seen.includes(id)).length;
+    root.innerHTML = `
+      <div class="xf-screen"><div class="xf-col xf-body">
+        <section class="card xf-section xf-break" aria-labelledby="xf-brk-h">
+          <h1 id="xf-brk-h" tabindex="-1">Przerwa</h1>
+          <p class="muted">Zegar egzaminu biegnie dalej.</p>
+          <div class="pill xf-clock xf-break-clock" role="timer"></div>
+          <p>Pozostało pytań: <b>${left}</b></p>
+          <button class="btn btn-primary btn-block" data-act="endbreak">Wróć do egzaminu</button>
+        </section>
+      </div></div>`;
+    renderClock($(".xf-clock", root));
+    startTick();
+    root.scrollTop = 0;
+    $("h1", root).focus({ preventScroll: true });
+    announce("Przerwa. Zegar egzaminu biegnie dalej.");
+  }
+
+  function endBreak() {
+    A.onBreak = null;
+    save();
+    const i = A.pool.findIndex(id => !A.seen.includes(id));
+    if (i < 0) { screen = "review"; return showReview(); }
+    screen = "break-end";
+    showQuestion(i);
+  }
+
   /* ---------- scoring + results ---------- */
   function scoreQuestion(id) {
     const q = questions[id];
@@ -499,7 +565,9 @@
       case "abandon": A = null; localStorage.removeItem(ATTEMPT_KEY); return showStart();
       case "nav": return openNavigator();
       case "prev": { const p = prevIndex(); if (p >= 0) go(p); return; }
-      case "next": return A.current === A.count - 1 ? toReview() : go(A.current + 1);
+      case "next": { const n = nextIndex(); return n < 0 ? toReview() : go(n); }
+      case "break": return confirmBreak();
+      case "endbreak": return endBreak();
       case "flag": return toggleFlag();
       case "back": {
         // First open question, else where you were, else any question still reachable.
