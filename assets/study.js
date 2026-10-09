@@ -180,7 +180,7 @@
 
     const parts = q.parts.map(p => p.kind === "text"
       ? `<div class="xf-qtext">${p.html}</div>`
-      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><img src="${esc(src)}" alt="${esc(p.label)}" loading="lazy" data-src="${esc(src)}"></figure>`).join("")}</div>`).join("");
+      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)}" loading="lazy" data-src="${esc(src)}"></a></figure>`).join("")}</div>`).join("");
 
     let answerBlock = "";
     if (keyed) {

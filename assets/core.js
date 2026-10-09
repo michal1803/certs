@@ -53,6 +53,42 @@
     return parts.filter(l => /^[A-F]$/.test(l) && !seen.has(l) && seen.add(l));
   }
 
+  /* Display-only cleanup of scraped question text: the source markup stays
+     as it is; only the rendered copy gets spaces, bullets and paragraphs. */
+  const KEEP_DOT = /(Microsoft|Azure|System|Windows|Get|Set|New|Remove)$/;
+  function tidyText(t) {
+    return t
+      .replace(/^\s*(HOTSPOT|DRAG DROP)\s*-\s*/, "$1\n")
+      .replace(/\s*[✑•]\s*/g, "\n• ")
+      .replace(/\s*(Solution:|NOTE:|Note:|Hot Area:|Does this meet the goal\?|Does the solution meet the goal\?|To answer,)/g, "\n\n$1")
+      // "connections.Subnet1" / "rules.NSG2" -> new sentence; "ASP.NET",
+      // "Microsoft.Compute/..." and "contoso.com" stay as they are.
+      .replace(/([a-z0-9)\]%])([.?!])([A-Z][a-z]|[A-Z]{1,6}\d)/g, (m, a, p, b, i, all) =>
+        KEEP_DOT.test(all.slice(Math.max(0, i - 12), i + 1)) ? m : `${a}${p} ${b}`)
+      .replace(/(will not appear in the review screen\.|might not have a correct solution\.(?= After)|depicts the identical set-up\. However, every question has a distinctive result\. Establish if the solution satisfies the requirements\.)\s*/g, "$1\n\n")
+      .replace(/([a-z]):([A-Z0-9])/g, "$1: $2")
+      .replace(/\n{3,}/g, "\n\n");
+  }
+  function tidyHTML(html) {
+    const tpl = document.createElement("template");
+    tpl.innerHTML = html;
+    const walker = document.createTreeWalker(tpl.content, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((node, k) => {
+      let t = tidyText(node.nodeValue);
+      if (k === 0) t = t.replace(/^\n+/, "");
+      if (!t.includes("\n")) { node.nodeValue = t; return; }
+      const frag = document.createDocumentFragment();
+      t.split("\n").forEach((line, j) => {
+        if (j) frag.appendChild(document.createElement("br"));
+        if (line) frag.appendChild(document.createTextNode(line));
+      });
+      node.replaceWith(frag);
+    });
+    return tpl.innerHTML;
+  }
+
   const examId = document.documentElement.dataset.exam;
   const profile = examId ? window.EXAM_PROFILES[examId] : null;
   const SERIES_RE = /part of a series of questions|included in a number of questions that depicts? the identical set-up/i;
@@ -68,7 +104,7 @@
         if (el.classList.contains("q-exhibit")) {
           parts.push({ kind: "exhibit", label: el.querySelector(".q-exhibit-label")?.textContent || "Exhibit", srcs: Array.from(el.querySelectorAll("img")).map(i => i.getAttribute("src")) });
         } else if (el.classList.contains("q-text")) {
-          parts.push({ kind: "text", html: el.innerHTML });
+          parts.push({ kind: "text", html: tidyHTML(el.innerHTML) });
         }
       });
       const text = card.querySelector(".q-text")?.textContent || "";
@@ -94,5 +130,5 @@
   const domainOf = id => profile?.domains.find(d => d.id === id) || { id, label: id, name: id };
 
   window.EXAM_PROFILE = profile;
-  window.Hub = { esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
+  window.Hub = { tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
 })();
