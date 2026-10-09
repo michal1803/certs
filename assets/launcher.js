@@ -116,4 +116,8 @@
     try { localStorage.setItem("exam-hub:launcher", JSON.stringify(saved)); } catch (err) {}
   }
   document.querySelectorAll("[role=tab]").forEach(t => { t.tabIndex = t.getAttribute("aria-selected") === "true" ? 0 : -1; });
+
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
 })();

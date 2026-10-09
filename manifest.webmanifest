@@ -1,0 +1,17 @@
+{
+  "name": "Exam Hub",
+  "short_name": "Exam Hub",
+  "description": "Nauka i egzaminy próbne do certyfikatów IT (AZ-104, Terraform Associate) z tym samym czasem i proporcjami domen co prawdziwy egzamin.",
+  "lang": "pl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff4e6",
+  "theme_color": "#fff4e6",
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
