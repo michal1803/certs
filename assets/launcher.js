@@ -6,7 +6,6 @@
   const pad = n => String(n).padStart(2, "0");
   const clock = ms => { const s = Math.max(0, Math.round(ms / 1000)); const h = Math.floor(s / 3600); return `${h ? h + ":" + pad(Math.floor(s / 60) % 60) : Math.floor(s / 60)}:${pad(s % 60)}`; };
   const plural = (n, one, few, many) => { if (n === 1) return one; const d = n % 10, t = n % 100; return d >= 2 && d <= 4 && (t < 12 || t > 14) ? few : many; };
-  const shuffled = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const date = ts => new Date(ts).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 
   const list = document.getElementById("exams");
@@ -18,7 +17,8 @@
     const running = attempt && attempt.status === "running" && attempt.seen?.length;
     const last = load(`exam-history:${id}:v1`, [])[0];
     const total = p.all.length;
-    const studySizes = [10, 20, 50, 100].filter(n => n < total);
+    const study = load(`study:${id}:v1`, null);
+    const okTotal = study?.summary ? Object.values(study.summary).reduce((s, x) => s + x.ok, 0) : 0;
     return `
     <article class="card exam" aria-labelledby="h-${id}">
       <div>
@@ -48,15 +48,21 @@
         <button class="btn btn-primary btn-block" data-start-exam="${id}">${running ? "Nowy egzamin" : "Przejdź do egzaminu"}</button>
       </div>
       <div role="tabpanel" id="p-${id}-study" aria-labelledby="t-${id}-study"${mode === "study" ? "" : " hidden"}>
-        <p class="muted">Wszystkie pytania z odpowiedziami, komentarzami społeczności i filtrami błędnych oraz oznaczonych gwiazdką.</p>
+        ${study?.summary ? `<ul class="facts">
+          <li>Opanowane ${okTotal} z ${total}</li>
+          <li>Błędne ${study.wrong || 0}</li>
+          <li>Gwiazdki ${study.starCount || 0}</li>
+        </ul>
+        <ul class="split mastery" aria-label="Opanowane pytania w każdej domenie">${p.domains.map(d => { const s = study.summary[d.id] || { total: 0, ok: 0 }; return `<li><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${s.total ? s.ok / s.total * 100 : 0}%"></i></span><b>${s.ok}/${s.total}</b></li>`; }).join("")}</ul>`
+        : `<p class="muted">Jedno pytanie na ekranie z natychmiastową odpowiedzią i komentarzami społeczności. Najpierw nowe i błędne pytania, opanowane wracają rzadziej.</p>`}
         <div class="field">
-          <label for="s-${id}">Zestaw</label>
+          <label for="s-${id}">Zakres</label>
           <select class="select" id="s-${id}">
-            <option value="all">Wszystkie ${total} ${plural(total, "pytanie", "pytania", "pytań")}</option>
-            ${studySizes.map(n => `<option value="${n}">Losowe ${n}</option>`).join("")}
+            <option value="">Wszystkie domeny</option>
+            ${p.domains.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join("")}
           </select>
         </div>
-        <button class="btn btn-primary btn-block" data-start-study="${id}">Ucz się</button>
+        <button class="btn btn-primary btn-block" data-start-study="${id}">${study?.summary ? "Ucz się dalej" : "Zacznij naukę"}</button>
       </div>
     </article>`;
   }).join("");
@@ -85,11 +91,8 @@
     const st = e.target.closest("[data-start-study]");
     if (st) {
       const id = st.dataset.startStudy, p = window.EXAM_PROFILES[id];
-      const value = document.getElementById(`s-${id}`).value;
-      const pool = value === "all" ? null : shuffled(p.all).slice(0, parseInt(value, 10));
-      const prev = load(p.storage.ui, {});
-      try { localStorage.setItem(p.storage.ui, JSON.stringify({ ...prev, mode: "study", filter: "all", pool, examFinished: false, pendingExam: 0 })); } catch (err) {}
-      location.href = p.href;
+      const dom = document.getElementById(`s-${id}`).value;
+      location.href = `${p.href}#nauka${dom ? "=" + dom : ""}`;
     }
   });
 
