@@ -6,6 +6,8 @@
 
   window.EXAM_PROFILES = {
     terraform: {
+      title: "Terraform Associate 004",
+      vendor: "HashiCorp",
       href: "terraform.html",
       storage: { ui: "exam-ui-v2:terraform-associate-004", progress: "exam-progress:terraform-associate-004:v1" },
       all: qRange(28),
@@ -15,6 +17,8 @@
         defaultCount: 14,
         // HashiCorp publishes no question count, passing score or domain weights.
         passing: null,
+        partialCredit: false,
+        questionTypes: "prawda/fałsz, jednokrotny i wielokrotny wybór",
         source: "https://developer.hashicorp.com/certifications/terraform-associate",
         verified: "2026-10-09",
       },
@@ -32,6 +36,8 @@
       ],
     },
     az104: {
+      title: "AZ-104 Azure Administrator",
+      vendor: "Microsoft",
       href: "az104.html",
       storage: { ui: "exam-ui-v2:microsoft-az-104", progress: "exam-progress:microsoft-az-104:v1" },
       all: qRange(256),
@@ -40,6 +46,15 @@
         counts: [40, 50, 60],
         defaultCount: 50,
         passing: { score: 700, scale: 1000, scaled: true },
+        // One point per correct selection on multi-answer questions.
+        partialCredit: true,
+        questionTypes: "jednokrotny i wielokrotny wybór, serie Tak/Nie, case study",
+        rules: {
+          // Problem/solution series: once you move on, you cannot return.
+          seriesNoReturn: true,
+          // Microsoft Learn is available during role-based exams; the clock keeps running.
+          learnUrl: "https://learn.microsoft.com/",
+        },
         source: "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104",
         verified: "2026-10-09",
       },

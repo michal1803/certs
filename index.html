@@ -2,63 +2,28 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1020">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fff4e6">
+<meta name="description" content="Symulacje egzaminów certyfikacyjnych (AZ-104, Terraform Associate) i nauka z pytań. Ten sam czas i te same proporcje domen co na prawdziwym egzaminie.">
 <title>Exam Hub</title>
-<style>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-*{box-sizing:border-box} :root{--bg:#0b1020;--line:rgba(255,255,255,.09);--text:#eef2ff;--muted:#99a3bd}
-html,body{min-height:100%} body{margin:0;font-family:Inter,system-ui,sans-serif;color:var(--text);background:radial-gradient(circle at 14% 0%,rgba(34,211,238,.14),transparent 30rem),radial-gradient(circle at 100% 100%,rgba(139,92,246,.12),transparent 34rem),var(--bg)}
-button,select{font:inherit}.shell{width:min(1080px,calc(100% - 28px));margin:0 auto;padding:48px 0 56px}.hero{margin-bottom:28px}.kicker{color:#67e8f9;text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:800}
-h1{margin:10px 0;font-size:clamp(34px,7vw,58px);line-height:.98;letter-spacing:-.045em}.hero p{margin:0;max-width:720px;color:var(--muted);line-height:1.65;font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.exam-card{border:1px solid var(--line);background:linear-gradient(180deg,rgba(24,33,56,.94),rgba(16,23,40,.96));border-radius:22px;padding:22px;box-shadow:0 20px 55px rgba(0,0,0,.24)}
-.card-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.vendor{font-size:11px;color:#7dd3fc;font-weight:800;text-transform:uppercase;letter-spacing:.08em}h2{margin:6px 0 7px;font-size:22px;line-height:1.15}.desc{margin:0;color:var(--muted);font-size:13px;line-height:1.55}
-.count-badge{flex:0 0 auto;padding:7px 10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.045);color:#cbd5e1;font-size:11px;font-weight:800}
-.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:20px;padding:5px;border-radius:13px;background:rgba(0,0,0,.20);border:1px solid rgba(255,255,255,.06)}
-.mode-switch button{border:0;border-radius:9px;min-height:38px;cursor:pointer;color:#9099b3;font-size:12px;font-weight:800;background:transparent;transition:.18s ease}.mode-switch button.active{color:#ecfeff;background:linear-gradient(135deg,rgba(8,145,178,.68),rgba(14,116,144,.55));box-shadow:inset 0 0 0 1px rgba(103,232,249,.18)}
-.config{margin-top:14px}.config label{color:#8792ad;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}select{width:100%;margin-top:6px;min-height:42px;border-radius:11px;padding:0 12px;border:1px solid var(--line);background:#0f172a;color:#e5e7eb;outline:none;font-size:12px;font-weight:700}
-.blueprint{margin-top:14px;padding:13px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);border-radius:13px}.blueprint-title{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:9px}.blueprint-title strong{font-size:11px}.blueprint-title span{color:#78839d;font-size:10px}.domains{display:flex;flex-wrap:wrap;gap:6px}.chip{padding:5px 7px;border-radius:7px;background:rgba(255,255,255,.05);color:#aeb8cf;border:1px solid rgba(255,255,255,.055);font-size:9px;font-weight:700}
-.warning{margin-top:12px;padding:10px 11px;border-radius:10px;font-size:10px;line-height:1.45;color:#fcdca3;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.17)}
-.start{width:100%;margin-top:15px;min-height:46px;border:0;border-radius:12px;cursor:pointer;color:#fff;font-weight:800;font-size:13px;letter-spacing:.01em;background:linear-gradient(135deg,#0891b2,#0e7490);box-shadow:0 10px 28px rgba(8,145,178,.18)}.start:hover{filter:brightness(1.08);transform:translateY(-1px)}.secondary{background:linear-gradient(135deg,#2563eb,#4f46e5);box-shadow:0 10px 28px rgba(37,99,235,.16)}
-.footnote{margin-top:18px;color:#68738d;font-size:10px;line-height:1.55;text-align:center}.study-copy,.exam-copy{display:none}.exam-card[data-mode="study"] .study-copy{display:block}.exam-card[data-mode="exam"] .exam-copy{display:block}
-@media(max-width:760px){.shell{padding-top:30px}.grid{grid-template-columns:1fr}.exam-card{padding:18px;border-radius:18px}}
-</style>
+<link rel="preload" href="assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/app.css">
 </head>
-<body>
-<main class="shell">
-<section class="hero"><div class="kicker">Certification practice</div><h1>Wybierz egzamin i tryb</h1><p>Ustaw wszystko tutaj, zanim wejdziesz do pytań. Tryb egzaminu uruchamia świeży zestaw i dopiero na końcu pokazuje wynik.</p></section>
-<section class="grid">
-<article class="exam-card" id="terraformCard" data-mode="study">
-<div class="card-head"><div><div class="vendor">HashiCorp</div><h2>Terraform Associate 004</h2><p class="desc">Terraform 1.12 · 8 domen egzaminacyjnych.</p></div><div class="count-badge">28 w bazie</div></div>
-<div class="mode-switch"><button class="active" data-mode-btn="study" onclick="setCardMode('terraform','study')">📚 Nauka</button><button data-mode-btn="exam" onclick="setCardMode('terraform','exam')">📝 Egzamin</button></div>
-<div class="study-copy config"><label>Zestaw do nauki</label><select id="terraformStudyCount"><option value="all">Wszystkie 28 pytań</option><option value="10">Losowe 10</option><option value="20">Losowe 20</option></select>
-<div class="blueprint"><div class="blueprint-title"><strong>Oficjalne domeny</strong><span>HashiCorp · 8 domen</span></div><div class="domains" id="terraformDomains"></div></div></div>
-<div class="exam-copy config"><label>Symulacja</label><select id="terraformExamCount" onchange="renderQuota('terraform')"><option value="14" selected>14 pytań · krótki mock</option><option value="28">28 pytań · cała obecna baza</option></select>
-<div class="blueprint"><div class="blueprint-title"><strong>Zbalansowany zestaw</strong><span>60 min</span></div><div class="domains" id="terraformQuota"></div></div>
-<div class="warning">HashiCorp nie publikuje liczby pytań, progu zaliczenia ani wag domen. Proporcje liczymy z liczby celów egzaminacyjnych w każdej domenie (37 celów, 1a–8d) — to przybliżenie, nie oficjalna proporcja.</div></div>
-<button class="start" onclick="launchExam('terraform')">Start Terraform →</button></article>
-<article class="exam-card" id="az104Card" data-mode="study">
-<div class="card-head"><div><div class="vendor">Microsoft</div><h2>AZ-104 Azure Administrator</h2><p class="desc">5 oficjalnych domen · symulacja zgodna z aktualnym blueprintem.</p></div><div class="count-badge">256 w bazie</div></div>
-<div class="mode-switch"><button class="active" data-mode-btn="study" onclick="setCardMode('az104','study')">📚 Nauka</button><button data-mode-btn="exam" onclick="setCardMode('az104','exam')">📝 Egzamin</button></div>
-<div class="study-copy config"><label>Zestaw do nauki</label><select id="az104StudyCount"><option value="all">Wszystkie 256 pytań</option><option value="20">Losowe 20</option><option value="50">Losowe 50</option><option value="100">Losowe 100</option></select>
-<div class="blueprint"><div class="blueprint-title"><strong>Oficjalne domeny</strong><span>Microsoft Learn</span></div><div class="domains"><span class="chip">Identity/Governance 20–25%</span><span class="chip">Storage 15–20%</span><span class="chip">Compute 20–25%</span><span class="chip">Networking 15–20%</span><span class="chip">Monitoring 10–15%</span></div></div></div>
-<div class="exam-copy config"><label>Liczba pytań</label><select id="az104ExamCount" onchange="renderQuota('az104')"><option value="40">40 pytań</option><option value="50" selected>50 pytań · polecane</option><option value="60">60 pytań</option></select>
-<div class="blueprint"><div class="blueprint-title"><strong>Zbalansowany zestaw</strong><span>100 min</span></div><div class="domains" id="az104Quota"></div></div>
-<div class="warning">Egzamin losuje tylko pytania z jednoznacznym kluczem odpowiedzi. Hotspoty i część drag-and-drop zostają w trybie Nauka, żeby nie fałszować wyniku automatycznego.</div></div>
-<button class="start secondary" onclick="launchExam('az104')">Start AZ-104 →</button></article>
-</section>
-<div class="footnote">Postęp i gwiazdki są zapisywane lokalnie w tej przeglądarce. Start nowego trybu Egzamin rozpoczyna świeżą próbę dla wybranego certyfikatu; gwiazdki zostają zachowane.</div>
+<body class="launcher">
+<main>
+  <header>
+    <h1>Exam Hub</h1>
+    <p>Ucz się z pytań albo zrób egzamin próbny z tym samym czasem i tymi samymi proporcjami domen co na prawdziwym egzaminie.</p>
+  </header>
+  <div class="exam-list" id="exams">
+    <noscript><p class="note">Exam Hub potrzebuje włączonego JavaScriptu.</p></noscript>
+  </div>
+  <footer>
+    <p>Postęp, gwiazdki i wyniki zapisują się tylko w tej przeglądarce.</p>
+    <p>Nieoficjalne narzędzie do nauki, niezwiązane z Microsoft ani HashiCorp. Zasady egzaminów pochodzą z ich oficjalnych stron.</p>
+  </footer>
 </main>
 <script src="assets/exam-data.js"></script>
-<script>
-const EXAMS=window.EXAM_PROFILES;
-const cardModes={terraform:"study",az104:"study"};
-function setCardMode(exam,mode){cardModes[exam]=mode;const card=document.getElementById(exam+"Card");card.dataset.mode=mode;card.querySelectorAll("[data-mode-btn]").forEach(btn=>btn.classList.toggle("active",btn.dataset.modeBtn===mode))}
-function shuffled(arr){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function sample(arr,n){return shuffled(arr).slice(0,Math.min(n,arr.length))}
-function renderQuota(exam){const cfg=EXAMS[exam],n=parseInt(document.getElementById(exam+"ExamCount").value,10),q=examQuotas(cfg,n);document.getElementById(exam+"Quota").innerHTML=cfg.domains.map(d=>`<span class="chip">${d.label} ${q[d.id]}</span>`).join("")}
-function renderDomains(exam){document.getElementById(exam+"Domains").innerHTML=EXAMS[exam].domains.map(d=>`<span class="chip">${d.label}</span>`).join("")}
-function launchExam(exam){const cfg=EXAMS[exam],mode=cardModes[exam],prev=JSON.parse(localStorage.getItem(cfg.storage.ui)||"{}");if(mode==="study"){const value=document.getElementById(exam+"StudyCount").value,pool=value==="all"?null:sample(cfg.all,parseInt(value,10));localStorage.setItem(cfg.storage.ui,JSON.stringify({...prev,mode:"study",filter:"all",pool,examFinished:false,pendingExam:0}))}else{localStorage.removeItem(cfg.storage.progress);localStorage.setItem(cfg.storage.ui,JSON.stringify({...prev,mode:"exam",filter:"all",pool:null,examFinished:false,pendingExam:parseInt(document.getElementById(exam+"ExamCount").value,10)}))}location.href=cfg.href}
-renderDomains("terraform");renderQuota("terraform");renderQuota("az104");
-</script>
-</body></html>
+<script src="assets/launcher.js"></script>
+</body>
+</html>
