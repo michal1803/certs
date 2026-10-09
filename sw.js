@@ -1,9 +1,11 @@
 /* Exam Hub service worker: offline use and faster starts.
    - Pages: network first, so a new deploy shows up when online; cached copy offline.
-   - Own assets: served from cache and refreshed in the background.
+   - Own scripts and styles: network first too (bypassing the HTTP cache), so a
+     deploy never pairs new pages with old CSS/JS; cached copy offline.
+   - Fonts and icons: cache first (they never change in place).
    - Question images from other hosts: cached the first time they are seen.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v3";
+const VERSION = "v4";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
 const MAX_IMAGES = 600;
@@ -31,7 +33,10 @@ const PRECACHE = [
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CORE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
+  // cache: "reload" skips the browser HTTP cache, so the precache is always fresh.
+  event.waitUntil(caches.open(CORE)
+    .then(c => c.addAll(PRECACHE.map(u => new Request(u, { cache: "reload" }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", event => {
@@ -57,7 +62,7 @@ self.addEventListener("fetch", event => {
   // Pages: network first, fall back to the cached page (ignoring #hash/?query).
   if (req.mode === "navigate" && sameOrigin) {
     event.respondWith(
-      fetch(req).then(res => {
+      fetch(req, { cache: "no-cache" }).then(res => {
         if (res.ok) { const copy = res.clone(); caches.open(CORE).then(c => c.put(url.pathname, copy)); }
         return res;
       }).catch(async () =>
@@ -68,16 +73,22 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Own assets: stale-while-revalidate.
+  // Fonts and icons: cache first.
+  if (sameOrigin && /\/assets\/(fonts|icons)\//.test(url.pathname)) {
+    event.respondWith(caches.match(req, { ignoreSearch: true }).then(hit => hit || fetch(req).then(res => {
+      if (res.ok) { const copy = res.clone(); caches.open(CORE).then(c => c.put(req, copy)); }
+      return res;
+    })));
+    return;
+  }
+
+  // Scripts, styles, manifest: network first, bypassing the HTTP cache.
   if (sameOrigin) {
     event.respondWith(
-      caches.match(req, { ignoreSearch: true }).then(cached => {
-        const fresh = fetch(req).then(res => {
-          if (res.ok) { const copy = res.clone(); caches.open(CORE).then(c => c.put(req, copy)); }
-          return res;
-        }).catch(() => cached);
-        return cached || fresh;
-      })
+      fetch(req, { cache: "no-cache" }).then(res => {
+        if (res.ok) { const copy = res.clone(); caches.open(CORE).then(c => c.put(req, copy)); }
+        return res;
+      }).catch(() => caches.match(req, { ignoreSearch: true }))
     );
     return;
   }
