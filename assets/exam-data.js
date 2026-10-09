@@ -1,4 +1,5 @@
-/* Exam profiles: one entry per certification.
+/* Exam profiles: one entry per certification, built from the vendor's
+   official pages. Each question card carries data-domain="<domain id>".
    Used by the launcher (index.html) and by assets/engine.js on exam pages. */
 (function () {
   const qRange = n => Array.from({ length: n }, (_, i) => "q" + (i + 1));
@@ -8,17 +9,83 @@
       href: "terraform.html",
       storage: { ui: "exam-ui-v2:terraform-associate-004", progress: "exam-progress:terraform-associate-004:v1" },
       all: qRange(28),
-      // NOTE: grouped by ExamTopics topic, not yet by official domain (phase 2)
-      domains: {"1":["q1","q2","q3"],"2":["q4","q5","q6","q7","q8","q9","q10","q11","q12","q13"],"3":["q14","q15","q16"],"4":["q17","q18","q19"],"5":["q20","q21"],"6":["q22","q23","q24"],"7":["q25","q26"],"8":["q27","q28"]},
-      balanced14: {"1":1,"2":2,"3":3,"4":3,"5":1,"6":2,"7":1,"8":1}
+      exam: {
+        minutes: 60,
+        counts: [14, 28],
+        defaultCount: 14,
+        // HashiCorp publishes no question count, passing score or domain weights.
+        passing: null,
+        source: "https://developer.hashicorp.com/certifications/terraform-associate",
+        verified: "2026-10-09",
+      },
+      // Unofficial weights: number of sub-objectives per domain (1a–8d, 37 total).
+      weightsAreProxy: true,
+      domains: [
+        { id: "iac",           label: "IaC",           name: "Infrastructure as Code (IaC) with Terraform", weight: 3 },
+        { id: "fundamentals",  label: "Fundamentals",  name: "Terraform fundamentals",                      weight: 4 },
+        { id: "workflow",      label: "Workflow",      name: "Core Terraform workflow",                     weight: 7 },
+        { id: "configuration", label: "Configuration", name: "Terraform configuration",                     weight: 8 },
+        { id: "modules",       label: "Modules",       name: "Terraform modules",                           weight: 4 },
+        { id: "state",         label: "State",         name: "Terraform state management",                  weight: 4 },
+        { id: "maintain",      label: "Maintenance",   name: "Maintain infrastructure with Terraform",      weight: 3 },
+        { id: "hcp",           label: "HCP",           name: "HCP Terraform",                               weight: 4 },
+      ],
     },
     az104: {
       href: "az104.html",
       storage: { ui: "exam-ui-v2:microsoft-az-104", progress: "exam-progress:microsoft-az-104:v1" },
       all: qRange(256),
-      // NOTE: grouped by ExamTopics topic, not yet by official domain (phase 2)
-      domains: {"2":["q38","q39","q41","q42","q45","q48","q49","q52","q53","q54","q55","q56","q58","q61","q62","q63","q65","q66","q70","q71","q72","q76","q80","q82","q84"],"3":["q85","q86","q90","q91","q94","q95","q98","q99","q104","q105","q108","q113","q114"],"4":["q115","q117","q118","q119","q120","q121","q123","q125","q128","q129","q133","q134","q135","q136","q137","q138","q139","q143","q145","q147","q148","q149","q150","q153","q155","q156","q157","q158","q159"],"5":["q161","q162","q164","q165","q166","q168","q169","q170","q171","q172","q174","q176","q179","q180","q181","q182","q183","q185","q186","q189","q192","q194","q195","q197","q199","q201","q203","q204","q205","q206","q207","q208","q209","q210","q211","q213","q215","q216","q218","q219","q220","q221"],"6":["q222","q226","q227","q228","q230","q232","q234","q235","q236","q238","q239","q241","q242","q245","q246","q247","q249"]},
-      quotas: {"40":{"2":10,"3":7,"4":10,"5":8,"6":5},"50":{"2":12,"3":10,"4":12,"5":9,"6":7},"60":{"2":15,"3":11,"4":15,"5":10,"6":9}}
+      exam: {
+        minutes: 100,
+        counts: [40, 50, 60],
+        defaultCount: 50,
+        passing: { score: 700, scale: 1000, scaled: true },
+        source: "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104",
+        verified: "2026-10-09",
+      },
+      // Skills measured as of 2026-04-17; weight = midpoint of the official range.
+      domains: [
+        { id: "identity",   label: "Identity/Gov.", name: "Manage Azure identities and governance",    range: [20, 25] },
+        { id: "storage",    label: "Storage",       name: "Implement and manage storage",              range: [15, 20] },
+        { id: "compute",    label: "Compute",       name: "Deploy and manage Azure compute resources", range: [20, 25] },
+        { id: "networking", label: "Networking",    name: "Implement and manage virtual networking",   range: [15, 20] },
+        { id: "monitoring", label: "Monitoring",    name: "Monitor and maintain Azure resources",      range: [10, 15] },
+      ],
+    },
+  };
+
+  const weightOf = d => d.weight ?? (d.range[0] + d.range[1]) / 2;
+
+  /* Questions per domain for an exam of n questions (largest-remainder
+     apportionment of the weights). `available` ({domainId: count}) caps a
+     domain at what the bank holds; the shortfall goes to the other domains
+     by the same rule. Deterministic, so the launcher preview matches the
+     set the exam page draws. */
+  window.examQuotas = function (profile, n, available) {
+    const quotas = {};
+    profile.domains.forEach(d => { quotas[d.id] = 0; });
+    let open = profile.domains.filter(d => !available || (available[d.id] || 0) > 0);
+    let left = n;
+    while (left > 0 && open.length) {
+      const total = open.reduce((s, d) => s + weightOf(d), 0);
+      const shares = open.map((d, i) => {
+        const exact = left * weightOf(d) / total;
+        return { d, i, base: Math.floor(exact), rem: exact - Math.floor(exact) };
+      });
+      let extra = left - shares.reduce((s, x) => s + x.base, 0);
+      shares.slice().sort((a, b) => b.rem - a.rem || weightOf(b.d) - weightOf(a.d) || a.i - b.i)
+        .forEach(x => { if (extra > 0) { x.base++; extra--; } });
+      let placed = 0;
+      shares.forEach(({ d, base }) => {
+        const cap = available ? available[d.id] - quotas[d.id] : Infinity;
+        const take = Math.min(base, cap);
+        quotas[d.id] += take;
+        placed += take;
+      });
+      left -= placed;
+      if (placed === 0) break;
+      open = open.filter(d => !available || quotas[d.id] < available[d.id]);
     }
+    return quotas;
   };
 })();

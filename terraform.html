@@ -79,7 +79,7 @@
 
       <div class="questions-list" id="questionsList">
         <!-- QUESTION 1 -->
-        <div class="q-card open" id="q1" data-correct="A"
+        <div class="q-card open" id="q1" data-domain="iac" data-correct="A"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385616-exam-terraform-associate-004-topic-1-question-1-discussion/"
              data-comments='[{&#34;user&#34;:&#34;YashAy&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;Yes, it can be stored in version control&#34;}]'>
             <div class="q-top" onclick="toggleCard('q1')">
@@ -112,7 +112,7 @@
         </div>
 
         <!-- QUESTION 2 -->
-        <div class="q-card" id="q2" data-correct="C"
+        <div class="q-card" id="q2" data-domain="iac" data-correct="C"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385238-exam-terraform-associate-004-topic-1-question-4-discussion/"
              data-comments='[{&#34;user&#34;:&#34;TechWithHer&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;Immutable infrastructure means that once infrastructure is deployed, you don&#39;t modify the existing resource in place.\nInstead, when you need a change:\nCreate new infrastructure → validate it → switch traffic → remove old infrastructure&#34;},{&#34;user&#34;:&#34;ykamal&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;AI said its D.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;D. Less complex infrastructure upgrades is the correct advantage of immutable infrastructure.\nImmutable infrastructure treats servers, VMs, or resources as immutable (unchanging once deployed). To apply updates, fixes, or changes, you create entirely new instances from a known, versioned image or template and then replace (or decommission) the old ones, rather than modifying them in place. This contrasts with mutable infrastructure, where you update existing resources directly (e.g., via patches, config changes, or SSH).&#34;},{&#34;user&#34;:&#34;mai_will&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;Embora \&#34;mais rápido\&#34; possa parecer subjetivo, refere-se à previsibilidade e à velocidade de implementação inerentes ao modelo imutável. Em vez de acessar servidores e executar scripts de atualização que podem travar ou falhar, você simplesmente substitui a versão antiga por uma nova pré-configurada.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q2')">
@@ -153,7 +153,7 @@
         </div>
 
         <!-- QUESTION 3 -->
-        <div class="q-card" id="q3" data-correct="A"
+        <div class="q-card" id="q3" data-domain="iac" data-correct="A"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385614-exam-terraform-associate-004-topic-1-question-6-discussion/"
              data-comments='[{&#34;user&#34;:&#34;pverma20&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;Cloud formation is specifically for AWS, therefore when deploying to Azure, we will require azure specific tool and have to utilize azure templates.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q3')">
@@ -194,7 +194,7 @@
         </div>
 
         <!-- QUESTION 4 -->
-        <div class="q-card" id="q4" data-correct="A"
+        <div class="q-card" id="q4" data-domain="configuration" data-correct="A"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385599-exam-terraform-associate-004-topic-2-question-2-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;This is the correct command for experimenting with Terraform expressions.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q4')">
@@ -235,7 +235,7 @@
         </div>
 
         <!-- QUESTION 5 -->
-        <div class="q-card" id="q5" data-correct="A"
+        <div class="q-card" id="q5" data-domain="fundamentals" data-correct="A"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385610-exam-terraform-associate-004-topic-2-question-3-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;terraform init does install Community and Partner plugins (providers).&#34;}]'>
             <div class="q-top" onclick="toggleCard('q5')">
@@ -268,7 +268,7 @@
         </div>
 
         <!-- QUESTION 6 -->
-        <div class="q-card" id="q6" data-correct="B,C,E"
+        <div class="q-card" id="q6" data-domain="fundamentals" data-correct="B,C,E"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385598-exam-terraform-associate-004-topic-2-question-4-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;B. Provision resources for public cloud infrastructure services.\nProviders (e.g., aws, azurerm, google) let you create, update, and delete resources in AWS, Azure, GCP, etc.\nC. Interact with cloud provider APIs.\nThis is the core job of a provider: it handles authentication, makes the actual API calls (create/read/update/delete), and translates Terraform’s declarative configuration into real infrastructure changes.\nE. Provision resources for on-premises infrastructure services.\nProviders also support self-hosted/on-prem platforms (e.g., vsphere for VMware, openstack, bare-metal providers, Kubernetes, databases, etc.). Terraform is not limited to public cloud.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q6')">
@@ -313,7 +313,7 @@
         </div>
 
         <!-- QUESTION 7 -->
-        <div class="q-card" id="q7" data-correct="B"
+        <div class="q-card" id="q7" data-domain="fundamentals" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385606-exam-terraform-associate-004-topic-2-question-5-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Terraform can (and usually does) manage resource dependencies automatically through implicit dependencies — no depends_on required in most cases.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q7')">
@@ -346,7 +346,7 @@
         </div>
 
         <!-- QUESTION 8 -->
-        <div class="q-card" id="q8" data-correct="C"
+        <div class="q-card" id="q8" data-domain="fundamentals" data-correct="C"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385605-exam-terraform-associate-004-topic-2-question-7-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;C. aws\nThe provider for this resource is aws.\nHow Terraform identifies the provider\nIn a Terraform resource block, the syntax is always:\nhclresource \&#34;\u003cRESOURCE_TYPE\u003e\&#34; \&#34;\u003cRESOURCE_NAME\u003e\&#34; { ... }\nRESOURCE_TYPE = aws_vpc\nThe part before the first underscore (aws) tells Terraform which provider is responsible for this resource.\nThe part after the underscore (vpc) is the specific resource type offered by that provider.\nRESOURCE_NAME = main\nThis is just a local identifier (used for referencing the resource inside your configuration). It has nothing to do with the provider.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q8')">
@@ -387,7 +387,7 @@
         </div>
 
         <!-- QUESTION 9 -->
-        <div class="q-card" id="q9" data-correct="B"
+        <div class="q-card" id="q9" data-domain="fundamentals" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385603-exam-terraform-associate-004-topic-2-question-9-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;B. False\nTerraform providers are not always installed from the internet. While the default behavior (when you run terraform init) is to download providers from the public Terraform Registry at registry.terraform.io (or a private registry), Terraform provides built-in support for offline / air-gapped installations through provider mirrors.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q9')">
@@ -420,7 +420,7 @@
         </div>
 
         <!-- QUESTION 10 -->
-        <div class="q-card" id="q10" data-correct="B"
+        <div class="q-card" id="q10" data-domain="maintain" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385601-exam-terraform-associate-004-topic-2-question-10-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;B. Set the environment variable TF_LOG=TRACE.\nThis is the official, recommended way to enable detailed logging in Terraform so you can see exactly which filesystem paths it is searching for and loading providers from (including the plugin cache, filesystem mirrors, dev overrides, and any custom directories)&#34;}]'>
             <div class="q-top" onclick="toggleCard('q10')">
@@ -461,7 +461,7 @@
         </div>
 
         <!-- QUESTION 11 -->
-        <div class="q-card" id="q11" data-correct="A"
+        <div class="q-card" id="q11" data-domain="fundamentals" data-correct="A"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/402395-exam-terraform-associate-004-topic-2-question-14-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;A. Providers and modules\nThe hidden .terraform directory (created automatically by terraform init) is Terraform’s local cache for providers and modules.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q11')">
@@ -502,7 +502,7 @@
         </div>
 
         <!-- QUESTION 12 -->
-        <div class="q-card" id="q12" data-correct="B"
+        <div class="q-card" id="q12" data-domain="fundamentals" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/407270-exam-terraform-associate-004-topic-2-question-17-discussion/"
              data-comments='[{&#34;user&#34;:&#34;ShreyRai20&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Terraform providers are developed and distributed independently typically via terraform registry. Whereas core binary is responsible for managing dependency graph, planning, etc&#34;}]'>
             <div class="q-top" onclick="toggleCard('q12')">
@@ -535,7 +535,7 @@
         </div>
 
         <!-- QUESTION 13 -->
-        <div class="q-card" id="q13" data-correct="B"
+        <div class="q-card" id="q13" data-domain="fundamentals" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/407271-exam-terraform-associate-004-topic-2-question-18-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Dash&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;B - Terraform providers are separate compiled executable binaries (written in Go). Terraform core interacts with these binaries via RPC (Remote Procedure Call). It cannot dynamically execute or load raw provider source code directly.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q13')">
@@ -576,7 +576,7 @@
         </div>
 
         <!-- QUESTION 14 -->
-        <div class="q-card" id="q14" data-correct="D"
+        <div class="q-card" id="q14" data-domain="workflow" data-correct="D"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385597-exam-terraform-associate-004-topic-3-question-2-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;terraform init is the mandatory first command you must run in any new Terraform workspace (or after you add new providers/modules). It does three critical things before plan or apply can succeed:\nDownloads and installs all providers referenced in your *.tf files (populating the .terraform/providers/ cache).\nDownloads any child modules declared with module blocks.\nInitializes the backend (local by default) and creates the lock file .terraform.lock.hcl.\nWithout it, terraform plan or terraform apply will immediately fail with an error&#34;}]'>
             <div class="q-top" onclick="toggleCard('q14')">
@@ -617,7 +617,7 @@
         </div>
 
         <!-- QUESTION 15 -->
-        <div class="q-card" id="q15" data-correct="B"
+        <div class="q-card" id="q15" data-domain="workflow" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385593-exam-terraform-associate-004-topic-3-question-5-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;B. False\nThe execution plan that terraform apply generates (and then executes) will not be the same as the one you saw from your earlier terraform plan.\nWhy the plans differ\nRefresh happens again\nBy default, both terraform plan and terraform apply perform a refresh before calculating the diff. This means Terraform queries the real infrastructure (via the provider) to update the in-memory state with current values.\nYour teammate’s manual change = drift\nBetween the time you ran terraform plan and when you run terraform apply, the live resource has changed. The refresh during apply will pick up that new reality, so the computed diff (what needs to be created/changed/destroyed) is now different.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q15')">
@@ -650,7 +650,7 @@
         </div>
 
         <!-- QUESTION 16 -->
-        <div class="q-card" id="q16" data-correct="B"
+        <div class="q-card" id="q16" data-domain="workflow" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385587-exam-terraform-associate-004-topic-3-question-12-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Annuore&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;I tried it\ntf validate\n╷\n│ Error: Reference to undeclared input variable\n│\n│   on main.tf line 42, in resource \&#34;aws_instance\&#34; \&#34;tf_ec2\&#34;:\n│   42:         Name = var.ec2name\n│\n│ An input variable with the name \&#34;ec2name\&#34; has not been declared. This variable can be declared with a variable \&#34;ec2name\&#34; {} block.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Why \&#34;B\&#34; is the Answer\nIf your code references a variable—for example, using var.instance_type—but you haven&#39;t actually defined that variable using a variable \&#34;instance_type\&#34; {} block, the configuration is considered incomplete.\nTerraform cannot proceed because it doesn&#39;t know the type or constraints of that reference, so validate will catch this and throw an error.\nWhy the others are incorrect:\nC (State file mismatch): This is handled by terraform plan or terraform refresh. Validation doesn&#39;t look at the state file or your real-world resources at all.\nD (Tabs vs. Spaces): While the Terraform standard is two spaces, using tabs is not a syntax error. terraform fmt is the tool used to fix indentation, but validate won&#39;t fail because of it.\nA: Since B is a legitimate syntax/configuration error, A is incorrect.&#34;},{&#34;user&#34;:&#34;markbotros&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Here’s why your explanation for A doesn’t hold up:\nterraform validate checks internal consistency, not just syntax.\nIf your configuration references a variable that is not declared anywhere, Terraform will raise an error during validation.\nWhile values can be provided at runtime (CLI, env vars, tfvars), the variable itself must still be declared with a variable block.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q16')">
@@ -691,7 +691,7 @@
         </div>
 
         <!-- QUESTION 17 -->
-        <div class="q-card" id="q17" data-correct="A"
+        <div class="q-card" id="q17" data-domain="configuration" data-correct="A"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385073-exam-terraform-associate-004-topic-4-question-2-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;A. True\nIn Terraform, the required_providers block (inside the terraform {} block) is the only place where you ever reference a provider by its full source address and version constraint. Example:\nhclterraform {\nrequired_providers {\naws = {\nsource  = \&#34;hashicorp/aws\&#34;\nversion = \&#34;~\u003e 5.0\&#34;\n}\n}\n}\nEverywhere else in the configuration — resource blocks, data sources, provider configuration blocks, provider meta-arguments, modules, etc. — Terraform uses only the local name (the key from required_providers, which defaults to the provider type if the block is omitted)&#34;},{&#34;user&#34;:&#34;AZJunkie&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;Terraform may use:\nThe default provider name, or\nAn alias, if you configured one.\nhttps://developer.hashicorp.com/terraform/language/block/provider&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;Alias is used when you need to define multiple provider blocks for the same provider&#34;}]'>
             <div class="q-top" onclick="toggleCard('q17')">
@@ -724,7 +724,7 @@
         </div>
 
         <!-- QUESTION 18 -->
-        <div class="q-card" id="q18" data-correct="D"
+        <div class="q-card" id="q18" data-domain="configuration" data-correct="D"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385568-exam-terraform-associate-004-topic-4-question-17-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;D. Dynamic blocks\nDynamic blocks are the exact Terraform feature designed for this use case: they let you generate repeating nested blocks (such as multiple data_disk, storage_data_disk, attached_disk, etc.) inside a single resource based on the contents of a variable.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q18')">
@@ -765,7 +765,7 @@
         </div>
 
         <!-- QUESTION 19 -->
-        <div class="q-card" id="q19" data-correct="A"
+        <div class="q-card" id="q19" data-domain="configuration" data-correct="A"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385567-exam-terraform-associate-004-topic-4-question-18-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Grandslam&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;B is invalid: The optional() modifier can only be used inside complex type constraints like object() or tuple(). It cannot be used as the top-level type for a standard variable.&#34;},{&#34;user&#34;:&#34;gpfs&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;A is wrong as terraform always add a value of \&#34;\&#34; every time.\nCorrect is B as type = optional(string) means the variable type is string, but the variable itself is optional, thus the caller can omit it.\nIf you don&#39;t set the billing_dept the variable has a \&#34;null\&#34; value.\nIf you do set it, terraform expects a string value.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q19')">
@@ -806,7 +806,7 @@
         </div>
 
         <!-- QUESTION 20 -->
-        <div class="q-card" id="q20" data-correct="B"
+        <div class="q-card" id="q20" data-domain="modules" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385563-exam-terraform-associate-004-topic-5-question-4-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;When you run terraform apply, the Terraform CLI only prints the output values defined in the root module. Outputs from child modules are not automatically displayed.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q20')">
@@ -839,7 +839,7 @@
         </div>
 
         <!-- QUESTION 21 -->
-        <div class="q-card" id="q21" data-correct="D"
+        <div class="q-card" id="q21" data-domain="modules" data-correct="D"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385557-exam-terraform-associate-004-topic-5-question-10-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Grandslam&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;D. version = \&#34;~\u003e3.1.4\&#34; (Incorrect but important): This uses the pessimistic constraint operator. It tells Terraform to allow patch updates but prevent minor updates. It would allow newer versions like 3.1.5 or 3.1.9 but prevent 3.2.0. While this is a common best practice for allowing safe updates, it is incorrect here because it still allows newer versions to be used, which the scenario explicitly wants to prevent.&#34;},{&#34;user&#34;:&#34;FlacoX&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;The question isn&#39;t really asking to prevent every newer version. It&#39;s asking which version constraint prevents newer versions that could introduce breaking changes.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q21')">
@@ -880,7 +880,7 @@
         </div>
 
         <!-- QUESTION 22 -->
-        <div class="q-card" id="q22" data-correct="A"
+        <div class="q-card" id="q22" data-domain="state" data-correct="A"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385539-exam-terraform-associate-004-topic-6-question-16-discussion/"
              data-comments='[{&#34;user&#34;:&#34;TexMachina&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;I think it&#39;s \&#34;C\&#34; as well, even though it&#39;s poorly written (&#39;=lock&#39; instead of &#39;-lock&#39;), \&#34;plan -refresh-only\&#34; reads the infra and creates a plan showing how the state would need to change, but doesn&#39;t commit that info to the state file.\nIf it was &#39;apply -refresh-only&#39; I&#39;d definietly go for that, but since we don&#39;t have that option, &#39;C&#39; makes more sense.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;Terraform Plan is the right answer as it shows the difference&#34;},{&#34;user&#34;:&#34;BrutexLau&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;I don&#39;t think any of them are correct, since the State File is updated only with the `terraform apply` command, but option C contains an error; it should be `terraform apply -lock=false`.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;I would chose A because the changes are made outside the terraform and by applying terraform configuration the outside changes would be overwritten&#34;}]'>
             <div class="q-top" onclick="toggleCard('q22')">
@@ -921,7 +921,7 @@
         </div>
 
         <!-- QUESTION 23 -->
-        <div class="q-card" id="q23" data-correct="B"
+        <div class="q-card" id="q23" data-domain="state" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385538-exam-terraform-associate-004-topic-6-question-18-discussion/"
              data-comments='[{&#34;user&#34;:&#34;FlacoX&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;It is false since terraform plan only checks/preview the changes between tfstate file and the real world infrastructure, but the terraform plan -refresh-only is the one that previews the changes with the real world infrastructure and updates the tfstate files.&#34;},{&#34;user&#34;:&#34;Dash&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;The terraform plan -refresh-only command operates entirely in memory. It performs a dry run that inspects your live infrastructure for drift, calculates what updates are required, and generates an execution plan. However, it does not write or permanently save those changes to the physical .tfstate file&#34;},{&#34;user&#34;:&#34;markbotros&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;A. True\nExplanation:\nThe -refresh-only flag tells Terraform to:\nCheck the real infrastructure (via provider APIs)\nCompare it with the current state file\nUpdate the state file to match reality if there are external changes\nBut not propose or apply configuration changes&#34;},{&#34;user&#34;:&#34;FlacoX&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;It is false since terraform plan only checks/preview the changes between tfstate file and the real world infrastructure, but the terraform plan -refresh-only is the one that previews the changes with the real world infrastructure and updates the tfstate files.&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;A&#34;,&#34;text&#34;:&#34;In the context of certification exams (like the HashiCorp Terraform Associate), when they ask if the -refresh-only parameter \&#34;will update your state file,\&#34; they are referring to the functionality of the refresh-only mode.\nWhile the plan phase is just a preview, the specific purpose of using that flag is to perform a state-only update. If you were to run a standard terraform apply (without the flag), Terraform would try to undo the manual changes to match your code. By using -refresh-only, you are telling Terraform to keep the manual changes and just update the state file to acknowledge them.&#34;},{&#34;user&#34;:&#34;yhalim&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;The -refresh-only parameter does not update the state file when used with the terraform plan command. Instead, it allows you to preview the changes to the Terraform state file that would occur if you were to run terraform apply -refresh-only. The state file itself is only updated when you run the terraform apply -refresh-only command.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q23')">
@@ -954,7 +954,7 @@
         </div>
 
         <!-- QUESTION 24 -->
-        <div class="q-card" id="q24" data-correct="A"
+        <div class="q-card" id="q24" data-domain="state" data-correct="A"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/402414-exam-terraform-associate-004-topic-6-question-23-discussion/"
              data-comments='[{&#34;user&#34;:&#34;FlacoX&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;It is optional, since by default it uses local backend, it is good to use a remote backend but not neccesary. So it is not mandatory, not impossible, not discouraged, it is optional&#34;},{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;D&#34;,&#34;text&#34;:&#34;Gemini said\nThe correct answer is D. optional.\nWhy it is optional\nYou are never forced to change your backend, but it is a best practice for teams or production environments.\nInitial State: When you run your first terraform apply, Terraform creates a terraform.tfstate file on your local disk (the local backend).\nThe Transition: You can move to a remote backend (like AWS S3, Azure Blob Storage, or Terraform Cloud) at any point in the project lifecycle. This process is called migration.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q24')">
@@ -995,7 +995,7 @@
         </div>
 
         <!-- QUESTION 25 -->
-        <div class="q-card" id="q25" data-correct="C"
+        <div class="q-card" id="q25" data-domain="state" data-correct="C"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385534-exam-terraform-associate-004-topic-7-question-4-discussion/"
              data-comments='[{&#34;user&#34;:&#34;yhalim&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;Why C is Correct:\n1) Remove the Resource Definition:\nIf the resource has been manually destroyed, you should remove its definition from your Terraform configuration files (e.g., .tf files).\nThis tells Terraform that the resource is no longer part of the desired state.\n2) Run terraform apply -refresh-only:\nThis command updates the Terraform state file to reflect the current state of your infrastructure without making any changes to resources.\nSince the resource definition has been removed, Terraform will remove the corresponding resource from the state file.&#34;},{&#34;user&#34;:&#34;Zam88&#34;,&#34;answer&#34;:&#34;C&#34;,&#34;text&#34;:&#34;correct answer is: C. Remove the resource definition from your file and run terraform apply -refresh-only.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q25')">
@@ -1036,7 +1036,7 @@
         </div>
 
         <!-- QUESTION 26 -->
-        <div class="q-card" id="q26" data-correct="B"
+        <div class="q-card" id="q26" data-domain="configuration" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385533-exam-terraform-associate-004-topic-7-question-5-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;The correct answer is B. False.\nWhen a check block’s assertion fails, Terraform reports a warning (including the error_message you defined) but continues executing the current operation (plan or apply) without blocking it.\nThis is the only type of custom validation in Terraform that is intentionally non-blocking. It runs as the final step of a plan or apply (after resources have been planned or provisioned) and is meant for ongoing health/monitoring checks rather than strict enforcement.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q26')">
@@ -1069,7 +1069,7 @@
         </div>
 
         <!-- QUESTION 27 -->
-        <div class="q-card" id="q27" data-correct="B,C"
+        <div class="q-card" id="q27" data-domain="hcp" data-correct="B,C"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385527-exam-terraform-associate-004-topic-8-question-2-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;&#34;,&#34;text&#34;:&#34;he correct answers are B. Resource drift detection and D. Check block validation.\nWhat is an HCP Terraform Health Assessment?\nA health assessment is a background process in HCP Terraform (formerly Terraform Cloud) that monitors your infrastructure for \&#34;correctness\&#34; without you having to manually trigger a plan. It is specifically designed to catch two things:\nB. Resource drift detection: It checks if the actual infrastructure has been changed outside of Terraform (e.g., someone manually edited a setting in the AWS Console).\nD. Check block validation: It executes any check blocks you have defined in your code. This is used to verify functional status, such as whether a website is returning a 200 OK status or if a certificate is nearing expiration.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q27')">
@@ -1114,7 +1114,7 @@
         </div>
 
         <!-- QUESTION 28 -->
-        <div class="q-card" id="q28" data-correct="B"
+        <div class="q-card" id="q28" data-domain="hcp" data-correct="B"
              data-link="https://www.examtopics.com/discussions/hashicorp/view/385525-exam-terraform-associate-004-topic-8-question-4-discussion/"
              data-comments='[{&#34;user&#34;:&#34;Srikantha&#34;,&#34;answer&#34;:&#34;B&#34;,&#34;text&#34;:&#34;The correct answer is B. False.\nYou can only provide one cloud block per Terraform configuration.\nThe cloud block (nested inside the top-level terraform block) is how you connect a workspace to either HCP Terraform or a Terraform Enterprise instance. It is not repeatable — Terraform explicitly forbids multiple cloud blocks in the same configuration.&#34;}]'>
             <div class="q-top" onclick="toggleCard('q28')">

@@ -579,6 +579,7 @@ const state = {};
   let pool = null; // null = all questions
   let stars = new Set();
   let examFinished = false;
+  let pendingExam = 0; // exam size requested by the launcher, drawn on load
 
   function loadV2() {
     try {
@@ -588,7 +589,31 @@ const state = {};
       stars = new Set(Array.isArray(saved.stars) ? saved.stars : []);
       pool = Array.isArray(saved.pool) && saved.pool.length ? saved.pool.filter(id => document.getElementById(id)) : null;
       examFinished = !!saved.examFinished && mode === "exam";
+      pendingExam = mode === "exam" ? parseInt(saved.pendingExam, 10) || 0 : 0;
     } catch (e) {}
+  }
+
+  function shuffle(list) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  /* Draw an exam set that follows the official domain weights
+     (assets/exam-data.js), using only questions with an answer key. */
+  function buildExamPool(count) {
+    const byDomain = {};
+    allCards().forEach(card => {
+      if (!getCorrectAnswers(card).length) return;
+      (byDomain[card.dataset.domain] ||= []).push(card.id);
+    });
+    const available = {};
+    Object.entries(byDomain).forEach(([d, ids]) => { available[d] = ids.length; });
+    const quotas = window.examQuotas(EXAM_PROFILE, count, available);
+    return shuffle(Object.entries(quotas).flatMap(([d, n]) => shuffle(byDomain[d] || []).slice(0, n)));
   }
 
   function saveV2() {
@@ -639,7 +664,7 @@ const state = {};
     if (!sel) return;
     const previous = sel.value;
     const n = eligibleIds().length;
-    const candidates = n <= 30 ? [10,20] : [10,20,50,100];
+    const candidates = mode === "exam" ? EXAM_PROFILE.exam.counts : n <= 30 ? [10,20] : [10,20,50,100];
     const allLabel = mode === "exam" ? `Wszystkie oceniane (${n})` : `Wszystkie (${n})`;
     sel.innerHTML = `<option value="all">${allLabel}</option>` + candidates
       .filter(x => x < n)
@@ -748,12 +773,7 @@ const state = {};
       pool = null;
     } else {
       const count = Math.max(1, Math.min(parseInt(value,10) || 10, eligibleIds().length));
-      const ids = eligibleIds();
-      for (let i = ids.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [ids[i], ids[j]] = [ids[j], ids[i]];
-      }
-      pool = ids.slice(0, count);
+      pool = mode === "exam" ? buildExamPool(count) : shuffle(eligibleIds()).slice(0, count);
     }
     if (mode === "exam") {
       resetPoolForExam();
@@ -914,6 +934,11 @@ const state = {};
   };
 
   loadV2();
+  if (pendingExam) {
+    pool = buildExamPool(pendingExam);
+    pendingExam = 0;
+    saveV2();
+  }
   injectStars();
   populateCountOptions();
   renderStars();
