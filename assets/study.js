@@ -300,6 +300,8 @@
       <div class="field"><span class="sv-label">Kolejność</span><div class="seg" role="radiogroup" aria-label="Kolejność">
         <button role="radio" aria-checked="${S.order !== "bank"}" data-order="smart">Mądra kolejka</button>
         <button role="radio" aria-checked="${S.order === "bank"}" data-order="bank">Jak w bazie</button></div></div>
+      <div class="field"><span class="sv-label">Motyw</span><div class="seg" role="radiogroup" aria-label="Motyw">
+        ${[["system", "Systemowy"], ["light", "Jasny"], ["dark", "Ciemny"]].map(([k, l]) => `<button role="radio" aria-checked="${(window.HubTheme?.get() || "system") === k}" data-theme-choice="${k}">${l}</button>`).join("")}</div></div>
       <p class="small muted" data-count></p>
       <ul class="xf-list sv-list" data-list></ul>
       <button class="btn btn-quiet sv-reset" data-reset>Wyczyść postęp nauki</button>
@@ -325,6 +327,8 @@
       if (set) { session.scope.set = set.dataset.set; dlg.querySelectorAll("[data-set]").forEach(b => b.setAttribute("aria-pressed", String(b === set))); saveSession(); return fill(); }
       const ord = e.target.closest("[data-order]");
       if (ord) { S.order = ord.dataset.order; save(); dlg.querySelectorAll("[data-order]").forEach(b => b.setAttribute("aria-checked", String(b === ord))); return; }
+      const th = e.target.closest("[data-theme-choice]");
+      if (th) { window.HubTheme?.set(th.dataset.themeChoice); dlg.querySelectorAll("[data-theme-choice]").forEach(b => b.setAttribute("aria-checked", String(b === th))); return; }
       const jump = e.target.closest("[data-jump]");
       if (jump) { dlg.close(); return goTo(jump.dataset.jump); }
       if (e.target.closest("[data-reset]")) { dlg.close(); return confirmReset(); }
