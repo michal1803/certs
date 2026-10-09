@@ -54,6 +54,9 @@
           seriesNoReturn: true,
           // Microsoft Learn is available during role-based exams; the clock keeps running.
           learnUrl: "https://learn.microsoft.com/",
+          // Unscheduled breaks: the exam clock keeps running and every question
+          // seen before the break locks (Microsoft "Exam duration and exam experience").
+          breaks: true,
         },
         source: "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104",
         verified: "2026-10-09",
