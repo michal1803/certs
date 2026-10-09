@@ -117,6 +117,14 @@
   }
   document.querySelectorAll("[role=tab]").forEach(t => { t.tabIndex = t.getAttribute("aria-selected") === "true" ? 0 : -1; });
 
+  // Theme picker in the footer.
+  const picker = document.querySelector(".theme-pick");
+  if (picker && window.HubTheme) {
+    const mark = () => picker.querySelectorAll("[data-theme-choice]").forEach(b => b.setAttribute("aria-checked", String(b.dataset.themeChoice === HubTheme.get())));
+    mark();
+    picker.addEventListener("click", e => { const b = e.target.closest("[data-theme-choice]"); if (b) { HubTheme.set(b.dataset.themeChoice); mark(); } });
+  }
+
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
   }

@@ -3,7 +3,7 @@
    - Own assets: served from cache and refreshed in the background.
    - Question images from other hosts: cached the first time they are seen.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v1";
+const VERSION = "v2";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
 const MAX_IMAGES = 600;
@@ -15,6 +15,7 @@ const PRECACHE = [
   "az104.html",
   "manifest.webmanifest",
   "assets/app.css",
+  "assets/theme.js",
   "assets/exam-data.js",
   "assets/core.js",
   "assets/study.js",
