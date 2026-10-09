@@ -3,7 +3,7 @@
    questions first, mastered ones later). Questions come from Hub (core.js);
    their markup is never changed. Progress is per browser. */
 (() => {
-  const { esc, load, store, plural, shuffle, icon, profile: P, questions, order, domainOf, examId } = Hub;
+  const { esc, load, store, plural, shuffle, icon, profile: P, questions, order, domainOf, examId, motion, pop, removeAfterClose } = Hub;
   if (!P) return;
   const KEY = `study:${examId}:v1`;
   const SESSION_KEY = `study-session:${examId}`;
@@ -46,6 +46,8 @@
   const saveSession = () => { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {} };
   let draft = {};          // unchecked selections per question in this view
   let peeked = {};         // answers revealed without counting
+  let revealPending = null; // question whose answer was just checked (plays the reveal)
+  let lastRendered = null;
 
   const scopeFromHash = () => {
     const m = location.hash.match(/^#nauka(?:=([a-z-]+))?$/);
@@ -108,10 +110,11 @@
     render();
   }
   const next = () => {
+    motion.dir = "next";
     if (session.pos < session.history.length - 1) { session.pos++; saveSession(); return render(); }
     goTo(pickNext());
   };
-  const back = () => { if (session.pos > 0) { session.pos--; saveSession(); render(); } };
+  const back = () => { if (session.pos > 0) { motion.dir = "prev"; session.pos--; saveSession(); render(); } };
 
   function mastered() {
     const ids = order.filter(id => !session.scope.domain || questions[id].domain === session.scope.domain);
@@ -176,6 +179,10 @@
     const multi = q.correct.length > 1;
     const chosen = rec?.sel || draft[id] || [];
     const prior = S.ans[id];
+    const justChecked = revealPending === id; revealPending = null;
+    const changed = id !== lastRendered; lastRendered = id;
+    const cardMotion = justChecked ? "is-checked" : changed ? `xf-enter-${motion.dir}` : "";
+    motion.dir = "next";
     document.title = `${P.title} · nauka`;
 
     const parts = q.parts.map(p => p.kind === "text"
@@ -237,7 +244,7 @@
     root.innerHTML = `
       <div class="xf-screen"><div class="xf-col xf-body">
         ${topBar()}
-        <article class="card xf-q xf-anim" aria-labelledby="sv-qh">
+        <article class="card xf-q ${cardMotion}" aria-labelledby="sv-qh">
           <div class="sv-meta"><span class="sv-num">${esc(q.num)}</span><span class="sv-dom">${esc(domainOf(q.domain).label)}</span>${prior ? `<span class="tag ${prior.ok ? "pass" : "fail"} sv-prev">${icon(prior.ok ? "check" : "x")}${prior.ok ? "ostatnio dobrze" : "ostatnio źle"}</span>` : `<span class="tag neutral sv-prev">nowe</span>`}</div>
           <h1 id="sv-qh" class="sv-hidden" tabindex="-1">Pytanie ${esc(q.num)}</h1>
           ${parts}
@@ -279,6 +286,7 @@
     const ok = sel.length === q.correct.length && sel.every(v => q.correct.includes(v));
     record(id, ok, sel, "answer");
     session.revealed[id] = { kind: "answer", ok, sel };
+    revealPending = id;
     delete draft[id];
     saveSession();
     render();
@@ -308,6 +316,7 @@
     </div>`;
     root.appendChild(dlg);
     const input = dlg.querySelector("input");
+    let jumped = false;
     const fill = () => {
       const term = input.value.trim().toLowerCase();
       const ids = order.filter(inScope).filter(id => !term || questions[id].num.toLowerCase() === term || questions[id].text.toLowerCase().includes(term));
@@ -330,11 +339,12 @@
       const th = e.target.closest("[data-theme-choice]");
       if (th) { window.HubTheme?.set(th.dataset.themeChoice); dlg.querySelectorAll("[data-theme-choice]").forEach(b => b.setAttribute("aria-checked", String(b === th))); return; }
       const jump = e.target.closest("[data-jump]");
-      if (jump) { dlg.close(); return goTo(jump.dataset.jump); }
+      if (jump) { jumped = true; dlg.close(); return goTo(jump.dataset.jump); }
       if (e.target.closest("[data-reset]")) { dlg.close(); return confirmReset(); }
     });
     dlg.addEventListener("close", () => {
-      dlg.remove();
+      setTimeout(() => dlg.remove(), 260);
+      if (jumped) return;  // goTo already rendered the chosen question
       const cur = session.history[session.pos];
       if (!cur || !inScope(cur)) goTo(pickNext()); else render();
     });
@@ -351,7 +361,7 @@
       if (e.target.closest("[data-yes]")) { S.ans = {}; save(); session = { history: [], pos: -1, scope: session.scope, revealed: {} }; dlg.close(); goTo(pickNext()); }
       else if (e.target.closest("[data-no]") || e.target === dlg) dlg.close();
     });
-    dlg.addEventListener("close", () => dlg.remove());
+    removeAfterClose(dlg);
     dlg.showModal();
     dlg.querySelector("[data-no]").focus();
   }
@@ -365,6 +375,7 @@
       const ok = t.dataset.self === "1";
       record(id, ok, [], "self");
       session.revealed[id] = { kind: "self", ok };
+      revealPending = id;
       saveSession();
       return render();
     }
@@ -379,11 +390,12 @@
         save();
         const on = S.stars.includes(id);
         t.setAttribute("aria-pressed", String(on));
+        pop(t.querySelector(".icon"));
         t.setAttribute("aria-label", on ? "Usuń gwiazdkę" : "Dodaj gwiazdkę");
         return announce(on ? "Dodano gwiazdkę" : "Usunięto gwiazdkę");
       }
-      case "peek": session.revealed[id] = { kind: "peek", sel: [] }; saveSession(); return render();
-      case "reveal": session.revealed[id] = { kind: "reveal" }; saveSession(); return render();
+      case "peek": session.revealed[id] = { kind: "peek", sel: [] }; revealPending = id; saveSession(); return render();
+      case "reveal": session.revealed[id] = { kind: "reveal" }; revealPending = id; saveSession(); return render();
       case "retry": delete session.revealed[id]; delete draft[id]; saveSession(); return render();
     }
   });

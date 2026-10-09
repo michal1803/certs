@@ -130,8 +130,32 @@
 
   const domainOf = id => profile?.domains.find(d => d.id === id) || { id, label: id, name: id };
 
+  /* Motion helpers: direction of the last question change, a one-shot
+     "pop" for toggles, and a count-up for numbers. */
+  const reduced = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const motion = { dir: "next" };
+  function pop(el) {
+    if (!el || reduced()) return;
+    el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop");
+    el.addEventListener("animationend", () => el.classList.remove("pop"), { once: true });
+  }
+  function countUp(el, to, ms = 700) {
+    if (!el) return;
+    if (reduced()) { el.textContent = to; return; }
+    const t0 = performance.now();
+    const step = t => {
+      const p = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(to * e);
+      if (p < 1) requestAnimationFrame(step);
+    };
+    el.textContent = 0;
+    requestAnimationFrame(step);
+  }
+  // Let a closing <dialog> play its exit before it leaves the DOM.
+  const removeAfterClose = dlg => dlg.addEventListener("close", () => setTimeout(() => dlg.remove(), 260));
+
   window.EXAM_PROFILE = profile;
-  window.Hub = { tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
+  window.Hub = { motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

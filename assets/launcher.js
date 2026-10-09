@@ -72,8 +72,14 @@
     const n = parseInt(document.getElementById(`c-${id}`).value, 10);
     const q = window.examQuotas(p, n);
     const max = Math.max(...Object.values(q), 1);
-    document.querySelector(`[data-split="${id}"]`).innerHTML = p.domains.map(d =>
-      `<li><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${q[d.id] / max * 100}%"></i></span><b>${q[d.id]}</b></li>`).join("");
+    const ul = document.querySelector(`[data-split="${id}"]`);
+    if (ul.children.length === p.domains.length) {
+      // Same domains, new counts: let the bars glide to their new length.
+      p.domains.forEach((d, k) => { const li = ul.children[k]; li.querySelector("i").style.width = q[d.id] / max * 100 + "%"; li.querySelector("b").textContent = q[d.id]; });
+      return;
+    }
+    ul.innerHTML = p.domains.map((d, k) =>
+      `<li><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i class="grow" style="width:${q[d.id] / max * 100}%;--d:${200 + k * 40}ms"></i></span><b>${q[d.id]}</b></li>`).join("");
   }
   Object.keys(window.EXAM_PROFILES).forEach(renderSplit);
 

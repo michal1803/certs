@@ -194,7 +194,7 @@ button.pill:hover { background: var(--surface); }
 .split { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .split li { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr) 2ch; align-items: center; gap: 12px; font-size: 15px; }
 .split .bar { height: 6px; border-radius: 3px; background: var(--surface); overflow: hidden; }
-.split .bar i { display: block; height: 100%; border-radius: 3px; background: var(--text-2); }
+.split .bar i { display: block; height: 100%; border-radius: 3px; background: var(--text-2); transition: width .35s var(--ease); }
 .split b { text-align: right; }
 .split.mastery li { grid-template-columns: 8.5rem minmax(0, 1fr) 6ch; }
 
@@ -261,7 +261,7 @@ body.xf-active { overflow: hidden !important; }
 .xf-q > .xf-qtext:first-of-type, .xf-q > .note + .xf-qtext { margin-top: 0; }
 .xf-q > .note { margin-top: 0 !important; margin-bottom: 12px; }
 .xf-progress { margin-top: 12px; height: 6px; border-radius: 3px; background: var(--surface); overflow: hidden; }
-.xf-progress i { display: block; height: 100%; border-radius: 3px; background: var(--text-2); transition: width .25s var(--ease); }
+.xf-progress i { display: block; height: 100%; border-radius: 3px; background: var(--text-2); transition: width .35s var(--ease); }
 .xf-q h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .xf-qtext { margin-top: 0; font-size: 18px; line-height: 1.55; overflow-wrap: anywhere; }
 .xf-qtext img, .xf-exhibit img { max-width: 100%; height: auto; border-radius: 8px; }
@@ -315,9 +315,7 @@ body.xf-active { overflow: hidden !important; }
 .xf-flag[aria-pressed="true"] { border-color: var(--text); background: var(--surface); }
 .xf-flag[aria-pressed="true"] .icon { fill: currentColor; }
 
-.xf-anim { animation: xf-in .22s var(--ease); }
-@keyframes xf-in { from { opacity: .4; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .xf-anim { animation: none; } .btn, .xf-opt, .xf-mark { transition: none; } }
+
 
 /* start / review / results */
 .xf-head { padding: 8px 0 4px; }
@@ -369,9 +367,8 @@ body.xf-active { overflow: hidden !important; }
   font-family: var(--font); font-variant-numeric: tabular-nums;
 }
 .xf-sheet::backdrop { background: var(--scrim); }
-.xf-sheet[open] { animation: sheet-in .25s var(--ease); }
-@keyframes sheet-in { from { transform: translateY(24px); opacity: .6; } to { transform: none; opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .xf-sheet[open] { animation: none; } }
+
+
 .xf-sheet-in { padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); display: grid; gap: 16px; }
 .xf-sheet-head { display: flex; align-items: center; justify-content: space-between; }
 .xf-sheet-head h2 { font-size: 20px; font-weight: 700; }
@@ -599,4 +596,88 @@ body.xf-active { overflow: hidden !important; }
   .sv-search .icon { left: 12px; }
   .sv-mastery { font-size: 12px; margin-top: 8px; }
   .sv-self-btns .btn { min-height: 38px; }
+}
+
+/* ===== motion =====
+   Motion explains state: where the next question comes from, which answer
+   was right, how a score builds up. Routine changes stay 150–300 ms. */
+@keyframes enter-next { from { opacity: 0; transform: translateX(28px); } }
+@keyframes enter-prev { from { opacity: 0; transform: translateX(-28px); } }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { 40% { transform: scale(1.28); } }
+@keyframes mark-in { from { transform: scale(.6); } }
+@keyframes tint-ok { from { background-color: var(--card); border-color: transparent; } }
+@keyframes tint-bad { from { background-color: var(--card); border-color: transparent; } }
+@keyframes draw { from { stroke-dashoffset: 26; } to { stroke-dashoffset: 0; } }
+@keyframes grow { from { transform: scaleX(0); } }
+@keyframes nudge { 30% { transform: scale(1.06); } }
+
+/* question change: the card arrives from the side you are moving towards */
+.xf-enter-next { animation: enter-next .26s var(--ease); }
+.xf-enter-prev { animation: enter-prev .26s var(--ease); }
+
+/* selecting an answer */
+.xf-opt input:checked + .xf-mark { animation: mark-in .2s var(--ease); }
+.xf-opt { transition: border-color .15s, background-color .2s, box-shadow .2s, transform .15s var(--ease); }
+.xf-opt:active { transform: scale(.99); }
+
+/* the reveal (study): colour washes into the right and wrong answers,
+   the check mark draws, the verdict rises, comments follow */
+.is-checked .xf-opt.is-correct { animation: tint-ok .45s var(--ease) both; }
+.is-checked .xf-opt.is-wrong { animation: tint-bad .45s var(--ease) both; }
+.is-checked .xf-opt.is-dim { animation: fade .3s var(--ease) both; }
+.is-checked .sv-tag { animation: fade .25s .12s both; }
+.is-checked .sv-tag .icon path { stroke-dasharray: 26; animation: draw .35s .18s var(--ease) both; }
+.is-checked .sv-result { animation: rise .3s .2s var(--ease) both; }
+.is-checked .sv-after, .is-checked .sv-comments, .is-checked .sv-self, .is-checked .note, .is-checked .xf-exhibit { animation: rise .3s .28s var(--ease) both; }
+.sv-comments[open] .sv-comments-body { animation: rise .25s var(--ease); }
+.xf-ans details[open] .body { animation: rise .25s var(--ease); }
+
+/* toggles */
+.icon.pop { animation: pop .3s var(--ease); }
+
+/* timer warning: one nudge when the clock turns amber or red */
+.xf-clock.low, .xf-clock.out { animation: nudge .5s var(--ease); }
+.xf-toast { animation: rise .25s var(--ease); }
+
+/* sheets and dialogs: enter and leave (exit is faster) */
+.xf-sheet, .xf-dialog {
+  transition: opacity .18s, transform .18s var(--ease), overlay .18s allow-discrete, display .18s allow-discrete;
+}
+.xf-sheet[open] { animation: none; transform: none; opacity: 1; }
+.xf-sheet:not([open]) { transform: translateY(40px); opacity: 0; }
+.xf-dialog[open] { transform: none; opacity: 1; }
+.xf-dialog:not([open]) { transform: scale(.96); opacity: 0; }
+@starting-style {
+  .xf-sheet[open] { transform: translateY(40px); opacity: 0; }
+  .xf-dialog[open] { transform: scale(.96); opacity: 0; }
+}
+.xf-sheet::backdrop, .xf-dialog::backdrop { transition: background-color .2s, overlay .2s allow-discrete, display .2s allow-discrete; }
+@starting-style {
+  .xf-sheet[open]::backdrop, .xf-dialog[open]::backdrop { background-color: transparent; }
+}
+.xf-sheet[open], .xf-dialog[open] { transition-duration: .28s; }
+
+/* results: the score counts up (JS), domain bars fill one after another */
+.grow { transform-origin: left center; animation: grow .6s var(--ease) var(--d, 0ms) both; }
+.xf-verdict .tag { animation: fade .3s .5s both; }
+
+/* launcher: the exam cards arrive as a list; tab panels cross-fade */
+.launcher .exam { animation: rise .4s var(--ease) both; }
+.launcher .exam:nth-child(2) { animation-delay: .06s; }
+.launcher .exam:nth-child(3) { animation-delay: .12s; }
+.exam [role="tabpanel"]:not([hidden]) { animation: fade .2s var(--ease); }
+.seg button { transition: background-color .18s, color .18s, box-shadow .18s; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* keep colour and opacity cues, drop movement */
+  .xf-enter-next, .xf-enter-prev, .launcher .exam, .is-checked .sv-result, .is-checked .sv-after,
+  .is-checked .sv-comments, .is-checked .sv-self, .is-checked .note, .is-checked .xf-exhibit,
+  .sv-comments[open] .sv-comments-body, .xf-ans details[open] .body, .xf-toast { animation: fade .15s both; }
+  .grow, .icon.pop, .xf-clock.low, .xf-clock.out, .xf-opt input:checked + .xf-mark, .is-checked .sv-tag .icon path { animation: none; }
+  .xf-sheet:not([open]), .xf-dialog:not([open]) { transform: none; }
+  @starting-style { .xf-sheet[open], .xf-dialog[open] { transform: none; } }
+  .xf-opt:active { transform: none; }
+  .xf-progress i, .split .bar i { transition: none; }
 }

@@ -10,7 +10,9 @@
   const HISTORY_KEY = `exam-history:${EXAM_ID}:v1`;
   const LETTER_KEYS = "abcdefgh";
 
-  const { esc, load, store, clock, plural, shuffle, icon, questions, domainOf } = Hub;
+  const { esc, load, store, clock, plural, shuffle, icon, questions, domainOf, motion, pop, countUp, removeAfterClose } = Hub;
+  let lastPct = 0;
+  let resultsAnimated = false; // the score reveal plays once per results visit
   const $ = (sel, root = document) => root.querySelector(sel);
   const mins = ms => Math.max(0, Math.round(ms / 60000));
 
@@ -202,6 +204,7 @@
   function go(i) {
     if (i < 0 || i >= A.count || i === A.current && screen === "question") return;
     if (isLocked(i)) return;
+    motion.dir = i < A.current ? "prev" : "next";
     if (screen === "question") leaveCurrent();
     showQuestion(i);
   }
@@ -236,8 +239,8 @@
             <div class="pill xf-clock" role="timer"></div>
           </div>
         </div>
-        <div class="xf-progress" aria-hidden="true"><i style="width:${(i + 1) / A.count * 100}%"></i></div>
-        <article class="card xf-q xf-anim" aria-labelledby="xf-qh">
+        <div class="xf-progress" aria-hidden="true"><i style="width:${lastPct}%"></i></div>
+        <article class="card xf-q xf-enter-${motion.dir}" aria-labelledby="xf-qh">
           <h2 id="xf-qh" tabindex="-1">Pytanie ${i + 1} z ${A.count}</h2>
           ${q.series ? `<p class="note warn">${icon("lock")}<span>Pytanie z serii. Po przejściu dalej nie wrócisz do niego.</span></p>` : ""}
           ${parts}
@@ -262,6 +265,9 @@
       </div>`;
     renderClock($(".xf-clock", root));
     startTick();
+    const pct = (i + 1) / A.count * 100, bar = $(".xf-progress i", root);
+    requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = pct + "%"; }));
+    lastPct = pct; motion.dir = "next";
     root.querySelectorAll(".xf-exhibit img").forEach(img => img.addEventListener("error", () => {
       img.closest("figure").innerHTML = `<p class="xf-imgfail">Nie udało się wczytać obrazka do pytania. <a href="${esc(img.dataset.src)}" target="_blank" rel="noopener">Otwórz obrazek w nowej karcie</a></p>`;
     }, { once: true }));
@@ -297,7 +303,7 @@
     A.flags = on ? [...A.flags, id] : A.flags.filter(x => x !== id);
     save();
     const b = $('[data-act="flag"]', root);
-    if (b) b.setAttribute("aria-pressed", String(on));
+    if (b) { b.setAttribute("aria-pressed", String(on)); pop(b.querySelector(".icon")); }
     announce(on ? "Pytanie oznaczone do powtórki" : "Usunięto oznaczenie");
   }
 
@@ -325,7 +331,7 @@
       if (cell) { dlg.close(); go(parseInt(cell.dataset.go, 10)); return; }
       if (e.target.closest("[data-review]")) { dlg.close(); toReview(); }
     });
-    dlg.addEventListener("close", () => dlg.remove());
+    removeAfterClose(dlg);
     dlg.showModal();
     $(".xf-cell.cur", dlg)?.focus();
   }
@@ -386,7 +392,7 @@
       if (e.target.closest("[data-yes]")) { dlg.close(); finish(false); }
       else if (e.target.closest("[data-no]") || e.target === dlg) dlg.close();
     });
-    dlg.addEventListener("close", () => dlg.remove());
+    removeAfterClose(dlg);
     dlg.showModal();
     $("[data-no]", dlg).focus();
   }
@@ -411,7 +417,7 @@
       if (e.target.closest("[data-yes]")) { dlg.close(); startBreak(); }
       else if (e.target.closest("[data-no]") || e.target === dlg) dlg.close();
     });
-    dlg.addEventListener("close", () => dlg.remove());
+    removeAfterClose(dlg);
     dlg.showModal();
     $("[data-no]", dlg).focus();
   }
@@ -472,6 +478,7 @@
     A.timeUp = !!timeUp;
     A.finishedAt = Date.now();
     A.showResults = true;
+    resultsAnimated = false;
     let pts = 0, max = 0;
     A.pool.forEach(id => { const s = scoreQuestion(id); pts += s.pts; max += s.max; });
     const history = load(HISTORY_KEY, []);
@@ -498,9 +505,9 @@
       ? `<span class="tag neutral">${icon("info")}Brak oficjalnego progu</span>`
       : pass ? `<span class="tag pass">${icon("check")}Zdany (szacunek)</span>` : `<span class="tag fail">${icon("x")}Niezdany (szacunek)</span>`;
     const scoreLine = P.exam.passing
-      ? `<p class="xf-score">≈ ${Math.round(pct * P.exam.passing.scale)} <small>/ ${P.exam.passing.scale}</small></p>
+      ? `<p class="xf-score">≈ <span data-count="${Math.round(pct * P.exam.passing.scale)}">${Math.round(pct * P.exam.passing.scale)}</span> <small>/ ${P.exam.passing.scale}</small></p>
          <p class="muted">${pts} z ${max} pkt (${Math.round(pct * 100)}%). Prawdziwy wynik ${esc(P.vendor)} jest skalowany: próg ${P.exam.passing.score} to nie to samo co ${Math.round(P.exam.passing.score / P.exam.passing.scale * 100)}%, więc to tylko przybliżenie.</p>`
-      : `<p class="xf-score">${Math.round(pct * 100)}<small>%</small></p>
+      : `<p class="xf-score"><span data-count="${Math.round(pct * 100)}">${Math.round(pct * 100)}</span><small>%</small></p>
          <p class="muted">${pts} z ${max} pytań. ${esc(P.vendor)} nie publikuje progu zaliczenia.</p>`;
     const list = rows.filter(r => resultsFilter === "wrong" ? !r.s.exact : resultsFilter === "flag" ? A.flags.includes(r.id) : true);
     root.innerHTML = `
@@ -514,7 +521,7 @@
         </section>
         <section class="card xf-section" aria-labelledby="xf-dom-h">
           <h2 id="xf-dom-h">Wynik w domenach</h2>
-          <ul class="split xf-domains">${byDomain.map(x => `<li><span>${esc(x.d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${x.m ? x.p / x.m * 100 : 0}%"></i></span><b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
+          <ul class="split xf-domains">${byDomain.map((x, k) => `<li><span>${esc(x.d.label)}</span><span class="bar" aria-hidden="true"><i class="grow" style="width:${x.m ? x.p / x.m * 100 : 0}%;--d:${250 + k * 70}ms"></i></span><b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
           <p class="small muted">Jak na oficjalnym raporcie: krótszy pasek to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
         </section>
         <div class="xf-actions" style="grid-template-columns:1fr 1fr">
@@ -545,6 +552,8 @@
         </section>
       </div></div>`;
     root.scrollTop = 0;
+    if (!resultsAnimated) { resultsAnimated = true; countUp($("[data-count]", root), parseInt($("[data-count]", root).dataset.count, 10)); }
+    else root.querySelectorAll(".grow").forEach(i => i.classList.remove("grow"));
     $("#xf-res-h", root).focus({ preventScroll: true });
     announce(pass === null ? `Wynik ${Math.round(pct * 100)} procent` : `${pass ? "Zdany" : "Niezdany"}, szacunkowo ${Math.round(pct * 100)} procent`);
   }
