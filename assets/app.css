@@ -138,7 +138,7 @@ button.pill:hover { background: var(--surface); }
 .launcher main { width: min(1040px, 100%); margin: 0 auto; padding: 32px 16px calc(32px + env(safe-area-inset-bottom)); }
 .launcher header { margin-bottom: 24px; }
 .launcher h1 { font-size: 40px; line-height: 1.1; font-weight: 700; letter-spacing: -.025em; }
-@media (min-width: 860px) { .launcher h1 { font-size: 48px; } }
+
 .launcher header p { margin-top: 8px; max-width: 60ch; color: var(--text-2); font-size: 17px; }
 .exam-list { display: grid; gap: 16px; }
 @media (min-width: 860px) { .exam-list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
@@ -360,10 +360,7 @@ body.xf-active { overflow: hidden !important; }
 .xf-ans .opt-r.wrong { background: var(--bad-tint); }
 .xf-ans .opt-r .lbl { margin-left: auto; font-weight: 800; font-size: 13px; white-space: nowrap; }
 
-@media (min-width: 900px) {
-  .xf-col { padding-top: 32px; }
-  .xf-qtext { font-size: 19px; }
-}
+
 
 /* ===== study mode ===== */
 .sv { z-index: 1000; }
@@ -426,3 +423,62 @@ body.xf-active { overflow: hidden !important; }
 .sv-list .time .icon { width: 16px; height: 16px; color: var(--text); fill: currentColor; }
 .sv-reset { justify-self: start; color: var(--bad); }
 .seg button[aria-checked="true"] { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(43,36,31,.12); }
+
+/* ===== desktop density =====
+   Touch devices (phones, tablets) keep the thumb-sized scale. A computer with
+   a mouse or trackpad gets a tighter scale, detected by the input device
+   rather than by width alone. */
+@media (hover: hover) and (pointer: fine) and (min-width: 700px) {
+  .xf, .launcher { font-size: 15px; }
+  .btn { min-height: 44px; padding: 0 18px; font-size: 15px; }
+  .pill { min-height: 38px; padding: 7px 14px; font-size: 15px; }
+  .icon-btn { width: 38px; padding: 0; }
+  .icon { width: 18px; height: 18px; }
+  .seg button { min-height: 36px; font-size: 15px; }
+  .select { min-height: 42px; font-size: 15px; }
+  .chip { min-height: 34px; font-size: 14px; }
+  .note { font-size: 14px; padding: 10px 12px; }
+  .split { gap: 8px; }
+  .split li { font-size: 14px; }
+
+  .launcher main { padding-top: 40px; }
+  .launcher h1 { font-size: 30px; }
+  .launcher header p { font-size: 15px; }
+  .exam { padding: 18px; gap: 14px; }
+  .exam h2 { font-size: 19px; }
+  .exam .meta { font-size: 14px; }
+  .exam .facts li { font-size: 13px; padding: 4px 10px; }
+
+  .xf-col { padding-top: 28px; }
+  .xf-head h1 { font-size: 24px; }
+  .xf-head p { font-size: 15px; }
+  .xf-section { padding: 18px; gap: 12px; }
+  .xf-section h2 { font-size: 17px; }
+  .xf-facts b { font-size: 19px; }
+  .xf-facts span { font-size: 13px; }
+  .xf-pos b { font-size: 19px; }
+  .xf-q { padding: 18px; }
+  .xf-qtext { font-size: 16px; line-height: 1.55; }
+  .xf-opts { gap: 8px; }
+  .xf-opt { min-height: 46px; padding: 11px 14px; gap: 12px; font-size: 15px; }
+  .xf-mark { width: 20px; height: 20px; }
+  .xf-opt input[type="radio"]:checked + .xf-mark { border-width: 6px; }
+  .xf-hint { font-size: 14px; }
+  .xf-bar { padding: 10px 16px; }
+  .xf-bar .btn { min-height: 44px; }
+  .xf-row { min-height: 46px; font-size: 14px; }
+  .xf-cell { height: 42px; font-size: 15px; }
+  .xf-grid { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
+  .xf-score { font-size: 38px; }
+  .xf-score small { font-size: 18px; }
+  .xf-verdict h1 { font-size: 20px; }
+  .xf-ans summary { min-height: 46px; font-size: 14px; }
+
+  .sv-num { font-size: 17px; }
+  .sv-meta { font-size: 13px; }
+  .sv-result { font-size: 15px; padding: 10px 12px; }
+  .sv-comments summary { min-height: 44px; font-size: 15px; }
+  .sv-comment { font-size: 14px; }
+  .sv-search input { min-height: 42px; font-size: 15px; }
+  .sv-mastery { font-size: 13px; }
+}
