@@ -230,6 +230,12 @@ button.pill:hover { background: var(--surface); }
 .resume { display: grid; gap: 12px; padding: 14px; border-radius: var(--radius-sm); background: var(--action-tint); }
 .resume p { font-weight: 700; }
 .history { font-size: 14px; color: var(--text-2); }
+.backup { display: grid; gap: 10px; margin-bottom: 14px; }
+.backup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.backup [data-backup-status]:empty { display: none; }
+.backup [data-backup-status] { color: var(--text); font-weight: 600; }
+.launcher footer .backup p + p { margin-top: 0; }
+.sv-guess-hint { color: var(--text-2); }
 /* quick five + reminder */
 .exam .quick { justify-content: space-between; gap: 12px; background: var(--action-tint); border-color: transparent; }
 .exam .quick:hover { background: var(--surface); }

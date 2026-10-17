@@ -121,7 +121,8 @@
   /* Spaced repetition (Leitner boxes) for study progress. Box 0 = missed,
      back in the same session; a correct answer moves one box up and waits
      DAYS[box] before it is due again. A correct answer before the due date
-     keeps the box (the gap is what makes it stick); a miss always drops to 0.
+     keeps the box (the gap is what makes it stick); a miss always drops to 0
+     and a lucky guess to box 1.
      "Mastered" = box 3 or higher: right three times with growing gaps. */
   const DAY = 864e5;
   const DAYS = [0, 1, 3, 7, 14, 30];
@@ -136,8 +137,10 @@
       return a;
     },
     // Next box and due date after an answer; prev may be undefined (new).
-    step(prev, ok, now) {
+    // guess: right but marked "Strzelam", so it is not learned yet: back tomorrow.
+    step(prev, ok, now, guess = false) {
       if (!ok) return { box: 0, due: now };
+      if (guess) return { box: 1, due: now + DAYS[1] * DAY };
       if (prev && prev.ok && prev.box > 0 && now < prev.due) return { box: prev.box, due: prev.due };
       const box = prev ? Math.min(prev.box + 1, DAYS.length - 1) : 1;
       return { box, due: now + DAYS[box] * DAY };
