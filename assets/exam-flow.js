@@ -517,6 +517,7 @@
     const history = load(HISTORY_KEY, []);
     history.unshift({ at: A.finishedAt, count: A.count, pct: max ? Math.round(pts / max * 100) : 0, untimed: !A.deadline });
     store(HISTORY_KEY, history.slice(0, 10));
+    window.HubSync?.schedule();
     save();
     showResults();
   }

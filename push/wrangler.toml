@@ -20,3 +20,13 @@ id = "c7707e2f99854759ac38f2e24dd04f70"
 # The private half is a secret: `npx wrangler secret put VAPID_PRIVATE_KEY`.
 VAPID_PUBLIC_KEY = "BBu3wf6Qcsa417hDEVniXWkLv3duN0hE8y7458FK_rA5SfM_YQTsAPzw0y6RbUxuTs5notAYnku4iSy9Cr_uhBA"
 VAPID_SUBJECT = "https://michal1803.github.io/certs/"
+# GitHub OAuth App client id (public). The client secret and SESSION_SECRET are secrets:
+# `npx wrangler secret put GITHUB_CLIENT_SECRET`, `npx wrangler secret put SESSION_SECRET`.
+GITHUB_CLIENT_ID = "Ov23lieJOmRhQHuCB0Nr"
+
+# Login sessions and synced progress. `npx wrangler d1 create exam-hub` prints the id.
+[[d1_databases]]
+binding = "DB"
+database_name = "exam-hub"
+database_id = "8156a635-0678-462b-8e8a-555030e06886"
+migrations_dir = "migrations"
