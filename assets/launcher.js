@@ -8,6 +8,11 @@
   const plural = (n, one, few, many) => { if (n === 1) return one; const d = n % 10, t = n % 100; return d >= 2 && d <= 4 && (t < 12 || t > 14) ? few : many; };
   const date = ts => new Date(ts).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 
+  // Reminders and the app shortcut open index.html#szybkie: go straight to the exam with most due.
+  const quick = () => location.replace(`${window.EXAM_PROFILES[window.HubDue.pick()].href}#szybkie`);
+  window.addEventListener("hashchange", () => { if (location.hash === "#szybkie") quick(); });
+  if (location.hash === "#szybkie") return quick();
+
   const list = document.getElementById("exams");
   const saved = load("exam-hub:launcher", {});
 
@@ -20,14 +25,14 @@
     const study = load(`study:${id}:v1`, null);
     const okTotal = study?.summary ? Object.values(study.summary).reduce((s, x) => s + x.ok, 0) : 0;
     // Counted live: questions fall due while the app is closed.
-    const now = Date.now();
-    const due = study?.ans ? Object.entries(study.ans).filter(([q, a]) => p.all.includes(q) && window.SRS.isDue(window.SRS.migrate(a), now)).length : 0;
+    const due = window.HubDue.count(id);
     return `
     <article class="card exam" aria-labelledby="h-${id}">
       <div>
         <h2 id="h-${id}">${esc(p.title)}</h2>
         <p class="meta">${esc(p.vendor)} · ${total} ${plural(total, "pytanie", "pytania", "pytań")} w bazie</p>
       </div>
+      <a class="btn btn-block quick" href="${esc(p.href)}#szybkie"><b>Szybka piątka</b><span>${due ? `${due} do powtórki` : "5 pytań · ok. 3 min"}</span></a>
       ${running ? `<div class="resume">
         <p>Niedokończony egzamin: pytanie ${attempt.current + 1} z ${attempt.count}${attempt.deadline ? ` · zostało ${clock(attempt.deadline - Date.now())}` : ""}</p>
         <a class="btn btn-primary btn-block" href="${esc(p.href)}#egzamin">Wróć do egzaminu</a>
@@ -134,6 +139,8 @@
     mark();
     picker.addEventListener("click", e => { const b = e.target.closest("[data-theme-choice]"); if (b) { HubTheme.set(b.dataset.themeChoice); mark(); } });
   }
+
+  window.HubDue.publish();
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

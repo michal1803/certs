@@ -26,6 +26,18 @@
   <div class="exam-list" id="exams">
     <noscript><p class="note">Exam Hub potrzebuje włączonego JavaScriptu.</p></noscript>
   </div>
+  <section class="card remind" id="remind" aria-labelledby="remind-h">
+    <div>
+      <h2 id="remind-h">Codzienna szybka piątka</h2>
+      <p class="muted">Kilka minut dziennie daje więcej niż jedna długa sesja raz w tygodniu. Wybierz godzinę, a przypomnienie otworzy 5 pytań z tych, które czekają na powtórkę.</p>
+    </div>
+    <div class="field remind-time"><label for="remind-time">Godzina przypomnienia</label><input class="select" type="time" id="remind-time" value="19:00" required></div>
+    <div class="remind-actions">
+      <div data-push hidden></div>
+      <button class="btn" type="button" data-ics>Dodaj do kalendarza</button>
+    </div>
+    <p class="small muted" data-remind-status role="status"></p>
+  </section>
   <footer>
     <div class="theme-pick"><span id="theme-l">Motyw</span><div class="seg" role="radiogroup" aria-labelledby="theme-l">
       <button role="radio" data-theme-choice="system">Systemowy</button>
@@ -38,5 +50,6 @@
 </main>
 <script src="assets/exam-data.js"></script>
 <script src="assets/launcher.js"></script>
+<script src="assets/remind.js"></script>
 </body>
 </html>

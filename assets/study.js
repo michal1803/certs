@@ -40,11 +40,18 @@
     S.starCount = S.stars.length;
     S.savedAt = Date.now();
     store(KEY, S);
+    clearTimeout(save.t); save.t = setTimeout(() => window.HubDue?.publish(), 400);
   }
 
   /* ---------- session: what you saw, in order, so Back works ---------- */
   let session = (() => { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch (e) { return null; } })();
   if (!session || !Array.isArray(session.history)) session = { history: [], pos: -1, scope: { domain: "", set: "all" }, revealed: {} };
+  /* Quick five: a short session of QUICK distinct questions (session.quick),
+     opened from #szybkie (launcher button, app shortcut, reminder). While it
+     runs the hash is #szybka, so a reload resumes it and #szybkie starts anew. */
+  const QUICK = 5;
+  const quickDone = () => !!session.quick && session.quick.done.length >= session.quick.n;
+  const keyed = id => questions[id].correct.length > 0 && questions[id].options.length > 0;
   const saveSession = () => { try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch (e) {} };
   let draft = {};          // unchecked selections per question in this view
   let peeked = {};         // answers revealed without counting
@@ -71,7 +78,12 @@
 
   function pickNext() {
     const cur = session.history[session.pos];
-    const pool = order.filter(inScope);
+    let pool = order.filter(inScope);
+    if (session.quick) {
+      // Distinct questions, and ones you can answer by tapping (hotspots need images and comments).
+      pool = pool.filter(id => !session.quick.done.includes(id));
+      if (pool.some(keyed)) pool = pool.filter(keyed);
+    }
     if (!pool.length) return null;
     if (S.order === "bank") {
       const i = cur ? pool.indexOf(cur) : -1;
@@ -91,7 +103,10 @@
     const scoreOf = id => S.ans[id] ? score(id) : 2; // new: after due reviews
 
     const best = Math.min(...list.map(scoreOf));
-    return shuffle(list.filter(id => scoreOf(id) - best < 0.25))[0];
+    const top = list.filter(id => scoreOf(id) - best < 0.25);
+    // Mix domains: avoid the domain you just saw when another is as urgent.
+    const other = cur ? top.filter(id => questions[id].domain !== questions[cur].domain) : [];
+    return shuffle(other.length ? other : top)[0];
   }
 
   /* ---------- root ---------- */
@@ -107,6 +122,7 @@
   const $ = sel => root.querySelector(sel);
 
   function goTo(id, push = true) {
+    if (!id && session.quick?.done.length) { session.quick.n = session.quick.done.length; saveSession(); return renderQuickDone(); }
     if (!id) return renderEmpty();
     if (push) {
       session.history = session.history.slice(0, session.pos + 1);
@@ -119,6 +135,7 @@
   }
   const next = () => {
     motion.dir = "next";
+    if (quickDone()) return renderQuickDone();
     if (session.pos < session.history.length - 1) { session.pos++; saveSession(); return render(); }
     goTo(pickNext());
   };
@@ -138,6 +155,16 @@
   }
 
   function topBar() {
+    if (session.quick) {
+      const k = session.quick.done.length, n = session.quick.n;
+      return `
+      <div class="xf-top">
+        <a class="pill icon-btn" href="index.html" aria-label="Wróć do listy egzaminów" title="Egzaminy">${icon("home")}</a>
+        <button class="pill sv-scope" data-act="quit-quick" title="Zakończ szybką piątkę i ucz się dalej">${icon("close")}<span>Szybka piątka</span></button>
+        <span class="pill-gap"></span>
+      </div>
+      <div class="sv-mastery"><span>Pytanie <b>${Math.min(k + 1, n)}</b> z ${n}</span><span class="xf-progress" aria-hidden="true"><i style="width:${k / n * 100}%"></i></span></div>`;
+    }
     const m = mastered();
     const id = session.history[session.pos];
     const starred = id && S.stars.includes(id);
@@ -148,6 +175,45 @@
         ${id ? `<button class="pill icon-btn sv-star" data-act="star" aria-pressed="${starred}" aria-label="${starred ? "Usuń gwiazdkę" : "Dodaj gwiazdkę"}" title="Gwiazdka">${icon("star")}</button>` : `<span class="pill-gap"></span>`}
       </div>
       <div class="sv-mastery"><span>Opanowane <b>${m.ok}</b> z ${m.total}${m.due ? ` · do powtórki ${m.due}` : ""}</span><span class="xf-progress" aria-hidden="true"><i style="width:${m.total ? m.ok / m.total * 100 : 0}%"></i></span></div>`;
+  }
+
+  function startQuick() {
+    session = { history: [], pos: -1, scope: { domain: "", set: "all" }, revealed: {}, quick: { n: QUICK, done: [] } };
+    draft = {}; peeked = {};
+    history.replaceState(null, "", "#szybka");
+    goTo(pickNext());
+  }
+
+  function renderQuickDone() {
+    const now = Date.now(), qk = session.quick;
+    session.quick.finished = true; saveSession();
+    const rows = qk.done.map(id => ({ q: questions[id], a: S.ans[id] }));
+    const ok = rows.filter(r => r.a?.ok).length;
+    const dueLeft = order.filter(id => SRS.isDue(S.ans[id], now)).length;
+    const nextDue = Math.min(...order.map(id => S.ans[id]).filter(a => a && a.due > now).map(a => a.due));
+    const after = dueLeft ? `Do powtórki zostało ${dueLeft} ${plural(dueLeft, "pytanie", "pytania", "pytań")}.`
+      : Number.isFinite(nextDue) ? `Nic więcej nie czeka na powtórkę. Następne pytania wrócą ${SRS.when(nextDue, now)}.` : "";
+    document.title = `${P.title} · szybka piątka`;
+    root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body">
+      <div class="xf-top"><a class="pill icon-btn" href="index.html" aria-label="Wróć do listy egzaminów" title="Egzaminy">${icon("home")}</a></div>
+      <section class="card xf-section sv-quick" aria-labelledby="sv-quick-h">
+        <h1 id="sv-quick-h" class="sv-h1" tabindex="-1">Szybka piątka: ${ok} z ${rows.length}</h1>
+        ${after ? `<p class="muted">${after}</p>` : ""}
+        <ul class="xf-list sv-quick-list">${rows.map(({ q, a }) => `<li><span class="xf-row">
+          <span class="n">${esc(q.num.replace(/^Q/, ""))}</span>
+          <span class="t">${esc(domainOf(q.domain).label)}</span>
+          ${a?.ok ? `<span class="s s-done">${icon("check")}${SRS.when(a.due, now)}</span>` : `<span class="s s-open">${icon("x")}wróci</span>`}
+        </span></li>`).join("")}</ul>
+        <button class="btn btn-quiet" data-act="quit-quick">${icon("book")}Ucz się dalej bez limitu</button>
+      </section>
+    </div>
+    <nav class="xf-bar" aria-label="Szybka piątka"><div class="xf-bar-inner" style="grid-template-columns:1fr 1.5fr">
+      <a class="btn" href="index.html">Egzaminy</a>
+      <button class="btn btn-primary" data-act="quick-again">Jeszcze ${QUICK} pytań</button>
+    </div></nav></div>`;
+    root.scrollTop = 0;
+    $("h1").focus({ preventScroll: true });
+    announce(`Koniec. ${ok} z ${rows.length} dobrze.`);
   }
 
   function renderEmpty() {
@@ -192,7 +258,7 @@
     const changed = id !== lastRendered; lastRendered = id;
     const cardMotion = justChecked ? "is-checked" : changed ? `xf-enter-${motion.dir}` : "";
     motion.dir = "next";
-    document.title = `${P.title} · nauka`;
+    document.title = `${P.title} · ${session.quick ? "szybka piątka" : "nauka"}`;
 
     const parts = q.parts.map(p => p.kind === "text"
       ? `<div class="xf-qtext">${p.html}</div>`
@@ -289,6 +355,7 @@
     const { box, due } = SRS.step(prev, ok, now);
     S.ans[id] = { sel, ok, at: now, n: (prev?.n || 0) + 1, streak: ok ? (prev?.ok ? prev.streak + 1 : 1) : 0, box, due };
     if (kind === "self") S.ans[id].self = true;
+    if (session.quick && !session.quick.done.includes(id)) session.quick.done.push(id);
     save();
     return { due, early: !!prev && prev.ok && due === prev.due };
   }
@@ -399,6 +466,12 @@
       case "next": return next();
       case "back": return back();
       case "list": return openList();
+      case "quick-again": return startQuick();
+      case "quit-quick": {
+        const finished = quickDone();
+        session.quick = null; saveSession(); history.replaceState(null, "", "#nauka");
+        return session.pos >= 0 && !finished ? render() : goTo(pickNext());
+      }
       case "all": session.scope = { domain: "", set: "all" }; saveSession(); return goTo(pickNext());
       case "star": {
         S.stars = S.stars.includes(id) ? S.stars.filter(x => x !== id) : [...S.stars, id];
@@ -455,6 +528,13 @@
 
   /* ---------- start ---------- */
   function boot() {
+    if (location.hash === "#szybkie" || location.hash === "#szybka") {
+      save();
+      if (location.hash === "#szybkie" || !session.quick) return startQuick();
+      if (session.quick.finished) return renderQuickDone();
+      return session.pos >= 0 && questions[session.history[session.pos]] ? render() : goTo(pickNext());
+    }
+    if (session.quick) { session.quick = null; saveSession(); }
     const fromHash = scopeFromHash();
     if (fromHash === "@exam") {
       session.scope = { domain: "", set: "exam" };
