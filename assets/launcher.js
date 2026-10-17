@@ -19,6 +19,9 @@
     const total = p.all.length;
     const study = load(`study:${id}:v1`, null);
     const okTotal = study?.summary ? Object.values(study.summary).reduce((s, x) => s + x.ok, 0) : 0;
+    // Counted live: questions fall due while the app is closed.
+    const now = Date.now();
+    const due = study?.ans ? Object.entries(study.ans).filter(([q, a]) => p.all.includes(q) && window.SRS.isDue(window.SRS.migrate(a), now)).length : 0;
     return `
     <article class="card exam" aria-labelledby="h-${id}">
       <div>
@@ -50,11 +53,12 @@
       <div role="tabpanel" id="p-${id}-study" aria-labelledby="t-${id}-study"${mode === "study" ? "" : " hidden"}>
         ${study?.summary ? `<ul class="facts">
           <li>Opanowane ${okTotal} z ${total}</li>
+          <li>Do powtórki ${due}</li>
           <li>Błędne ${study.wrong || 0}</li>
           <li>Gwiazdki ${study.starCount || 0}</li>
         </ul>
         <ul class="split mastery" aria-label="Opanowane pytania w każdej domenie">${p.domains.map(d => { const s = study.summary[d.id] || { total: 0, ok: 0 }; return `<li><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${s.total ? s.ok / s.total * 100 : 0}%"></i></span><b>${s.ok}/${s.total}</b></li>`; }).join("")}</ul>`
-        : `<p class="muted">Jedno pytanie na ekranie z natychmiastową odpowiedzią i komentarzami społeczności. Najpierw nowe i błędne pytania, opanowane wracają rzadziej.</p>`}
+        : `<p class="muted">Jedno pytanie na ekranie z natychmiastową odpowiedzią i komentarzami społeczności. Najpierw błędne i te, których termin powtórki minął. Każda dobra odpowiedź wydłuża odstęp: 1, 3, 7, 14, 30 dni.</p>`}
         <div class="field">
           <label for="s-${id}">Zakres</label>
           <select class="select" id="s-${id}">

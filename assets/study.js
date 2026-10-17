@@ -3,7 +3,7 @@
    questions first, mastered ones later). Questions come from Hub (core.js);
    their markup is never changed. Progress is per browser. */
 (() => {
-  const { esc, load, store, plural, shuffle, icon, profile: P, questions, order, domainOf, examId, motion, pop, removeAfterClose } = Hub;
+  const { esc, load, store, plural, shuffle, icon, profile: P, questions, order, domainOf, examId, motion, pop, removeAfterClose, reduced } = Hub;
   if (!P) return;
   const KEY = `study:${examId}:v1`;
   const SESSION_KEY = `study-session:${examId}`;
@@ -23,15 +23,17 @@
     });
     S.stars = (legacyUi.stars || []).filter(id => questions[id]);
   }
+  Object.values(S.ans).forEach(SRS.migrate);
   function save() {
     // Summary for the launcher, which cannot read the question bank.
     const summary = {};
+    // ok = mastered (box 3+), not just "last answer right".
     P.domains.forEach(d => { summary[d.id] = { total: 0, seen: 0, ok: 0 }; });
     order.forEach(id => {
       const s = summary[questions[id].domain]; if (!s) return;
       s.total++;
       const a = S.ans[id];
-      if (a) { s.seen++; if (a.ok) s.ok++; }
+      if (a) { s.seen++; if (SRS.mastered(a)) s.ok++; }
     });
     S.summary = summary;
     S.wrong = order.filter(id => S.ans[id] && !S.ans[id].ok).length;
@@ -50,16 +52,20 @@
   let lastRendered = null;
 
   const scopeFromHash = () => {
+    if (location.hash === "#nauka:egzamin") return "@exam";
     const m = location.hash.match(/^#nauka(?:=([a-z-]+))?$/);
     return m ? (m[1] && P.domains.some(d => d.id === m[1]) ? m[1] : "") : null;
   };
+  const examFocus = () => { try { return JSON.parse(sessionStorage.getItem(`study-focus:${examId}`)) || []; } catch (e) { return []; } };
 
   function inScope(id) {
     const q = questions[id], sc = session.scope;
     if (sc.domain && q.domain !== sc.domain) return false;
     if (sc.set === "new") return !S.ans[id];
+    if (sc.set === "due") return SRS.isDue(S.ans[id], Date.now());
     if (sc.set === "wrong") return !!S.ans[id] && !S.ans[id].ok;
     if (sc.set === "star") return S.stars.includes(id);
+    if (sc.set === "exam") return examFocus().includes(id);
     return true;
   }
 
@@ -78,12 +84,14 @@
     const now = Date.now();
     const score = id => {
       const a = S.ans[id];
-      if (!a) return 1;                      // new
       if (!a.ok) return 0;                   // missed: soonest
-      return 2 + a.streak - Math.min(1, (now - a.at) / 864e5 / 7); // mastered: later, older first
+      if (a.due <= now) return 1 - Math.min(0.2, (now - a.due) / 864e5 / 30); // due review, most overdue first
+      return 3 + Math.min(1, (a.due - now) / 864e5 / 30);                     // not due yet: soonest first
     };
-    const best = Math.min(...list.map(score));
-    return shuffle(list.filter(id => score(id) - best < 0.25))[0];
+    const scoreOf = id => S.ans[id] ? score(id) : 2; // new: after due reviews
+
+    const best = Math.min(...list.map(scoreOf));
+    return shuffle(list.filter(id => scoreOf(id) - best < 0.25))[0];
   }
 
   /* ---------- root ---------- */
@@ -118,12 +126,13 @@
 
   function mastered() {
     const ids = order.filter(id => !session.scope.domain || questions[id].domain === session.scope.domain);
-    return { ok: ids.filter(id => S.ans[id]?.ok).length, total: ids.length };
+    const now = Date.now();
+    return { ok: ids.filter(id => SRS.mastered(S.ans[id])).length, due: ids.filter(id => SRS.isDue(S.ans[id], now)).length, total: ids.length };
   }
 
   function scopeLabel() {
     const sc = session.scope;
-    const set = { all: "", new: "nowe", wrong: "błędne", star: "z gwiazdką" }[sc.set];
+    const set = { all: "", due: "do powtórki", new: "nowe", wrong: "błędne", star: "z gwiazdką", exam: "błędne z egzaminu" }[sc.set];
     const dom = sc.domain ? domainOf(sc.domain).label : "Wszystkie";
     return set ? `${dom} · ${set}` : dom;
   }
@@ -138,12 +147,12 @@
         <button class="pill sv-scope" data-act="list" aria-haspopup="dialog">${icon("list")}<span>${esc(scopeLabel())}</span></button>
         ${id ? `<button class="pill icon-btn sv-star" data-act="star" aria-pressed="${starred}" aria-label="${starred ? "Usuń gwiazdkę" : "Dodaj gwiazdkę"}" title="Gwiazdka">${icon("star")}</button>` : `<span class="pill-gap"></span>`}
       </div>
-      <div class="sv-mastery"><span>Opanowane <b>${m.ok}</b> z ${m.total}</span><span class="xf-progress" aria-hidden="true"><i style="width:${m.total ? m.ok / m.total * 100 : 0}%"></i></span></div>`;
+      <div class="sv-mastery"><span>Opanowane <b>${m.ok}</b> z ${m.total}${m.due ? ` · do powtórki ${m.due}` : ""}</span><span class="xf-progress" aria-hidden="true"><i style="width:${m.total ? m.ok / m.total * 100 : 0}%"></i></span></div>`;
   }
 
   function renderEmpty() {
     const sc = session.scope;
-    const why = sc.set === "wrong" ? "Nie masz błędnych odpowiedzi w tym zakresie." : sc.set === "star" ? "Nie dodałeś jeszcze gwiazdek w tym zakresie." : sc.set === "new" ? "Odpowiedziałeś już na wszystkie pytania w tym zakresie." : "Brak pytań w tym zakresie.";
+    const why = sc.set === "due" ? "Nic nie czeka na powtórkę w tym zakresie. Wróć później albo ucz się nowych pytań." : sc.set === "wrong" ? "Nie masz błędnych odpowiedzi w tym zakresie." : sc.set === "star" ? "Nie dodałeś jeszcze gwiazdek w tym zakresie." : sc.set === "new" ? "Odpowiedziałeś już na wszystkie pytania w tym zakresie." : "Brak pytań w tym zakresie.";
     root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body">${topBar()}
       <section class="card xf-section" style="margin-top:16px"><h1 class="sv-h1" tabindex="-1">Nic do nauki</h1><p class="muted">${why}</p>
       <button class="btn btn-primary btn-block" data-act="all">Ucz się ze wszystkich pytań</button></section></div></div>`;
@@ -211,7 +220,7 @@
         const ok = rec.kind === "answer" && rec.ok;
         answerBlock += rec.kind === "peek"
           ? `<p class="sv-result neutral">${icon("eye")}<span>Podejrzana odpowiedź: <b>${q.correct.join(", ")}</b>. Nie liczy się do postępu.</span></p>`
-          : `<p class="sv-result ${ok ? "ok" : "bad"}">${icon(ok ? "check" : "x")}<span>${ok ? "Dobrze." : `Źle. Poprawna odpowiedź: <b>${q.correct.join(", ")}</b>.`}</span></p>`;
+          : `<p class="sv-result ${ok ? "ok" : "bad"}">${icon(ok ? "check" : "x")}<span>${ok ? `Dobrze. ${nextLine(rec)}` : `Źle. Poprawna odpowiedź: <b>${q.correct.join(", ")}</b>.`}</span></p>`;
         answerBlock += `<div class="sv-after"><button class="btn btn-quiet" data-act="retry">${icon("undo")}Odpowiedz jeszcze raz</button></div>`;
         answerBlock += communityHTML(q, false);
       } else {
@@ -228,7 +237,7 @@
           ${q.answerArea.length ? `<div class="xf-exhibit">${q.answerArea.map(src => `<figure><figcaption>Pole odpowiedzi z pytania (bez rozwiązania)</figcaption><img src="${esc(src)}" alt="Pole odpowiedzi" loading="lazy" data-src="${esc(src)}"></figure>`).join("")}</div>` : ""}
           ${communityHTML(q, true)}
           ${rec.kind === "self"
-            ? `<p class="sv-result ${rec.ok ? "ok" : "bad"}">${icon(rec.ok ? "check" : "x")}<span>${rec.ok ? "Oznaczone jako: wiedziałem." : "Oznaczone jako: nie wiedziałem. Wróci w kolejce."}</span></p>`
+            ? `<p class="sv-result ${rec.ok ? "ok" : "bad"}">${icon(rec.ok ? "check" : "x")}<span>${rec.ok ? `Oznaczone jako: wiedziałem. ${nextLine(rec)}` : "Oznaczone jako: nie wiedziałem. Wróci w kolejce."}</span></p>`
             : `<div class="sv-self"><p><b>Jak poszło?</b></p><div class="sv-self-btns"><button class="btn" data-self="0">${icon("x")}Nie wiedziałem</button><button class="btn" data-self="1">${icon("check")}Wiedziałem</button></div></div>`}`;
       }
     }
@@ -259,7 +268,9 @@
       img.closest("figure").innerHTML = `<p class="xf-imgfail">Nie udało się wczytać obrazka. <a href="${esc(img.dataset.src)}" target="_blank" rel="noopener">Otwórz w nowej karcie</a></p>`;
     }, { once: true }));
     applyLimit(q, checked);
-    root.scrollTop = 0;
+    // After "Sprawdź" bring the verdict into view (it can sit below the fold on a phone).
+    if (justChecked) $(".sv-result, .sv-self")?.scrollIntoView({ block: "nearest", behavior: reduced() ? "auto" : "smooth" });
+    else root.scrollTop = 0;
     $("#sv-qh").focus({ preventScroll: true });
   }
 
@@ -272,20 +283,25 @@
     if (hint) hint.textContent = `Wybierz ${q.correct.length}. Zaznaczono ${n}.`;
   }
 
+  // Returns what the result line needs: next due date and whether it moved.
   function record(id, ok, sel, kind) {
-    const prev = S.ans[id];
-    S.ans[id] = { sel, ok, at: Date.now(), n: (prev?.n || 0) + 1, streak: ok ? (prev?.ok ? prev.streak + 1 : 1) : 0 };
+    const prev = S.ans[id], now = Date.now();
+    const { box, due } = SRS.step(prev, ok, now);
+    S.ans[id] = { sel, ok, at: now, n: (prev?.n || 0) + 1, streak: ok ? (prev?.ok ? prev.streak + 1 : 1) : 0, box, due };
     if (kind === "self") S.ans[id].self = true;
     save();
+    return { due, early: !!prev && prev.ok && due === prev.due };
   }
+  const nextLine = rec => !rec.due ? "" : rec.early
+    ? `Termin powtórki jeszcze nie minął, więc poziom się nie zmienia (powtórka ${SRS.when(rec.due, Date.now())}).`
+    : `Następna powtórka ${SRS.when(rec.due, Date.now())}.`;
 
   function check() {
     const id = session.history[session.pos], q = questions[id];
     const sel = draft[id] || [];
     if (!sel.length) return;
     const ok = sel.length === q.correct.length && sel.every(v => q.correct.includes(v));
-    record(id, ok, sel, "answer");
-    session.revealed[id] = { kind: "answer", ok, sel };
+    session.revealed[id] = { kind: "answer", ok, sel, ...record(id, ok, sel, "answer") };
     revealPending = id;
     delete draft[id];
     saveSession();
@@ -299,7 +315,7 @@
     dlg.className = "xf-sheet sv-sheet";
     dlg.setAttribute("aria-labelledby", "sv-list-h");
     const sc = session.scope;
-    const sets = [["all", "Wszystkie"], ["new", "Nowe"], ["wrong", "Błędne"], ["star", "Gwiazdki"]];
+    const sets = [["all", "Wszystkie"], ["due", "Do powtórki"], ["new", "Nowe"], ["wrong", "Błędne"], ["star", "Gwiazdki"], ...(examFocus().length ? [["exam", "Z egzaminu"]] : [])];
     dlg.innerHTML = `<div class="xf-sheet-in">
       <div class="xf-sheet-head"><h2 id="sv-list-h">Pytania</h2><button class="btn btn-quiet icon-btn" data-close aria-label="Zamknij">${icon("close")}</button></div>
       <div class="sv-search">${icon("search")}<input type="search" placeholder="Szukaj w pytaniach, np. peering, Q120" aria-label="Szukaj w pytaniach" autocomplete="off"></div>
@@ -323,7 +339,7 @@
       dlg.querySelector("[data-count]").textContent = `${ids.length} ${plural(ids.length, "pytanie", "pytania", "pytań")}`;
       dlg.querySelector("[data-list]").innerHTML = ids.slice(0, 300).map(id => {
         const q = questions[id], a = S.ans[id];
-        const st = !a ? `<span class="s s-lock">nowe</span>` : a.ok ? `<span class="s s-done">${icon("check")}dobrze</span>` : `<span class="s s-open">${icon("x")}źle</span>`;
+        const st = !a ? `<span class="s s-lock">nowe</span>` : a.ok ? `<span class="s s-done">${icon("check")}${SRS.mastered(a) ? "opanowane" : "dobrze"}</span>` : `<span class="s s-open">${icon("x")}źle</span>`;
         return `<li><button class="xf-row" data-jump="${id}"><span class="n">${esc(q.num.replace(/^Q/, ""))}</span><span class="t">${esc(q.text.slice(0, 140))}</span>${st}<span class="time">${S.stars.includes(id) ? icon("star", "gwiazdka") : ""}</span></button></li>`;
       }).join("") || `<li class="note">${icon("info")}<span>Nic nie pasuje do wyszukiwania i filtrów.</span></li>`;
     };
@@ -373,8 +389,7 @@
     const id = session.history[session.pos];
     if (t.dataset.self !== undefined) {
       const ok = t.dataset.self === "1";
-      record(id, ok, [], "self");
-      session.revealed[id] = { kind: "self", ok };
+      session.revealed[id] = { kind: "self", ok, ...record(id, ok, [], "self") };
       revealPending = id;
       saveSession();
       return render();
@@ -431,6 +446,8 @@
     } else if (e.key === "Enter" && !(e.target instanceof HTMLButtonElement) && !(e.target instanceof HTMLAnchorElement) && !(e.target instanceof HTMLElement && e.target.closest("summary"))) {
       const p = root.querySelector(".xf-bar-inner").lastElementChild;
       if (p) { e.preventDefault(); p.click(); }
+    } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && e.target instanceof Element && e.target.matches("input[type=radio], input[type=checkbox]")) {
+      return; // native radio-group arrows move the choice, not the question
     } else if (e.key === "ArrowRight") { e.preventDefault(); next(); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); back(); }
     else if (k === "s") { e.preventDefault(); root.querySelector('[data-act="star"]')?.click(); }
@@ -439,7 +456,11 @@
   /* ---------- start ---------- */
   function boot() {
     const fromHash = scopeFromHash();
-    if (fromHash !== null && fromHash !== session.scope.domain) {
+    if (fromHash === "@exam") {
+      session.scope = { domain: "", set: "exam" };
+      session.history = []; session.pos = -1; session.revealed = {};
+      history.replaceState(null, "", "#nauka");
+    } else if (fromHash !== null && fromHash !== session.scope.domain) {
       session.scope = { domain: fromHash, set: "all" };
       session.history = []; session.pos = -1; session.revealed = {};
     }
