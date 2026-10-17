@@ -18,6 +18,9 @@
         // HashiCorp publishes no question count, passing score or domain weights.
         passing: null,
         partialCredit: false,
+        // The bank (28) is far smaller than the real exam (~57, unofficial), so
+        // this is a timed drill at the real pace (~63 s per question), not a mock.
+        drill: { secondsPerQuestion: 63, realMinutes: 60, realCount: "ok. 57 (nieoficjalnie)" },
         questionTypes: "prawda/fałsz, jednokrotny i wielokrotny wybór",
         source: "https://developer.hashicorp.com/certifications/terraform-associate",
         verified: "2026-10-09",
@@ -74,6 +77,14 @@
 
   const weightOf = d => d.weight ?? (d.range[0] + d.range[1]) / 2;
 
+  /* Time limit for an exam of n questions: the official limit, or for a
+     drill the real exam pace scaled to the number of questions. */
+  window.examMinutes = function (profile, n) {
+    const drill = profile.exam.drill;
+    return drill ? Math.ceil(n * drill.secondsPerQuestion / 60) : profile.exam.minutes;
+  };
+  window.examLabel = profile => profile.exam.drill ? "Trening na czas" : "Egzamin";
+
   /* Questions per domain for an exam of n questions (largest-remainder
      apportionment of the weights). `available` ({domainId: count}) caps a
      domain at what the bank holds; the shortfall goes to the other domains
@@ -105,5 +116,38 @@
       open = open.filter(d => !available || quotas[d.id] < available[d.id]);
     }
     return quotas;
+  };
+
+  /* Spaced repetition (Leitner boxes) for study progress. Box 0 = missed,
+     back in the same session; a correct answer moves one box up and waits
+     DAYS[box] before it is due again. A correct answer before the due date
+     keeps the box (the gap is what makes it stick); a miss always drops to 0.
+     "Mastered" = box 3 or higher: right three times with growing gaps. */
+  const DAY = 864e5;
+  const DAYS = [0, 1, 3, 7, 14, 30];
+  const MASTERED = 3;
+  window.SRS = {
+    DAYS, MASTERED,
+    // Progress saved before boxes existed: a streak of n right answers = box n.
+    migrate(a) {
+      if (!a || a.box !== undefined) return a;
+      a.box = a.ok ? Math.min(a.streak || 1, DAYS.length - 1) : 0;
+      a.due = a.at + DAYS[a.box] * DAY;
+      return a;
+    },
+    // Next box and due date after an answer; prev may be undefined (new).
+    step(prev, ok, now) {
+      if (!ok) return { box: 0, due: now };
+      if (prev && prev.ok && prev.box > 0 && now < prev.due) return { box: prev.box, due: prev.due };
+      const box = prev ? Math.min(prev.box + 1, DAYS.length - 1) : 1;
+      return { box, due: now + DAYS[box] * DAY };
+    },
+    isDue: (a, now) => !!a && a.due <= now,
+    mastered: a => !!a && a.ok && a.box >= MASTERED,
+    // "dziś", "jutro", "za 3 dni"
+    when(due, now) {
+      const days = Math.ceil((due - now) / DAY);
+      return days <= 0 ? "dziś" : days === 1 ? "jutro" : `za ${days} dni`;
+    },
   };
 })();

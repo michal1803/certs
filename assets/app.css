@@ -132,6 +132,8 @@ html { background: var(--ground); }
   outline-offset: 2px;
   border-radius: 8px;
 }
+/* Headings get focus from code (for screen readers), not from the user: no ring. */
+.xf [tabindex="-1"]:focus-visible { outline: none; }
 .xf h1, .xf h2, .xf h3, .xf p, .launcher h1, .launcher h2, .launcher h3, .launcher p { margin: 0; }
 
 .icon { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -153,6 +155,8 @@ html { background: var(--ground); }
 .btn-quiet { border-color: transparent; background: transparent; }
 .btn-quiet:hover { background: var(--surface); }
 .btn-block { width: 100%; }
+.btn-danger { color: var(--bad); border-color: var(--bad); }
+.btn-danger:hover { background: var(--bad-tint); }
 
 .pill {
   display: inline-flex; align-items: center; gap: 8px;
@@ -328,6 +332,16 @@ body.xf-active { overflow: hidden !important; }
 .xf-facts b { display: block; font-size: 22px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
 .xf-facts span { font-size: 14px; color: var(--text-2); }
 .xf-rules { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.xf-keyrules { gap: 8px; }
+.xf-more summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+.xf-more summary::-webkit-details-marker { display: none; }
+.xf-more summary::after { content: ""; width: 9px; height: 9px; margin-right: 4px; border: solid var(--text-2); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .2s var(--ease); }
+.xf-more[open] summary::after { transform: rotate(-135deg); }
+.xf-more:not([open]) { gap: 0; }
+.xf-weak { display: flex; gap: 10px; align-items: flex-start; margin-top: 4px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--surface); text-align: left; }
+.xf-weak .icon { margin-top: 2px; color: var(--text-2); flex: none; }
+.xf-next { margin-top: 12px; display: grid; gap: 8px; }
+.xf-ans .skip { color: var(--text-2); font-weight: 800; text-align: center; }
 .switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
 .switch input { appearance: none; width: 52px; height: 32px; flex: none; border-radius: 999px; background: var(--border-strong); position: relative; cursor: pointer; transition: background-color .15s; }
 .switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s var(--ease); }
@@ -474,6 +488,7 @@ body.xf-active { overflow: hidden !important; }
 .is-wrong .sv-tag { color: var(--bad); }
 .sv-tag .icon { width: 16px; height: 16px; }
 .sv-result { margin-top: 12px; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius-sm); font-weight: 700; }
+.sv-result, .sv-self { scroll-margin: 16px 0 calc(96px + env(safe-area-inset-bottom)); }
 .sv-result.ok { background: var(--ok-tint); color: var(--ok); }
 .sv-result.bad { background: var(--bad-tint); color: var(--bad); }
 .sv-result.neutral { background: var(--surface); color: var(--text); }

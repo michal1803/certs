@@ -43,7 +43,8 @@
     A = {
       v: 1, status: "running", count: pool.length, pool, current: 0,
       answers: {}, flags: [], locked: [], spent: {}, seen: [],
-      startedAt: now, deadline: untimed ? null : now + P.exam.minutes * 60000,
+      startedAt: now, minutes: window.examMinutes(P, pool.length),
+      deadline: untimed ? null : now + window.examMinutes(P, pool.length) * 60000,
       warned: [], timeUp: false, finishedAt: null,
     };
     save();
@@ -137,45 +138,54 @@
     const counts = P.exam.counts;
     const count = counts.includes(hashCount) ? hashCount : P.exam.defaultCount;
     const running = A && A.status === "running" && A.seen.length;
+    const drill = P.exam.drill;
+    const lead = drill
+      ? `Trening na czas: tempo prawdziwego egzaminu, ok. 1 minuty na pytanie. Prawdziwy egzamin ${esc(P.vendor)} trwa ${drill.realMinutes} minut i ma ${esc(drill.realCount)} pytań, a baza ma ich ${P.all.length}.`
+      : `Symulacja egzaminu ${esc(P.vendor)}: ten sam czas i te same proporcje domen.`;
+    const keyRules = [
+      P.exam.rules?.seriesNoReturn ? "Do pytań z serii Tak/Nie nie wrócisz po przejściu dalej." : "",
+      P.exam.rules?.breaks ? "Przerwa jest możliwa poza serią Tak/Nie. Zegar biegnie, a pytań sprzed przerwy już nie zobaczysz." : "",
+    ].filter(Boolean);
     root.innerHTML = `
       <div class="xf-screen"><div class="xf-col xf-body">
         <div class="xf-top"><a class="btn btn-quiet" href="index.html">${icon("left")}Egzaminy</a></div>
-        <div class="xf-head"><h1 tabindex="-1">${esc(P.title)}</h1><p>Symulacja egzaminu ${esc(P.vendor)}: ten sam czas i te same proporcje domen.</p></div>
+        <div class="xf-head"><h1 tabindex="-1">${esc(P.title)}</h1><p>${lead}</p></div>
         ${running ? `
         <section class="card xf-section" aria-labelledby="resume-h">
-          <h2 id="resume-h">Niedokończony egzamin</h2>
+          <h2 id="resume-h">Niedokończony ${drill ? "trening" : "egzamin"}</h2>
           <p>Pytanie ${A.current + 1} z ${A.count}${A.deadline ? ` · zostało ${clock(remaining())}` : " · bez limitu czasu"}. Zegar biegnie dalej, tak jak na prawdziwym egzaminie.</p>
           <button class="btn btn-primary btn-block" data-act="resume">Wróć do egzaminu</button>
-          <button class="btn btn-block" data-act="abandon">Porzuć i zacznij od nowa</button>
+          <button class="btn btn-danger btn-block" data-act="abandon">Porzuć ten egzamin</button>
         </section>` : ""}
         <section class="card xf-section" aria-labelledby="setup-h">
           <h2 id="setup-h">Ustawienia</h2>
           <div class="field"><label for="xf-count">Liczba pytań</label>
             <select class="select" id="xf-count">${counts.map(n => `<option value="${n}"${n === count ? " selected" : ""}>${n} ${plural(n, "pytanie", "pytania", "pytań")}</option>`).join("")}</select></div>
           <div class="xf-facts">
-            <div><b data-f="count">${count}</b><span>pytań</span></div>
-            <div><b>${P.exam.minutes}</b><span>minut</span></div>
-            <div><b>${P.exam.passing ? P.exam.passing.score : "brak"}</b><span>${P.exam.passing ? `próg z ${P.exam.passing.scale}` : "progu"}</span></div>
+            <div><b data-f="minutes">${window.examMinutes(P, count)}</b><span>minut${drill ? " (tempo)" : ""}</span></div>
+            <div><b>${P.exam.passing ? P.exam.passing.score : "brak"}</b><span>${P.exam.passing ? `próg z ${P.exam.passing.scale}` : "oficjalnego progu"}</span></div>
           </div>
           <div><h3 class="small muted" style="margin-bottom:8px">Pytania z każdej domeny</h3><ul class="split" data-split></ul></div>
           ${P.weightsAreProxy ? `<p class="note">${icon("info")}<span>${esc(P.vendor)} nie publikuje wag domen ani progu. Proporcje liczymy z liczby celów egzaminacyjnych w każdej domenie.</span></p>` : ""}
-          <label class="switch"><span><b>Bez limitu czasu</b><br><span class="small muted">Dla nauki w swoim tempie. Prawdziwy egzamin ma ${P.exam.minutes} minut.</span></span><input type="checkbox" id="xf-untimed"></label>
+          <label class="switch"><span><b>Bez limitu czasu</b><br><span class="small muted">Dla nauki w swoim tempie.</span></span><input type="checkbox" id="xf-untimed"></label>
         </section>
-        <section class="card xf-section" aria-labelledby="rules-h">
-          <h2 id="rules-h">Jak to działa</h2>
+        ${keyRules.length ? `<section class="card xf-section xf-keyrules" aria-label="Ważne zasady">${keyRules.map(r => `<p class="note warn">${icon("lock")}<span>${r}</span></p>`).join("")}</section>` : ""}
+        <details class="card xf-section xf-more">
+          <summary><h2>Jak to działa</h2></summary>
           <ul class="xf-rules">
             <li>Jedno pytanie na ekranie. Możesz oznaczać pytania i wracać do nich przed oddaniem.</li>
             <li>Komentarze, wyszukiwarka i podpowiedzi są niedostępne do końca egzaminu.</li>
             <li>Typy pytań: ${esc(P.exam.questionTypes)}. Pytania bez klucza odpowiedzi (hotspot, drag &amp; drop) zostają w trybie Nauka.</li>
-            ${P.exam.rules?.seriesNoReturn ? "<li>Do pytań z serii Tak/Nie nie można wrócić po przejściu dalej, tak jak na egzaminie Microsoft.</li>" : ""}
             ${P.exam.rules?.learnUrl ? "<li>Możesz otworzyć Microsoft Learn w nowej karcie. Zegar w tym czasie biegnie.</li>" : ""}
-            ${P.exam.rules?.breaks ? "<li>Możesz zrobić przerwę (poza serią Tak/Nie). Zegar biegnie dalej, a po przerwie nie wrócisz do pytań widzianych przed nią.</li>" : ""}
             <li>Zamknięcie strony nie przerywa egzaminu: po powrocie wracasz do tego samego pytania.</li>
+            <li>Skróty klawiszowe: A–F lub 1–6 wybiera odpowiedź, ← → zmienia pytanie, F oznacza.</li>
           </ul>
-        </section>
-        <div class="xf-actions"><button class="btn btn-primary btn-block" data-act="begin">${running ? "Zacznij nowy egzamin" : "Rozpocznij egzamin"}</button></div>
-        <p class="small muted" style="margin-top:16px">Źródło zasad: oficjalna strona egzaminu, sprawdzone ${esc(P.exam.verified)}. Nieoficjalne narzędzie, niezwiązane z ${esc(P.vendor)}.</p>
-      </div></div>`;
+          <p class="small muted">Źródło zasad: oficjalna strona egzaminu, sprawdzone ${esc(P.exam.verified)}. Nieoficjalne narzędzie, niezwiązane z ${esc(P.vendor)}.</p>
+        </details>
+      </div>
+      <nav class="xf-bar" aria-label="Start"><div class="xf-bar-inner" style="grid-template-columns:1fr">
+        <button class="btn btn-primary" data-act="begin">${running ? "Zacznij nowy egzamin" : `Rozpocznij ${drill ? "trening" : "egzamin"}`}</button>
+      </div></nav></div>`;
     const sel = $("#xf-count", root);
     const renderSplit = () => {
       const n = parseInt(sel.value, 10);
@@ -184,7 +194,7 @@
       const q = window.examQuotas(P, n, avail);
       const max = Math.max(...Object.values(q), 1);
       $("[data-split]", root).innerHTML = P.domains.map(d => `<li><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${(q[d.id] / max) * 100}%"></i></span><b>${q[d.id]}</b></li>`).join("");
-      $('[data-f="count"]', root).textContent = n;
+      $('[data-f="minutes"]', root).textContent = window.examMinutes(P, n);
     };
     sel.addEventListener("change", renderSplit);
     renderSplit();
@@ -369,7 +379,7 @@
         }).join("") : `<li class="note">${icon("check")}<span>Nic tu nie ma: ${reviewFilter === "open" ? "każde pytanie ma odpowiedź" : "nie oznaczono żadnego pytania"}.</span></li>`}</ul>
       </div>
       <nav class="xf-bar" aria-label="Nawigacja przeglądu"><div class="xf-bar-inner" style="grid-template-columns:1fr 1.5fr">
-        <button class="btn" data-act="back">${icon("left")}Pytania</button>
+        <button class="btn" data-act="back">${icon("left")}Do pytań</button>
         <button class="btn btn-primary" data-act="finish">Zakończ egzamin</button>
       </div></nav></div>`;
     renderClock($(".xf-clock", root));
@@ -386,7 +396,9 @@
     dlg.setAttribute("aria-labelledby", "xf-fin-h");
     dlg.innerHTML = `<h2 id="xf-fin-h">Zakończyć egzamin?</h2>
       <p>${unanswered ? `Bez odpowiedzi: ${unanswered}. ` : "Wszystkie pytania mają odpowiedź. "}${flagged ? `Oznaczone: ${flagged}. ` : ""}Po zakończeniu nie zmienisz odpowiedzi.</p>
-      <div class="xf-actions"><button class="btn" data-no>Wróć</button><button class="btn btn-primary" data-yes>Zakończ</button></div>`;
+      <div class="xf-actions">${unanswered
+        ? `<button class="btn" data-yes>Zakończ mimo to</button><button class="btn btn-primary" data-no>Wróć do pytań</button>`
+        : `<button class="btn" data-no>Wróć</button><button class="btn btn-primary" data-yes>Zakończ</button>`}</div>`;
     root.appendChild(dlg);
     dlg.addEventListener("click", e => {
       if (e.target.closest("[data-yes]")) { dlg.close(); finish(false); }
@@ -459,6 +471,27 @@
     showQuestion(i);
   }
 
+  /* Confirm a destructive step; resolves true when the viewer agrees. */
+  function confirmDanger(title, text, yes) {
+    return new Promise(resolve => {
+      const dlg = document.createElement("dialog");
+      dlg.className = "xf-dialog";
+      dlg.innerHTML = `<h2>${esc(title)}</h2><p>${esc(text)}</p>
+        <div class="xf-actions"><button class="btn btn-danger" data-yes>${esc(yes)}</button><button class="btn btn-primary" data-no>Anuluj</button></div>`;
+      root.appendChild(dlg);
+      let answer = false;
+      dlg.addEventListener("click", e => {
+        if (e.target.closest("[data-yes]")) { answer = true; dlg.close(); }
+        else if (e.target.closest("[data-no]") || e.target === dlg) dlg.close();
+      });
+      dlg.addEventListener("close", () => resolve(answer));
+      removeAfterClose(dlg);
+      dlg.showModal();
+      dlg.querySelector("[data-no]").focus();
+    });
+  }
+  const runningLabel = () => `Pytanie ${A.current + 1} z ${A.count}, odpowiedzi: ${Object.keys(A.answers).length}.`;
+
   /* ---------- scoring + results ---------- */
   function scoreQuestion(id) {
     const q = questions[id];
@@ -510,6 +543,10 @@
       : `<p class="xf-score"><span data-count="${Math.round(pct * 100)}">${Math.round(pct * 100)}</span><small>%</small></p>
          <p class="muted">${pts} z ${max} pytań. ${esc(P.vendor)} nie publikuje progu zaliczenia.</p>`;
     const list = rows.filter(r => resultsFilter === "wrong" ? !r.s.exact : resultsFilter === "flag" ? A.flags.includes(r.id) : true);
+    const missed = rows.filter(r => !r.s.exact).map(r => r.id);
+    // The weakest domain (lowest share, at least 2 questions so one miss does not decide it).
+    const weakest = byDomain.filter(x => x.n >= 2 && x.m).sort((a, b) => a.p / a.m - b.p / b.m)[0];
+    const weakPct = weakest ? Math.round(weakest.p / weakest.m * 100) : null;
     root.innerHTML = `
       <div class="xf-screen"><div class="xf-col xf-body" style="padding-bottom:40px">
         <div class="xf-top"><a class="btn btn-quiet" href="index.html">${icon("home")}Egzaminy</a></div>
@@ -517,16 +554,21 @@
           <h1 id="xf-res-h" tabindex="-1">Wynik: ${esc(P.title)}</h1>
           ${tag}
           ${scoreLine}
-          <p class="muted">Czas: ${mins(used)} min${A.deadline ? ` z ${P.exam.minutes}` : " (bez limitu)"}${A.timeUp ? ". Czas minął, egzamin oddano automatycznie" : ""}.</p>
+          <p class="muted">Czas: ${mins(used)} min${A.deadline ? ` z ${A.minutes || P.exam.minutes}` : " (bez limitu)"}${A.timeUp ? ". Czas minął, egzamin oddano automatycznie" : ""}.</p>
+          ${weakest && weakPct < 100 ? `<p class="xf-weak">${icon("info")}<span>Najsłabsza domena: <b>${esc(weakest.d.name)}</b> (${weakPct}%). Od niej zacznij naukę.</span></p>` : ""}
         </section>
+        <div class="xf-next">
+          ${missed.length ? `<button class="btn btn-primary btn-block" data-act="study-missed">${icon("undo")}Powtórz błędne z tego egzaminu (${missed.length})</button>` : ""}
+          ${weakest && weakPct < 100 ? `<a class="btn btn-block" href="#nauka=${weakest.d.id}">${icon("book")}Ucz się: ${esc(weakest.d.label)}</a>` : ""}
+        </div>
         <section class="card xf-section" aria-labelledby="xf-dom-h">
           <h2 id="xf-dom-h">Wynik w domenach</h2>
           <ul class="split xf-domains">${byDomain.map((x, k) => `<li><span>${esc(x.d.label)}</span><span class="bar" aria-hidden="true"><i class="grow" style="width:${x.m ? x.p / x.m * 100 : 0}%;--d:${250 + k * 70}ms"></i></span><b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
           <p class="small muted">Jak na oficjalnym raporcie: krótszy pasek to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
         </section>
         <div class="xf-actions" style="grid-template-columns:1fr 1fr">
-          <a class="btn" href="index.html">Egzaminy</a>
-          <button class="btn btn-primary" data-act="again">Nowy egzamin</button>
+          <a class="btn btn-quiet" href="index.html">Egzaminy</a>
+          <button class="btn btn-quiet" data-act="again">Nowy egzamin</button>
         </div>
         <section class="xf-section" style="padding:0" aria-labelledby="xf-ans-h">
           <h2 id="xf-ans-h" style="margin-top:12px">Twoje odpowiedzi</h2>
@@ -537,9 +579,9 @@
           </div>
           <div class="xf-ans">${list.map(r => `
             <details>
-              <summary><span class="n"><b>${r.i + 1}</b></span>${r.s.exact ? `<span class="ok">${icon("check", "poprawnie")}</span>` : `<span class="bad">${icon("x", r.s.pts ? "częściowo" : "błędnie")}</span>`}<span class="t">${esc(r.q.text.slice(0, 140))}</span><span class="time">${clock(A.spent[r.id] || 0)}</span></summary>
+              <summary><span class="n"><b>${r.i + 1}</b></span>${r.s.exact ? `<span class="ok">${icon("check", "poprawnie")}</span>` : !r.s.chosen.length ? `<span class="skip" role="img" aria-label="bez odpowiedzi">–</span>` : `<span class="bad">${icon("x", r.s.pts ? "częściowo" : "błędnie")}</span>`}<span class="t">${esc(r.q.text.slice(0, 140))}</span><span class="time">${clock(A.spent[r.id] || 0)}</span></summary>
               <div class="body">
-                <p class="small muted">${esc(domainOf(r.q.domain).name)}${r.s.max > 1 ? ` · ${r.s.pts}/${r.s.max} pkt` : ""}</p>
+                <p class="small muted">${esc(domainOf(r.q.domain).name)}${r.s.max > 1 ? ` · ${r.s.pts}/${r.s.max} pkt` : ""}${!r.s.chosen.length ? " · bez odpowiedzi" : ""}</p>
                 ${r.q.parts.filter(p => p.kind === "text").map(p => `<div class="xf-qtext">${p.html}</div>`).join("")}
                 ${r.q.options.map(o => {
                   const isC = r.q.correct.includes(o.val), mine = r.s.chosen.includes(o.val);
@@ -567,11 +609,15 @@
     if (t.dataset.rfilter) { resultsFilter = t.dataset.rfilter; return showResults(); }
     switch (t.dataset.act) {
       case "begin": {
+        if (A && A.status === "running" && A.seen.length) {
+          const n = parseInt($("#xf-count", root).value, 10), u = $("#xf-untimed", root).checked;
+          return confirmDanger("Zacząć nowy egzamin?", `Trwający egzamin zostanie usunięty. ${runningLabel()}`, "Usuń i zacznij").then(ok => { if (ok) { startAttempt(n, u); showQuestion(0); } });
+        }
         startAttempt(parseInt($("#xf-count", root).value, 10), $("#xf-untimed", root).checked);
         return showQuestion(0);
       }
       case "resume": return showQuestion(A.current);
-      case "abandon": A = null; localStorage.removeItem(ATTEMPT_KEY); return showStart();
+      case "abandon": return confirmDanger("Porzucić egzamin?", `Trwający egzamin zostanie usunięty bez wyniku. ${runningLabel()}`, "Porzuć").then(ok => { if (ok) { A = null; localStorage.removeItem(ATTEMPT_KEY); showStart(); } });
       case "nav": return openNavigator();
       case "prev": { const p = prevIndex(); if (p >= 0) go(p); return; }
       case "next": { const n = nextIndex(); return n < 0 ? toReview() : go(n); }
@@ -585,6 +631,12 @@
         return i >= 0 ? showQuestion(i) : undefined;
       }
       case "finish": return confirmFinish();
+      case "study-missed": {
+        const ids = A.pool.filter(id => !scoreQuestion(id).exact);
+        try { sessionStorage.setItem(`study-focus:${EXAM_ID}`, JSON.stringify(ids)); } catch (err) {}
+        location.hash = "nauka:egzamin";
+        return;
+      }
       case "again": A = null; localStorage.removeItem(ATTEMPT_KEY); return showStart();
     }
   });
@@ -605,6 +657,8 @@
       box.checked = box.type === "radio" ? true : !box.checked;
       box.focus({ preventScroll: true });
       onAnswerChange();
+    } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && e.target instanceof Element && e.target.matches("input[type=radio], input[type=checkbox]")) {
+      return; // native radio-group arrows; never change (or lock) a question from here
     } else if (e.key === "ArrowRight") { e.preventDefault(); $('[data-act="next"]', root)?.click(); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); $('[data-act="prev"]', root)?.click(); }
     else if (k === "f") { e.preventDefault(); toggleFlag(); }
