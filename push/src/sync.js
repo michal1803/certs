@@ -3,7 +3,8 @@
 import { HttpError, readJson } from "./http.js";
 import { authenticate } from "./auth.js";
 
-const KEY_RE = /^(study:[a-z0-9-]{1,40}:v1|exam-history:[a-z0-9-]{1,40}:v1|exam-hub:theme)$/;
+// Only the real exams: caps every user at a handful of rows (no unbounded storage).
+const KEY_RE = /^(study:(az104|terraform):v1|exam-history:(az104|terraform):v1|exam-hub:theme)$/;
 const MAX_KEYS = 20;
 const MAX_VALUE = 200_000;
 const MAX_SYNC_BODY = 1_000_000;

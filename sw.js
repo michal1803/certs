@@ -7,7 +7,7 @@
    - Push: the daily reminder from the push Worker (push/), worded here with
      the due counts the pages copy to IndexedDB.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v11";
+const VERSION = "v12";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
 const MAX_IMAGES = 600;
@@ -163,7 +163,9 @@ self.addEventListener("push", event => {
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
-  const url = new URL(event.notification.data?.url || "./index.html#szybkie", self.registration.scope).href;
+  let url = new URL(event.notification.data?.url || "./index.html#szybkie", self.registration.scope).href;
+  // Only ever open this app's own pages.
+  if (!url.startsWith(self.registration.scope)) url = new URL("./index.html#szybkie", self.registration.scope).href;
   event.waitUntil((async () => {
     const wins = await clients.matchAll({ type: "window", includeUncontrolled: true });
     for (const w of wins) {

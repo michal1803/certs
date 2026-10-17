@@ -6,6 +6,8 @@
   const pad = n => String(n).padStart(2, "0");
   const clock = ms => { const s = Math.max(0, Math.round(ms / 1000)); const h = Math.floor(s / 3600); return `${h ? h + ":" + pad(Math.floor(s / 60) % 60) : Math.floor(s / 60)}:${pad(s % 60)}`; };
   const plural = (n, one, few, many) => { if (n === 1) return one; const d = n % 10, t = n % 100; return d >= 2 && d <= 4 && (t < 12 || t > 14) ? few : many; };
+  // Stored values (some arrive through sync) are only ever shown as numbers.
+  const int = x => { const n = Number(x); return Number.isFinite(n) ? Math.round(n) : 0; };
   const date = ts => new Date(ts).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 
   // Reminders and the app shortcut open index.html#szybkie: go straight to the exam with most due.
@@ -25,7 +27,7 @@
     const last = load(`exam-history:${id}:v1`, [])[0];
     const total = p.all.length;
     const study = load(`study:${id}:v1`, null);
-    const okTotal = study?.summary ? Object.values(study.summary).reduce((s, x) => s + x.ok, 0) : 0;
+    const okTotal = study?.summary ? Object.values(study.summary).reduce((s, x) => s + int(x?.ok), 0) : 0;
     // Counted live: questions fall due while the app is closed.
     const due = window.HubDue.count(id);
     return `
@@ -36,7 +38,7 @@
       </div>
       <a class="btn btn-block quick" href="${esc(p.href)}#szybkie"><b>Szybka piątka</b><span>${due ? `${due} do powtórki` : "5 pytań · ok. 3 min"}</span></a>
       ${running ? `<div class="resume">
-        <p>Niedokończony egzamin: pytanie ${attempt.current + 1} z ${attempt.count}${attempt.deadline ? ` · zostało ${clock(attempt.deadline - Date.now())}` : ""}</p>
+        <p>Niedokończony egzamin: pytanie ${int(attempt.current) + 1} z ${int(attempt.count)}${attempt.deadline ? ` · zostało ${clock(attempt.deadline - Date.now())}` : ""}</p>
         <a class="btn btn-primary btn-block" href="${esc(p.href)}#egzamin">Wróć do egzaminu</a>
       </div>` : ""}
       <div class="seg" role="tablist" aria-label="Tryb">
@@ -54,17 +56,17 @@
         </div>
         <ul class="split" data-split="${id}" aria-label="Pytania z każdej domeny"></ul>
         ${p.weightsAreProxy ? `<p class="note">${esc(p.vendor)} nie publikuje wag domen. Proporcje liczymy z liczby celów egzaminacyjnych w każdej domenie.</p>` : ""}
-        ${last ? `<p class="history">Ostatni wynik: ${last.pct}% · ${last.count} ${plural(last.count, "pytanie", "pytania", "pytań")} · ${date(last.at)}${last.untimed ? " · bez limitu" : ""}</p>` : ""}
+        ${last ? `<p class="history">Ostatni wynik: ${int(last.pct)}% · ${int(last.count)} ${plural(int(last.count), "pytanie", "pytania", "pytań")} · ${esc(date(int(last.at)))}${last.untimed ? " · bez limitu" : ""}</p>` : ""}
         <button class="btn btn-primary btn-block" data-start-exam="${id}">${running ? "Nowy egzamin" : "Przejdź do egzaminu"}</button>
       </div>
       <div role="tabpanel" id="p-${id}-study" aria-labelledby="t-${id}-study"${mode === "study" ? "" : " hidden"}>
         ${study?.summary ? `<ul class="facts">
           <li>Opanowane ${okTotal} z ${total}</li>
           <li>Do powtórki ${due}</li>
-          <li>Błędne ${study.wrong || 0}</li>
-          <li>Gwiazdki ${study.starCount || 0}</li>
+          <li>Błędne ${int(study.wrong)}</li>
+          <li>Gwiazdki ${int(study.starCount)}</li>
         </ul>
-        <ul class="split mastery" aria-label="Opanowane pytania w każdej domenie">${p.domains.map(d => { const s = study.summary[d.id] || { total: 0, ok: 0 }; return `<li><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${s.total ? s.ok / s.total * 100 : 0}%"></i></span><b>${s.ok}/${s.total}</b></li>`; }).join("")}</ul>`
+        <ul class="split mastery" aria-label="Opanowane pytania w każdej domenie">${p.domains.map(d => { const x = study.summary[d.id], s = { total: int(x?.total), ok: int(x?.ok) }; return `<li><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${s.total ? s.ok / s.total * 100 : 0}%"></i></span><b>${s.ok}/${s.total}</b></li>`; }).join("")}</ul>`
         : `<p class="muted">Jedno pytanie na ekranie z natychmiastową odpowiedzią i komentarzami społeczności. Najpierw błędne i te, których termin powtórki minął. Każda dobra odpowiedź wydłuża odstęp: 1, 3, 7, 14, 30 dni.</p>`}
         <div class="field">
           <label for="s-${id}">Zakres</label>

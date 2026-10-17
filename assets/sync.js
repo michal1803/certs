@@ -30,35 +30,61 @@
     return data;
   }
 
+  /* ---------- validate ----------
+     Synced data comes from the server, so it is untrusted: keep only known
+     fields with the right types before anything is merged or rendered. */
+  const num = (x, lo = 0, hi = 9e15) => { const n = Number(x); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : lo; };
+  const QID = /^q\d{1,4}$/, DOM = /^[a-z-]{1,40}$/;
+  function cleanAnswer(a) {
+    if (!a || typeof a !== "object") return null;
+    const out = {
+      sel: Array.isArray(a.sel) ? a.sel.filter(v => typeof v === "string" && /^[A-H]$/.test(v)).slice(0, 8) : [],
+      ok: a.ok === true, at: num(a.at), n: num(a.n, 0, 1e6) | 0, streak: num(a.streak, 0, 1e6) | 0,
+      box: num(a.box, 0, window.SRS.DAYS.length - 1) | 0, due: num(a.due),
+    };
+    if (typeof a.d === "string" && DOM.test(a.d)) out.d = a.d;
+    if (a.guess === true) out.guess = true;
+    if (a.self === true) out.self = true;
+    return out;
+  }
+  function cleanStudy(S, totalsFrom) {
+    if (!S || typeof S !== "object") return null;
+    const ans = {}, starLog = {};
+    Object.entries(S.ans && typeof S.ans === "object" ? S.ans : {}).forEach(([id, a]) => { const c = QID.test(id) && cleanAnswer(a); if (c) ans[id] = c; });
+    const log = S.starLog && typeof S.starLog === "object" ? S.starLog : Object.fromEntries((Array.isArray(S.stars) ? S.stars : []).map(id => [id, num(S.savedAt)]));
+    Object.entries(log).forEach(([id, t]) => { if (QID.test(id) && Number.isFinite(Number(t))) starLog[id] = Number(t); });
+    // Domain totals describe the question bank: trust this device's copy over the server's.
+    const totals = {};
+    Object.entries((totalsFrom || S).summary || {}).forEach(([d, x]) => { if (DOM.test(d)) totals[d] = num(x?.total, 0, 1e4) | 0; });
+    return { v: 1, order: S.order === "bank" ? "bank" : "smart", savedAt: num(S.savedAt), ans, starLog, totals };
+  }
+  const cleanHistory = list => (Array.isArray(list) ? list : [])
+    .map(h => h && typeof h === "object" ? { at: num(h.at, 0, Date.now() + 864e5), count: num(h.count, 0, 1000) | 0, pct: num(h.pct, 0, 100) | 0, untimed: h.untimed === true } : null)
+    .filter(h => h && h.at > 0);
+
   /* ---------- merge ---------- */
-  const starLogOf = S => {
-    if (S.starLog) return S.starLog;
-    const t = S.savedAt || 0, log = {};
-    (S.stars || []).forEach(id => { log[id] = t; });
-    return log;
-  };
-  function mergeStudy(a, b) {
-    if (!a) return b;
-    if (!b) return a;
-    const ans = { ...a.ans };
-    Object.entries(b.ans || {}).forEach(([id, x]) => { if (!ans[id] || (x.at || 0) > (ans[id].at || 0)) ans[id] = x; });
+  function mergeStudy(local, remote) {
+    const a = cleanStudy(local), b = cleanStudy(remote, local);
+    if (!a && !b) return null;
+    const x = a || b, y = b || a;
+    const ans = { ...x.ans };
+    Object.entries(y.ans).forEach(([id, r]) => { if (!ans[id] || r.at > ans[id].at) ans[id] = r; });
     // Star log: positive time = starred then, negative = unstarred then; the later one wins.
-    const la = starLogOf(a), lb = starLogOf(b), starLog = { ...la };
-    Object.entries(lb).forEach(([id, t]) => { if (!(id in starLog) || Math.abs(t) > Math.abs(starLog[id])) starLog[id] = t; });
-    const newer = (b.savedAt || 0) > (a.savedAt || 0) ? b : a;
-    const S = { ...newer, ans, starLog, stars: Object.keys(starLog).filter(id => starLog[id] > 0) };
-    // Launcher summary from each answer's domain (a.d); totals come from the bank.
-    const sum = {};
-    Object.entries(newer.summary || a.summary || b.summary || {}).forEach(([d, s]) => { sum[d] = { total: s.total, seen: 0, ok: 0 }; });
-    Object.values(ans).forEach(x => { const s = x.d && sum[x.d]; if (s) { s.seen++; if (window.SRS.mastered(x)) s.ok++; } });
-    S.summary = sum;
-    S.wrong = Object.values(ans).filter(x => !x.ok).length;
-    S.starCount = S.stars.length;
-    return S;
+    const starLog = { ...x.starLog };
+    Object.entries(y.starLog).forEach(([id, t]) => { if (!(id in starLog) || Math.abs(t) > Math.abs(starLog[id])) starLog[id] = t; });
+    const newer = y.savedAt > x.savedAt ? y : x;
+    const totals = Object.keys(a?.totals || {}).length ? a.totals : (b?.totals || {});
+    // Launcher summary rebuilt from each answer's domain (a.d), never taken from the server.
+    const summary = {};
+    Object.entries(totals).forEach(([d, t]) => { summary[d] = { total: t, seen: 0, ok: 0 }; });
+    Object.values(ans).forEach(r => { const s = r.d && summary[r.d]; if (s) { s.seen++; if (window.SRS.mastered(r)) s.ok++; } });
+    const stars = Object.keys(starLog).filter(id => starLog[id] > 0);
+    return { v: 1, order: newer.order, savedAt: Math.max(x.savedAt, y.savedAt), ans, starLog, stars, summary,
+      wrong: Object.values(ans).filter(r => !r.ok).length, starCount: stars.length };
   }
   function mergeHistory(a, b) {
     const seen = new Set();
-    return [...(a || []), ...(b || [])].filter(h => !seen.has(h.at) && seen.add(h.at)).sort((x, y) => y.at - x.at).slice(0, 10);
+    return [...cleanHistory(a), ...cleanHistory(b)].filter(h => !seen.has(h.at) && seen.add(h.at)).sort((x, y) => y.at - x.at).slice(0, 10);
   }
   const merge = (key, a, b) => key.startsWith("study:") ? mergeStudy(a, b) : mergeHistory(a, b);
   const parse = s => { try { return JSON.parse(s); } catch (e) { return null; } };
@@ -99,8 +125,16 @@
   window.addEventListener("online", () => { if (auth) sync(); });
 
   /* ---------- sign in / out ---------- */
-  function login() {
-    location.href = `${API}/auth/login?return=${encodeURIComponent(location.href.split("#")[0])}`;
+  /* Sign-in is bound to this browser: it keeps a random verifier and sends
+     only its hash. A sign-in link made by someone else carries a code this
+     browser cannot exchange, so nobody can log you into their account. */
+  const PKCE_KEY = "exam-hub:pkce";
+  const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  async function login() {
+    const verifier = hex(crypto.getRandomValues(new Uint8Array(32)));
+    store(PKCE_KEY, { v: verifier, exp: Date.now() + 10 * 60000 });
+    const challenge = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
+    location.href = `${API}/auth/login?challenge=${challenge}&return=${encodeURIComponent(location.href.split("#")[0])}`;
   }
   function signOutLocal(msg) {
     auth = null;
@@ -124,8 +158,16 @@
     history.replaceState(null, "", location.pathname + location.search);
     if (m[1]) setTimeout(() => emit("hub:auth-message", m[2] === "access_denied" ? "Logowanie anulowane." : "Nie udało się zalogować przez GitHub. Spróbuj ponownie."), 0);
     else if (API) {
+      const pkce = load(PKCE_KEY, null);
+      try { localStorage.removeItem(PKCE_KEY); } catch (e) {}
+      if (!pkce || pkce.exp < Date.now()) {
+        // Not started here (or too old): never accept it, and keep any current session.
+        setTimeout(() => emit("hub:auth-message", "Ten link logowania nie pochodzi z tej przeglądarki. Zaloguj się przyciskiem „Zaloguj przez GitHub”."), 0);
+        if (auth) setTimeout(() => sync(), 0);
+        return publish();
+      }
       setState("syncing");
-      fetch(`${API}/auth/exchange`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: m[2] }) })
+      fetch(`${API}/auth/exchange`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: m[2], verifier: pkce.v }) })
         .then(r => r.json().then(d => { if (!r.ok) throw new Error(d.error); return d; }))
         .then(d => { auth = { token: d.token, user: d.user, lastSync: null }; store(AUTH_KEY, auth); emit("hub:auth-message", `Zalogowano jako ${d.user.login}. Postęp będzie się synchronizował.`); return sync(); })
         .catch(() => { signOutLocal("Nie udało się zalogować. Spróbuj ponownie."); });
@@ -134,6 +176,7 @@
     setTimeout(() => sync(), 0);
   }
 
+  function publish() {
   window.HubSync = {
     available: !!API,
     get state() { return state; },
@@ -141,4 +184,6 @@
     get lastSync() { return auth?.lastSync || null; },
     login, logout, deleteAccount, schedule, sync,
   };
+  }
+  publish();
 })();

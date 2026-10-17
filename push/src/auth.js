@@ -40,7 +40,7 @@ async function signState(env, data) {
   return `${payload}.${b64u.encode(sig)}`;
 }
 
-// Returns the return URL from a valid, unexpired state, else null.
+// Returns { ret, challenge } from a valid, unexpired state, else null.
 async function verifyState(env, state) {
   if (typeof state !== "string" || state.length > 4096) return null;
   const [payload, sig, extra] = state.split(".");
@@ -51,20 +51,28 @@ async function verifyState(env, state) {
     if (!ok) return null;
     const data = JSON.parse(new TextDecoder().decode(b64u.decode(payload)));
     if (typeof data.e !== "number" || data.e < Date.now()) return null;
-    return validReturn(data.r);
+    const ret = validReturn(data.r);
+    return ret && CHALLENGE.test(data.c) ? { ret, challenge: data.c } : null;
   } catch (e) {
     return null;
   }
 }
+
+// SHA-256 hex of the verifier the page keeps; binds the code to that browser,
+// so a code from someone else's sign-in link cannot be exchanged here (login CSRF).
+const CHALLENGE = /^[0-9a-f]{64}$/;
 
 const redirect = location => new Response(null, { status: 302, headers: { Location: location, "Cache-Control": "no-store" } });
 const callbackUrl = req => `${new URL(req.url).origin}/auth/callback`;
 
 async function login(req, env) {
   checkConfig(env);
-  const ret = validReturn(new URL(req.url).searchParams.get("return"));
+  const q = new URL(req.url).searchParams;
+  const ret = validReturn(q.get("return"));
   if (!ret) throw new HttpError(400, "invalid return URL");
-  const state = await signState(env, { r: ret.href, e: Date.now() + STATE_TTL_MS, n: randomToken() });
+  const challenge = q.get("challenge");
+  if (!CHALLENGE.test(challenge || "")) throw new HttpError(400, "challenge missing");
+  const state = await signState(env, { r: ret.href, c: challenge, e: Date.now() + STATE_TTL_MS, n: randomToken() });
   const params = new URLSearchParams({ client_id: env.GITHUB_CLIENT_ID, redirect_uri: callbackUrl(req), state, allow_signup: "true" });
   return redirect(`${oauthBase(env)}/login/oauth/authorize?${params}`);
 }
@@ -91,12 +99,13 @@ async function githubUser(req, env, code) {
 async function callback(req, env) {
   checkConfig(env);
   const q = new URL(req.url).searchParams;
-  const ret = await verifyState(env, q.get("state"));
-  if (!ret) {
+  const st = await verifyState(env, q.get("state"));
+  if (!st) {
     return new Response("Nieprawidłowe lub wygasłe logowanie. Wróć do aplikacji i spróbuj ponownie.", {
       status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   }
+  const ret = st.ret;
   ret.hash = "";
   const fail = reason => redirect(`${ret.href}#auth-error=${reason}`);
   const ghError = q.get("error");
@@ -113,8 +122,8 @@ async function callback(req, env) {
         `INSERT INTO users (id, login, name, avatar, created, last_seen) VALUES (?1, ?2, ?3, ?4, ?5, ?5)
          ON CONFLICT(id) DO UPDATE SET login = excluded.login, name = excluded.name, avatar = excluded.avatar, last_seen = excluded.last_seen`
       ).bind(user.id, user.login, user.name, user.avatar, now),
-      env.DB.prepare("INSERT INTO codes (code_hash, user_id, expires) VALUES (?, ?, ?)")
-        .bind(await sha256Hex(oneTime), user.id, now + CODE_TTL_MS),
+      env.DB.prepare("INSERT INTO codes (code_hash, user_id, expires, challenge) VALUES (?, ?, ?, ?)")
+        .bind(await sha256Hex(oneTime), user.id, now + CODE_TTL_MS, st.challenge),
     ]);
     return redirect(`${ret.href}#auth=${oneTime}`);
   } catch (e) {
@@ -127,12 +136,14 @@ const publicUser = row => ({ id: row.id, login: row.login, name: row.name, avata
 
 async function exchange(req, env) {
   checkConfig(env);
-  const { code } = await readJson(req);
+  const { code, verifier } = await readJson(req);
   if (typeof code !== "string" || !code || code.length > 200) throw new HttpError(400, "code missing");
+  if (typeof verifier !== "string" || verifier.length < 32 || verifier.length > 200) throw new HttpError(400, "verifier missing");
   // Deleting first makes the code single-use even if two exchanges race.
-  const row = await env.DB.prepare("DELETE FROM codes WHERE code_hash = ? RETURNING user_id, expires")
+  const row = await env.DB.prepare("DELETE FROM codes WHERE code_hash = ? RETURNING user_id, expires, challenge")
     .bind(await sha256Hex(code)).first();
   if (!row || row.expires < Date.now()) throw new HttpError(400, "invalid or expired code");
+  if (!row.challenge || row.challenge !== await sha256Hex(verifier)) throw new HttpError(400, "invalid or expired code");
   const user = await env.DB.prepare("SELECT id, login, name, avatar FROM users WHERE id = ?").bind(row.user_id).first();
   if (!user) throw new HttpError(400, "invalid or expired code");
   const token = randomToken();
