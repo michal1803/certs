@@ -1,0 +1,19 @@
+# Cloudflare Worker that sends the daily Exam Hub study reminder (Web Push).
+name = "exam-hub-push"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+# Every 15 minutes; each subscriber gets the push in the slot matching their local time.
+[triggers]
+crons = ["*/15 * * * *"]
+
+# `npx wrangler kv namespace create SUBS` prints the real id; paste it here.
+[[kv_namespaces]]
+binding = "SUBS"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+[vars]
+# Public half of the VAPID key pair from `node scripts/gen-vapid.mjs`.
+# The private half is a secret: `npx wrangler secret put VAPID_PRIVATE_KEY`.
+VAPID_PUBLIC_KEY = "REPLACE_WITH_VAPID_PUBLIC_KEY"
+VAPID_SUBJECT = "https://michal1803.github.io/certs/"
