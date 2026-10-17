@@ -140,6 +140,54 @@
     picker.addEventListener("click", e => { const b = e.target.closest("[data-theme-choice]"); if (b) { HubTheme.set(b.dataset.themeChoice); mark(); } });
   }
 
+  /* Backup: study progress, exam results and preferences as one JSON file.
+     A running exam attempt stays out (its clock belongs to this device). */
+  const OWN = /^(study:|exam-history:|exam-hub:(theme|launcher)$)/;
+  const backup = document.querySelector(".backup");
+  if (backup) {
+    const say = msg => { backup.querySelector("[data-backup-status]").textContent = msg; };
+    const file = backup.querySelector("[data-import-file]");
+    const ownKeys = () => Object.keys(localStorage).filter(k => OWN.test(k));
+    backup.querySelector("[data-export]").addEventListener("click", () => {
+      const data = Object.fromEntries(ownKeys().map(k => [k, localStorage.getItem(k)]));
+      const blob = new Blob([JSON.stringify({ app: "exam-hub", v: 1, at: Date.now(), data }, null, 1)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `exam-hub-postep-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      say("Kopia zapisana w pobranych plikach. Na innym urządzeniu otwórz Exam Hub i wybierz „Wczytaj kopię”.");
+    });
+    backup.querySelector("[data-import]").addEventListener("click", () => file.click());
+    file.addEventListener("change", async () => {
+      const f = file.files[0]; file.value = "";
+      if (!f) return;
+      let pack;
+      try { pack = JSON.parse(await f.text()); } catch (e) { return say("To nie jest plik kopii Exam Hub."); }
+      if (pack?.app !== "exam-hub" || !pack.data || typeof pack.data !== "object") return say("To nie jest plik kopii Exam Hub.");
+      const entries = Object.entries(pack.data).filter(([k, v]) => OWN.test(k) && typeof v === "string");
+      const dlg = document.createElement("dialog");
+      dlg.className = "xf-dialog";
+      dlg.innerHTML = `<h2>Wczytać kopię z ${esc(date(pack.at))}?</h2><p>Postęp nauki i wyniki egzaminów w tej przeglądarce zostaną zastąpione tymi z pliku.</p>
+        <div class="xf-actions"><button class="btn" data-no>Anuluj</button><button class="btn btn-primary" data-yes>Wczytaj</button></div>`;
+      document.body.appendChild(dlg);
+      dlg.addEventListener("click", e => {
+        if (e.target.closest("[data-yes]")) {
+          ownKeys().forEach(k => localStorage.removeItem(k));
+          entries.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch (err) {} });
+          dlg.close(); location.reload();
+        } else if (e.target.closest("[data-no]") || e.target === dlg) dlg.close();
+      });
+      dlg.addEventListener("close", () => setTimeout(() => dlg.remove(), 260));
+      dlg.showModal();
+      dlg.querySelector("[data-no]").focus();
+    });
+  }
+
+  // Ask the browser to keep this site's data (Safari otherwise clears it after
+  // 7 days without a visit). Firefox would show a prompt for it, so not there.
+  if (navigator.storage?.persist && !/Firefox\//.test(navigator.userAgent)) navigator.storage.persisted().then(p => p || navigator.storage.persist()).catch(() => {});
+
   window.HubDue.publish();
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
