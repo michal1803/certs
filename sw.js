@@ -4,8 +4,10 @@
      deploy never pairs new pages with old CSS/JS; cached copy offline.
    - Fonts and icons: cache first (they never change in place).
    - Question images from other hosts: cached the first time they are seen.
+   - Push: the daily reminder from the push Worker (push/), worded here with
+     the due counts the pages copy to IndexedDB.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v7";
+const VERSION = "v8";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
 const MAX_IMAGES = 600;
@@ -24,6 +26,7 @@ const PRECACHE = [
   "assets/exam-flow.js",
   "assets/launcher.js",
   "assets/remind.js",
+  "assets/push-config.js",
   "assets/fonts/nunito-latin.woff2",
   "assets/fonts/nunito-latin-ext.woff2",
   "assets/icons/icon-192.png",
@@ -110,4 +113,61 @@ self.addEventListener("fetch", event => {
       })
     );
   }
+});
+
+/* ---------- daily reminder (push/) ---------- */
+function readDue() {
+  return new Promise(resolve => {
+    try {
+      const req = indexedDB.open("exam-hub", 1);
+      req.onupgradeneeded = () => req.result.createObjectStore("kv");
+      req.onerror = () => resolve(null);
+      req.onsuccess = () => {
+        const db = req.result;
+        const get = db.transaction("kv").objectStore("kv").get("due");
+        get.onsuccess = () => { db.close(); resolve(get.result || null); };
+        get.onerror = () => { db.close(); resolve(null); };
+      };
+    } catch (e) { resolve(null); }
+  });
+}
+const plural = (n, one, few, many) => {
+  if (n === 1) return one;
+  const d = n % 10, t = n % 100;
+  return d >= 2 && d <= 4 && (t < 12 || t > 14) ? few : many;
+};
+
+self.addEventListener("push", event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) {}
+  event.waitUntil((async () => {
+    let body = data.body || "Masz chwilę? Zrób szybką piątkę: 5 pytań, ok. 3 minuty.";
+    let url = data.url || "./index.html#szybkie";
+    const due = await readDue();
+    if (due && due.exams) {
+      const now = Date.now();
+      const rows = Object.values(due.exams).map(x => ({ ...x, n: x.dues.filter(d => d <= now).length })).sort((a, b) => b.n - a.n);
+      const total = rows.reduce((s, x) => s + x.n, 0);
+      if (total) {
+        body = `${total} ${plural(total, "pytanie czeka", "pytania czekają", "pytań czeka")} na powtórkę${rows.filter(x => x.n).length === 1 ? ` (${rows[0].title})` : ""}. Szybka piątka zajmie ok. 3 minuty.`;
+        url = `./${rows[0].href}#szybkie`;
+      }
+      if (self.navigator.setAppBadge) (total ? self.navigator.setAppBadge(total) : self.navigator.clearAppBadge()).catch(() => {});
+    }
+    await self.registration.showNotification(data.title || "Exam Hub", {
+      body, tag: data.tag || "daily", icon: "assets/icons/icon-192.png", lang: "pl", data: { url },
+    });
+  })());
+});
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "./index.html#szybkie", self.registration.scope).href;
+  event.waitUntil((async () => {
+    const wins = await clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const w of wins) {
+      try { await w.focus(); await w.navigate(url); return; } catch (e) {}
+    }
+    await clients.openWindow(url);
+  })());
 });
