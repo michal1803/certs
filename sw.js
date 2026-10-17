@@ -5,7 +5,7 @@
    - Fonts and icons: cache first (they never change in place).
    - Question images from other hosts: cached the first time they are seen.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v6";
+const VERSION = "v7";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
 const MAX_IMAGES = 600;
@@ -23,6 +23,7 @@ const PRECACHE = [
   "assets/study.js",
   "assets/exam-flow.js",
   "assets/launcher.js",
+  "assets/remind.js",
   "assets/fonts/nunito-latin.woff2",
   "assets/fonts/nunito-latin-ext.woff2",
   "assets/icons/icon-192.png",

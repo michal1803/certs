@@ -230,6 +230,21 @@ button.pill:hover { background: var(--surface); }
 .resume { display: grid; gap: 12px; padding: 14px; border-radius: var(--radius-sm); background: var(--action-tint); }
 .resume p { font-weight: 700; }
 .history { font-size: 14px; color: var(--text-2); }
+/* quick five + reminder */
+.exam .quick { justify-content: space-between; gap: 12px; background: var(--action-tint); border-color: transparent; }
+.exam .quick:hover { background: var(--surface); }
+.exam .quick span { color: var(--text-2); font-weight: 700; font-size: 14px; }
+.remind { margin-top: 16px; padding: 20px; display: grid; gap: 16px; max-width: 512px; }
+.remind h2 { font-size: 20px; line-height: 1.2; font-weight: 700; }
+.remind .muted { margin-top: 6px; }
+.remind-time .select { background-image: none; padding-right: 14px; max-width: 200px; }
+.remind-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.remind-actions [data-push] { display: contents; }
+.remind-actions [data-push][hidden] { display: none; }
+.remind [data-remind-status]:empty { display: none; }
+.sv-quick-list .xf-row { cursor: default; box-shadow: none; background: var(--surface); }
+.sv-quick-list .xf-row:hover { background: var(--surface); }
+.sv-quick .btn-quiet { justify-self: start; color: var(--text-2); }
 .launcher footer { margin-top: 28px; color: var(--text-2); font-size: 14px; max-width: 70ch; }
 .launcher footer p + p { margin-top: 6px; }
 .theme-pick { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }

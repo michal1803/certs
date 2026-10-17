@@ -150,4 +150,39 @@
       return days <= 0 ? "dziś" : days === 1 ? "jutro" : `za ${days} dni`;
     },
   };
+
+  /* Due questions across exams. publish() also sets the app icon badge and
+     copies the due dates to IndexedDB, because the service worker (which
+     words the reminder notification) cannot read localStorage. */
+  const studyOf = id => { try { return JSON.parse(localStorage.getItem(`study:${id}:v1`)); } catch (e) { return null; } };
+  const duesOf = id => {
+    const p = window.EXAM_PROFILES[id], st = studyOf(id);
+    return st?.ans ? Object.entries(st.ans).filter(([q]) => p.all.includes(q)).map(([, a]) => window.SRS.migrate(a).due) : [];
+  };
+  window.HubDue = {
+    count: (id, now = Date.now()) => duesOf(id).filter(d => d <= now).length,
+    // The exam a "quick five" should open: most due, then most recently studied.
+    pick() {
+      const now = Date.now();
+      const rows = Object.keys(window.EXAM_PROFILES).map(id => ({ id, due: this.count(id, now), at: studyOf(id)?.savedAt || 0, size: window.EXAM_PROFILES[id].all.length }));
+      rows.sort((a, b) => b.due - a.due || b.at - a.at || b.size - a.size);
+      return rows[0].id;
+    },
+    publish() {
+      const now = Date.now(), exams = {};
+      let total = 0;
+      Object.keys(window.EXAM_PROFILES).forEach(id => {
+        const dues = duesOf(id);
+        exams[id] = { title: window.EXAM_PROFILES[id].title, href: window.EXAM_PROFILES[id].href, dues };
+        total += dues.filter(d => d <= now).length;
+      });
+      if ("setAppBadge" in navigator) (total ? navigator.setAppBadge(total) : navigator.clearAppBadge()).catch(() => {});
+      try {
+        const req = indexedDB.open("exam-hub", 1);
+        req.onupgradeneeded = () => req.result.createObjectStore("kv");
+        req.onsuccess = () => { const db = req.result; const tx = db.transaction("kv", "readwrite"); tx.objectStore("kv").put({ at: now, exams }, "due"); tx.oncomplete = () => db.close(); };
+      } catch (e) {}
+      return total;
+    },
+  };
 })();
