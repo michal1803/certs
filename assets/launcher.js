@@ -16,6 +16,8 @@
   const list = document.getElementById("exams");
   const saved = load("exam-hub:launcher", {});
 
+  // Drawn again when synced progress arrives from another device.
+  function paint() {
   list.innerHTML = Object.entries(window.EXAM_PROFILES).map(([id, p]) => {
     const mode = saved[id] === "study" ? "study" : "exam";
     const attempt = load(`exam-attempt:${id}:v1`, null);
@@ -75,6 +77,11 @@
       </div>
     </article>`;
   }).join("");
+  Object.keys(window.EXAM_PROFILES).forEach(renderSplit);
+  document.querySelectorAll("[role=tab]").forEach(t => { t.tabIndex = t.getAttribute("aria-selected") === "true" ? 0 : -1; });
+  }
+  paint();
+  window.addEventListener("hub:synced", paint);
 
   function renderSplit(id) {
     const p = window.EXAM_PROFILES[id];
@@ -90,7 +97,6 @@
     ul.innerHTML = p.domains.map((d, k) =>
       `<li><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i class="grow" style="width:${q[d.id] / max * 100}%;--d:${200 + k * 40}ms"></i></span><b>${q[d.id]}</b></li>`).join("");
   }
-  Object.keys(window.EXAM_PROFILES).forEach(renderSplit);
 
   list.addEventListener("change", e => { const id = e.target.dataset.count; if (id) renderSplit(id); });
 
@@ -130,7 +136,6 @@
     saved[id] = tab.dataset.mode;
     try { localStorage.setItem("exam-hub:launcher", JSON.stringify(saved)); } catch (err) {}
   }
-  document.querySelectorAll("[role=tab]").forEach(t => { t.tabIndex = t.getAttribute("aria-selected") === "true" ? 0 : -1; });
 
   // Theme picker in the footer.
   const picker = document.querySelector(".theme-pick");
@@ -140,53 +145,96 @@
     picker.addEventListener("click", e => { const b = e.target.closest("[data-theme-choice]"); if (b) { HubTheme.set(b.dataset.themeChoice); mark(); } });
   }
 
-  /* Backup: study progress, exam results and preferences as one JSON file.
-     A running exam attempt stays out (its clock belongs to this device). */
-  const OWN = /^(study:|exam-history:|exam-hub:(theme|launcher)$)/;
-  const backup = document.querySelector(".backup");
-  if (backup) {
-    const say = msg => { backup.querySelector("[data-backup-status]").textContent = msg; };
-    const file = backup.querySelector("[data-import-file]");
-    const ownKeys = () => Object.keys(localStorage).filter(k => OWN.test(k));
-    backup.querySelector("[data-export]").addEventListener("click", () => {
-      const data = Object.fromEntries(ownKeys().map(k => [k, localStorage.getItem(k)]));
-      const blob = new Blob([JSON.stringify({ app: "exam-hub", v: 1, at: Date.now(), data }, null, 1)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `exam-hub-postep-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
-      say("Kopia zapisana w pobranych plikach. Na innym urządzeniu otwórz Exam Hub i wybierz „Wczytaj kopię”.");
-    });
-    backup.querySelector("[data-import]").addEventListener("click", () => file.click());
-    file.addEventListener("change", async () => {
-      const f = file.files[0]; file.value = "";
-      if (!f) return;
-      let pack;
-      try { pack = JSON.parse(await f.text()); } catch (e) { return say("To nie jest plik kopii Exam Hub."); }
-      if (pack?.app !== "exam-hub" || !pack.data || typeof pack.data !== "object") return say("To nie jest plik kopii Exam Hub.");
-      const entries = Object.entries(pack.data).filter(([k, v]) => OWN.test(k) && typeof v === "string");
+  // Ask the browser to keep this site's data (Safari otherwise clears it after
+  // 7 days without a visit). Firefox would show a prompt for it, so not there.
+  if (navigator.storage?.persist && !/Firefox\//.test(navigator.userAgent)) navigator.storage.persisted().then(p => p || navigator.storage.persist()).catch(() => {});
+
+  /* Account: sign in with GitHub to sync progress across devices. */
+  const acct = document.getElementById("account");
+  const GH = '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" stroke="none" d="M8 0C3.58 0 0 3.58 0 8a8 8 0 0 0 5.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.67.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>';
+  let acctMsg = "";
+  function paintAccount() {
+    const sync = window.HubSync;
+    if (!acct || !sync?.available) return;
+    acct.hidden = false;
+    const u = sync.user;
+    const note = sync.state === "syncing" ? "Synchronizuję…" : sync.state === "error" ? "Nie udało się zsynchronizować. Spróbuję ponownie." : sync.lastSync ? `Zsynchronizowano ${new Date(sync.lastSync).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}` : "";
+    acct.innerHTML = u ? `
+      <div class="acct-who">
+        ${u.avatar ? `<img src="${esc(u.avatar + (u.avatar.includes("?") ? "&" : "?") + "s=80")}" alt="" width="40" height="40">` : ""}
+        <div><b>${esc(u.login)}</b><span class="small muted" data-acct-note>${esc(note)}</span></div>
+      </div>
+      <details class="acct-more"><summary class="btn btn-quiet">Konto</summary>
+        <div class="acct-menu">
+          <button class="btn" type="button" data-acct="sync">Synchronizuj teraz</button>
+          <button class="btn" type="button" data-acct="logout">Wyloguj</button>
+          <button class="btn btn-quiet acct-del" type="button" data-acct="delete">Usuń konto i dane z serwera</button>
+          <p class="small muted">Na serwerze zapisujemy tylko login, nazwę i avatar z GitHuba oraz postęp nauki i wyniki egzaminów. Nie mamy dostępu do Twoich repozytoriów.</p>
+        </div>
+      </details>`
+      : `<button class="btn btn-gh" type="button" data-acct="login">${GH}Zaloguj przez GitHub</button>
+         <span class="small muted">Postęp na telefonie i komputerze, bez przenoszenia plików.</span>`;
+    if (acctMsg) acct.insertAdjacentHTML("beforeend", `<p class="acct-msg" role="status">${esc(acctMsg)}</p>`);
+  }
+  window.addEventListener("hub:auth", paintAccount);
+  window.addEventListener("hub:auth-message", e => { acctMsg = e.detail; paintAccount(); });
+  acct?.addEventListener("click", e => {
+    const b = e.target.closest("[data-acct]");
+    if (!b) return;
+    const act = b.dataset.acct, sync = window.HubSync;
+    acctMsg = "";
+    if (act === "login") return sync.login();
+    if (act === "sync") return sync.sync();
+    if (act === "logout") return sync.logout();
+    if (act === "delete") {
       const dlg = document.createElement("dialog");
       dlg.className = "xf-dialog";
-      dlg.innerHTML = `<h2>Wczytać kopię z ${esc(date(pack.at))}?</h2><p>Postęp nauki i wyniki egzaminów w tej przeglądarce zostaną zastąpione tymi z pliku.</p>
-        <div class="xf-actions"><button class="btn" data-no>Anuluj</button><button class="btn btn-primary" data-yes>Wczytaj</button></div>`;
+      dlg.innerHTML = `<h2>Usunąć konto?</h2><p>Usuniemy z serwera Twój login i cały zapisany postęp. Postęp w tej przeglądarce zostanie. Tego nie da się cofnąć.</p>
+        <div class="xf-actions"><button class="btn btn-danger" data-yes>Usuń konto</button><button class="btn btn-primary" data-no>Anuluj</button></div>`;
       document.body.appendChild(dlg);
-      dlg.addEventListener("click", e => {
-        if (e.target.closest("[data-yes]")) {
-          ownKeys().forEach(k => localStorage.removeItem(k));
-          entries.forEach(([k, v]) => { try { localStorage.setItem(k, v); } catch (err) {} });
-          dlg.close(); location.reload();
-        } else if (e.target.closest("[data-no]") || e.target === dlg) dlg.close();
+      dlg.addEventListener("click", ev => {
+        if (ev.target.closest("[data-yes]")) { dlg.close(); sync.deleteAccount().catch(() => { acctMsg = "Nie udało się usunąć konta. Spróbuj ponownie."; paintAccount(); }); }
+        else if (ev.target.closest("[data-no]") || ev.target === dlg) dlg.close();
       });
       dlg.addEventListener("close", () => setTimeout(() => dlg.remove(), 260));
       dlg.showModal();
       dlg.querySelector("[data-no]").focus();
-    });
-  }
+    }
+  });
+  paintAccount();
 
-  // Ask the browser to keep this site's data (Safari otherwise clears it after
-  // 7 days without a visit). Firefox would show a prompt for it, so not there.
-  if (navigator.storage?.persist && !/Firefox\//.test(navigator.userAgent)) navigator.storage.persisted().then(p => p || navigator.storage.persist()).catch(() => {});
+  /* Install: one tap where the browser offers it (Android, desktop Chrome/Edge),
+     steps for iPhone, where "Add to Home Screen" sits in the Share menu. */
+  const inst = document.getElementById("install");
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (inst && !standalone) {
+    const ua = navigator.userAgent;
+    const ios = /iP(hone|ad|od)/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const inApp = /FBAN|FBAV|Instagram|Line\/|GSA\/|Messenger/.test(ua);
+    let deferred = null;
+    window.addEventListener("beforeinstallprompt", e => {
+      e.preventDefault(); deferred = e;
+      inst.hidden = false;
+      inst.innerHTML = `<button class="btn" type="button" data-install>Zainstaluj aplikację</button><span class="small muted">Ikona na ekranie, działa offline, przypomnienia.</span>`;
+    });
+    inst.addEventListener("click", async e => {
+      if (!e.target.closest("[data-install]") || !deferred) return;
+      deferred.prompt();
+      await deferred.userChoice.catch(() => {});
+      deferred = null; inst.hidden = true;
+    });
+    window.addEventListener("appinstalled", () => { inst.hidden = true; });
+    if (ios) {
+      inst.hidden = false;
+      inst.innerHTML = `<details class="install-ios"><summary class="btn">Dodaj aplikację do ekranu początkowego</summary>
+        <ol class="small">
+          ${inApp ? "<li>Otwórz tę stronę w Safari (menu ⋯, potem „Otwórz w Safari”).</li>" : ""}
+          <li>Stuknij <b>Udostępnij</b> (kwadrat ze strzałką). W iOS 26 najpierw stuknij <b>⋯</b> obok paska adresu.</li>
+          <li>Przewiń w dół i wybierz <b>Do ekranu początkowego</b>. Jeśli go nie ma, stuknij <b>Więcej</b> albo „Edytuj czynności”.</li>
+          <li>Otwieraj Exam Hub z ikony: wtedy działają przypomnienia.</li>
+        </ol></details>`;
+    }
+  }
 
   window.HubDue.publish();
 

@@ -7,7 +7,7 @@
    - Push: the daily reminder from the push Worker (push/), worded here with
      the due counts the pages copy to IndexedDB.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v10";
+const VERSION = "v11";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
 const MAX_IMAGES = 600;
@@ -27,6 +27,7 @@ const PRECACHE = [
   "assets/launcher.js",
   "assets/remind.js",
   "assets/push-config.js",
+  "assets/sync.js",
   "assets/fonts/nunito-latin.woff2",
   "assets/fonts/nunito-latin-ext.woff2",
   "assets/icons/icon-192.png",

@@ -1,6 +1,10 @@
 /* Exam Hub push: stores Web Push subscriptions in KV and sends one daily
-   study reminder at each subscriber's local time (cron every 15 minutes). */
+   study reminder at each subscriber's local time (cron every 15 minutes).
+   Also GitHub login and progress sync in D1 (see auth.js, sync.js). */
 import { sendPush } from "./webpush.js";
+import { corsHeaders, json, HttpError, readJson, sha256Hex } from "./http.js";
+import { authRoutes, cleanupAuth } from "./auth.js";
+import { syncRoutes } from "./sync.js";
 
 const PAYLOAD = JSON.stringify({
   title: "Exam Hub",
@@ -13,41 +17,10 @@ const WINDOW_MIN = 15;     // matches the cron interval
 const TEST_GAP_MS = 60_000;
 // Free plan allows 50 subrequests per invocation; keep headroom.
 const MAX_PUSHES_PER_RUN = 45;
-const MAX_BODY = 4096;
 
 const PUSH_HOSTS = /(^|\.)(fcm\.googleapis\.com|android\.googleapis\.com|push\.services\.mozilla\.com|push\.apple\.com|notify\.windows\.com)$/;
-const ALLOWED_ORIGIN = "https://michal1803.github.io";
-const LOCAL_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
-function corsHeaders(req) {
-  const origin = req.headers.get("Origin") || "";
-  if (origin !== ALLOWED_ORIGIN && !LOCAL_ORIGIN.test(origin)) return {};
-  return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400",
-    Vary: "Origin",
-  };
-}
-
-const json = (req, status, data) =>
-  new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...corsHeaders(req) } });
-
-class HttpError extends Error {
-  constructor(status, message) { super(message); this.status = status; }
-}
-
-async function readJson(req) {
-  const text = await req.text();
-  if (text.length > MAX_BODY) throw new HttpError(413, "body too large");
-  try { return JSON.parse(text); } catch (e) { throw new HttpError(400, "invalid JSON"); }
-}
-
-async function idFor(endpoint) {
-  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(endpoint));
-  return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, "0")).join("");
-}
+const idFor = sha256Hex;
 
 function checkEndpoint(endpoint, env) {
   if (typeof endpoint !== "string" || endpoint.length > 1024) throw new HttpError(400, "endpoint missing");
@@ -196,6 +169,8 @@ async function runCron(env) {
 }
 
 const routes = {
+  ...authRoutes,
+  ...syncRoutes,
   "POST /subscribe": subscribe,
   "POST /unsubscribe": unsubscribe,
   "POST /test": test,
@@ -208,7 +183,9 @@ export default {
     const route = routes[`${req.method} ${new URL(req.url).pathname}`];
     if (!route) return json(req, 404, { ok: false, error: "not found" });
     try {
-      return json(req, 200, await route(req, env));
+      const out = await route(req, env);
+      // Redirects and plain-text pages come back as ready Responses.
+      return out instanceof Response ? out : json(req, 200, out);
     } catch (e) {
       if (e instanceof HttpError) return json(req, e.status, { ok: false, error: e.message });
       console.error(e);
@@ -218,5 +195,6 @@ export default {
 
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runCron(env));
+    ctx.waitUntil(cleanupAuth(env));
   },
 };

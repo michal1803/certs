@@ -23,7 +23,13 @@
     });
     S.stars = (legacyUi.stars || []).filter(id => questions[id]);
   }
-  Object.values(S.ans).forEach(SRS.migrate);
+  // Each answer carries its domain (so the launcher and sync can summarise
+  // without the bank) and stars get a change log (so sync can merge them).
+  function prepare() {
+    Object.entries(S.ans).forEach(([id, a]) => { SRS.migrate(a); if (!a.d && questions[id]) a.d = questions[id].domain; });
+    if (!S.starLog) { S.starLog = {}; S.stars.forEach(id => { S.starLog[id] = S.savedAt || Date.now(); }); }
+  }
+  prepare();
   function save() {
     // Summary for the launcher, which cannot read the question bank.
     const summary = {};
@@ -41,6 +47,7 @@
     S.savedAt = Date.now();
     store(KEY, S);
     clearTimeout(save.t); save.t = setTimeout(() => window.HubDue?.publish(), 400);
+    window.HubSync?.schedule();
   }
 
   /* ---------- session: what you saw, in order, so Back works ---------- */
@@ -355,7 +362,7 @@
   function record(id, ok, sel, kind, guess = false) {
     const prev = S.ans[id], now = Date.now();
     const { box, due } = SRS.step(prev, ok, now, guess);
-    S.ans[id] = { sel, ok, at: now, n: (prev?.n || 0) + 1, streak: ok && !guess ? (prev?.ok ? prev.streak + 1 : 1) : 0, box, due };
+    S.ans[id] = { sel, ok, at: now, n: (prev?.n || 0) + 1, streak: ok && !guess ? (prev?.ok ? prev.streak + 1 : 1) : 0, box, due, d: questions[id].domain };
     if (guess) S.ans[id].guess = true;
     if (kind === "self") S.ans[id].self = true;
     if (session.quick && !session.quick.done.includes(id)) session.quick.done.push(id);
@@ -481,6 +488,7 @@
       case "all": session.scope = { domain: "", set: "all" }; saveSession(); return goTo(pickNext());
       case "star": {
         S.stars = S.stars.includes(id) ? S.stars.filter(x => x !== id) : [...S.stars, id];
+        S.starLog[id] = S.stars.includes(id) ? Date.now() : -Date.now();
         save();
         const on = S.stars.includes(id);
         t.setAttribute("aria-pressed", String(on));
@@ -552,5 +560,12 @@
     else goTo(pickNext());
   }
   window.addEventListener("hashchange", () => { if (!/^#egzamin/.test(location.hash)) boot(); });
+  // Another device's answers arrived: reload progress and redraw what is on screen.
+  window.addEventListener("hub:synced", e => {
+    if (!e.detail.changed.includes(KEY)) return;
+    S = load(KEY, S); prepare();
+    if (document.querySelector("dialog[open]") || document.body.classList.contains("xf-active")) return;
+    if (session.quick?.finished) renderQuickDone(); else if (session.pos >= 0) render();
+  });
   boot();
 })();
