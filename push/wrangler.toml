@@ -2,6 +2,9 @@
 name = "exam-hub-push"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
+# Served at https://exam-hub-push.<subdomain>.workers.dev; no preview URLs needed.
+workers_dev = true
+preview_urls = false
 
 # Every 15 minutes; each subscriber gets the push in the slot matching their local time.
 [triggers]
@@ -10,10 +13,10 @@ crons = ["*/15 * * * *"]
 # `npx wrangler kv namespace create SUBS` prints the real id; paste it here.
 [[kv_namespaces]]
 binding = "SUBS"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "c7707e2f99854759ac38f2e24dd04f70"
 
 [vars]
 # Public half of the VAPID key pair from `node scripts/gen-vapid.mjs`.
 # The private half is a secret: `npx wrangler secret put VAPID_PRIVATE_KEY`.
-VAPID_PUBLIC_KEY = "REPLACE_WITH_VAPID_PUBLIC_KEY"
+VAPID_PUBLIC_KEY = "BBu3wf6Qcsa417hDEVniXWkLv3duN0hE8y7458FK_rA5SfM_YQTsAPzw0y6RbUxuTs5notAYnku4iSy9Cr_uhBA"
 VAPID_SUBJECT = "https://michal1803.github.io/certs/"
