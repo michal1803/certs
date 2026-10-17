@@ -90,9 +90,9 @@ Zmiana kluczy VAPID unieważnia wszystkie istniejące subskrypcje (użytkownicy 
 
 ### Logowanie i synchronizacja
 
-1. Strona otwiera `GET /auth/login?return=<adres strony>` (tylko `https://michal1803.github.io/certs/...` albo `http://localhost:*`, inaczej 400). Worker przekierowuje do GitHuba, a GitHub z powrotem na `/auth/callback`.
+1. Strona otwiera `GET /auth/login?challenge=<sha256 hex weryfikatora>&return=<adres strony>` (tylko `https://michal1803.github.io/certs/...` albo `http://localhost:*`, inaczej 400). Worker przekierowuje do GitHuba, a GitHub z powrotem na `/auth/callback`.
 2. Po sukcesie Worker przekierowuje na `<return>#auth=<kod>` (kod ważny 2 minuty, jednorazowy), po błędzie na `<return>#auth-error=<powód>` (np. `access_denied`).
-3. `POST /auth/exchange` `{ "code": "..." }` → `{ "ok": true, "token": "...", "user": { "id", "login", "name", "avatar" } }`
+3. `POST /auth/exchange` `{ "code": "...", "verifier": "..." }` → `{ "ok": true, "token": "...", "user": { "id", "login", "name", "avatar" } }`
 
 Pozostałe wymagają nagłówka `Authorization: Bearer <token>`, inaczej 401 `{ "ok": false, "error": "unauthorized" }`. Sesja wygasa po 180 dniach bez użycia.
 
@@ -117,3 +117,7 @@ curl "http://localhost:8787/__scheduled?cron=*/15+*+*+*+*"
 ## Limity
 
 Jedno uruchomienie crona wysyła najwyżej 45 powiadomień (limit 50 zapytań wychodzących na darmowym planie). KV na darmowym planie pozwala na 1000 zapisów dziennie: każde wysłane przypomnienie to jeden zapis. D1 na darmowym planie: 5 mln odczytanych i 100 tys. zapisanych wierszy dziennie; `PUT /sync` to jeden zapis na klucz, a sesja odświeża `last_used` najwyżej raz na dobę. Cron przy okazji usuwa wygasłe kody i sesje.
+
+## Ochrona logowania
+
+Kod logowania jest powiązany z przeglądarką, która zaczęła logowanie: strona trzyma losowy weryfikator i wysyła tylko jego skrót (`challenge`). Bez weryfikatora kodu nie da się wymienić na sesję, więc cudzy link logowania nie zaloguje nikogo na obce konto. Klucze synchronizacji są ograniczone do istniejących egzaminów.
