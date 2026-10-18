@@ -7,8 +7,8 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fff4e6",
-  "theme_color": "#fff4e6",
+  "background_color": "#0b1230",
+  "theme_color": "#0b1230",
   "shortcuts": [
     {
       "name": "Szybka piątka",

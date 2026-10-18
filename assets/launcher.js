@@ -73,23 +73,32 @@
   }
 
   /* ---------- pieces ---------- */
-  const bar = (part, whole) => `<span class="bar" aria-hidden="true"><i style="width:${whole ? Math.min(100, part / whole * 100) : 0}%"></i></span>`;
+  /* Signature: each domain is a transit line. Its length is the domain's share
+     of the bank, with ten stations along it, lit up to the mastered share;
+     the open ring marks where the line continues from. */
+  const lineOf = (k, ok, total, max, stations = 10) => {
+    const share = total ? Math.min(1, ok / total) : 0, lit = Math.floor(share * stations + 1e-9);
+    const w = max && total ? Math.max(40, total / max * 100) : 100;
+    return `<span class="line" style="--c:var(--l${k % 8 + 1});--p:${(share * 100).toFixed(1)}%;--w:${w.toFixed(1)}%" aria-hidden="true">${
+      Array.from({ length: stations }, (_, s) => `<i${s < lit ? ' class="lit"' : s === lit ? ' class="here"' : ""}></i>`).join("")}</span>`;
+  };
+  // The domains as one network; each line opens study for its domain.
+  function network(f, full = false) {
+    const max = Math.max(0, ...f.domains.map(x => x.total || 0));
+    return `<ul class="network${full ? " full" : ""}">${f.domains.map(({ d, ok, total }, k) => `<li><a class="net-row" href="${esc(f.p.href)}#nauka=${esc(d.id)}" aria-label="Ucz się: ${esc(d.name)}. Opanowane ${ok}${total ? ` z ${total}` : ""}.">
+      <span class="net-name" lang="en">${esc(full ? d.name : d.label)}</span>${lineOf(k, ok, total, max, full ? 10 : 6)}<span class="net-n">${ok}${total ? `<small>/${total}</small>` : ""}</span>${full ? icon("chev") : ""}</a></li>`).join("")}</ul>`;
+  }
   const row = (href, title, sub, n = "") => `<li><a class="row" href="${esc(href)}"><span class="row-t"><b>${title}</b>${sub ? `<span>${sub}</span>` : ""}</span>${n !== "" ? `<span class="row-n">${n}</span>` : ""}${icon("chev")}</a></li>`;
   const header = (h, sub) => `<div class="view-head"><h1 tabindex="-1">${h}</h1>${sub ? `<p>${sub}</p>` : ""}</div>`;
 
   function resumeCard(f) {
     const a = f.running, left = a.deadline ? a.deadline - Date.now() : null;
     const drill = !!f.p.exam.drill;
-    return `<section class="card hero" aria-labelledby="hero-h">
+    return `<section class="hero" aria-labelledby="hero-h">
       <h2 id="hero-h">Niedokończony ${drill ? "trening" : "egzamin"}</h2>
       <p>Pytanie ${int(a.current) + 1} z ${int(a.count)}${left === null ? " · bez limitu czasu" : left > 0 ? ` · zostało ${clock(left)}. Zegar biegnie dalej, jak na prawdziwym egzaminie.` : ". Czas minął: wynik czeka."}${left === null ? "." : ""}</p>
       <a class="btn btn-primary btn-block" href="${esc(f.p.href)}#egzamin">${left !== null && left <= 0 ? "Zobacz wynik" : "Wróć do egzaminu"}</a>
     </section>`;
-  }
-
-  function masteryLine(f) {
-    const total = f.p.all.length;
-    return `<div class="meter"><span>Opanowane <b>${f.mastered}</b> z ${total}</span>${bar(f.mastered, total)}</div>`;
   }
 
   /* ---------- Nauka: one next step ---------- */
@@ -99,23 +108,21 @@
     if (f.running) { hero = resumeCard(f); heroIs = "resume"; }
     else if (f.due) {
       heroIs = "quick";
-      hero = `<section class="card hero" aria-labelledby="hero-h">
-        <h2 id="hero-h">${f.due} ${plural(f.due, "pytanie czeka", "pytania czekają", "pytań czeka")} na powtórkę</h2>
+      hero = `<section class="hero" aria-labelledby="hero-h">
+        <h2 id="hero-h" class="due"><b>${f.due}</b> <span>${plural(f.due, "pytanie czeka", "pytania czekają", "pytań czeka")} na powtórkę</span></h2>
         <p>Szybka piątka bierze ${f.due >= 5 ? "5 z nich" : f.due === 1 ? "je i dobiera nowe" : "je i dobiera nowe"}. Zajmie ok. 3 minuty.</p>
         <a class="btn btn-primary btn-block" href="${esc(href)}#szybkie">Szybka piątka</a>
-        ${masteryLine(f)}
       </section>`;
     } else if (f.seen) {
       heroIs = "all";
-      hero = `<section class="card hero" aria-labelledby="hero-h">
+      hero = `<section class="hero" aria-labelledby="hero-h">
         <h2 id="hero-h">Powtórki na dziś zrobione</h2>
         <p>${f.nextDue ? `Następne pytania wrócą ${window.SRS.when(f.nextDue, Date.now())}. ` : ""}W międzyczasie ucz się nowych pytań.</p>
         <a class="btn btn-primary btn-block" href="${esc(href)}#nauka:wszystkie">Ucz się dalej</a>
-        ${masteryLine(f)}
       </section>`;
     } else {
       heroIs = "quick";
-      hero = `<section class="card hero" aria-labelledby="hero-h">
+      hero = `<section class="hero" aria-labelledby="hero-h">
         <h2 id="hero-h">Zacznij od pięciu pytań</h2>
         <p>Odpowiedź sprawdzasz od razu, a komentarze społeczności wyjaśniają dlaczego. Dobre odpowiedzi wracają po 1, 3, 7, 14 i 30 dniach, żeby zostały w pamięci.</p>
         <a class="btn btn-primary btn-block" href="${esc(href)}#szybkie">Szybka piątka</a>
@@ -126,11 +133,13 @@
       heroIs !== "all" ? row(`${href}#nauka:wszystkie`, "Wszystkie pytania", "Najpierw błędne i zaległe, potem nowe", "") : "",
       f.wrong ? row(`${href}#nauka:bledne`, "Błędne odpowiedzi", "Ostatnia odpowiedź była błędna", f.wrong) : "",
       f.stars ? row(`${href}#nauka:gwiazdki`, "Z gwiazdką", "Twoje oznaczone pytania", f.stars) : "",
-      row("#postep", "Jedna domena", "Wybierz ją w zakładce Postęp"),
     ].join("");
     return `${header(esc(p.title), `${esc(p.vendor)} · ${pytan(p.all.length)} w bazie`)}
       ${hero}
-      <h2 class="list-h">Inne sposoby nauki</h2>
+      <h2 class="list-h">Twoja sieć <span>opanowane ${f.mastered} z ${p.all.length}</span></h2>
+      ${network(f)}
+      <p class="small muted list-note">Linia to domena, stacje świecą, gdy pytania są opanowane. Dotknij linii, żeby uczyć się tylko jej.</p>
+      <h2 class="list-h">Inne trasy</h2>
       <ul class="rows">${rows}</ul>
       ${statusLines(f)}`;
   }
@@ -160,7 +169,7 @@
     const lead = drill
       ? `Prawdziwy egzamin ${esc(p.vendor)} trwa ${drill.realMinutes} minut i ma ${esc(drill.realCount)} pytań${drill.realCountUnofficial ? " (dane nieoficjalne)" : ""}. Baza ma ich ${p.all.length}, więc to trening w tym samym tempie, nie pełna symulacja.`
       : `Pytania losowane w proporcjach domen z oficjalnego opisu egzaminu. Możesz oznaczać pytania i wracać do nich przed oddaniem.`;
-    const card = f.running ? resumeCard(f) : `<section class="card hero" aria-labelledby="hero-h">
+    const card = f.running ? resumeCard(f) : `<section class="hero" aria-labelledby="hero-h">
         <h2 id="hero-h">${drill ? "W tempie prawdziwego egzaminu" : "Jak na prawdziwym egzaminie"}</h2>
         <ul class="facts">${chips.map(c => `<li>${esc(c)}</li>`).join("")}</ul>
         <p>${lead}</p>
@@ -184,7 +193,7 @@
     const p = f.p;
     if (!f.seen) {
       return `${header("Postęp", esc(p.title))}
-        <section class="card hero" aria-labelledby="hero-h">
+        <section class="hero" aria-labelledby="hero-h">
           <h2 id="hero-h">Jeszcze nic tu nie ma</h2>
           <p>Po pierwszych odpowiedziach zobaczysz tu, które domeny już umiesz, a które wymagają pracy.</p>
           <a class="btn btn-block" href="${esc(p.href)}#szybkie">Szybka piątka</a>
@@ -199,16 +208,14 @@
         <li><b>${f.stars}</b><span>z gwiazdką</span></li>
       </ul>
       <h2 class="list-h">Domeny</h2>
-      <p class="small muted list-note">Opanowane to trzy dobre odpowiedzi z rosnącymi odstępami. Dotknij domeny, żeby uczyć się tylko z niej.</p>
-      <ul class="rows domains">${f.domains.map(({ d, ok, total }) => `<li><a class="row" href="${esc(p.href)}#nauka=${esc(d.id)}">
-        <span class="row-t"><b>${esc(d.name)}</b>${bar(ok, total || 0)}</span>
-        <span class="row-n">${ok}${total ? `/${total}` : ""}</span>${icon("chev")}</a></li>`).join("")}</ul>
+      <p class="small muted list-note">Opanowane to trzy dobre odpowiedzi z rosnącymi odstępami. Długość linii to liczba pytań w domenie. Dotknij domeny, żeby uczyć się tylko z niej.</p>
+      ${network(f, true)}
       ${last ? `<h2 class="list-h">Ostatni egzamin</h2><p class="last-exam"><b>${int(last.pct)}%</b> · ${esc(date(int(last.at)))} · ${pytan(int(last.count))}. <a href="#egzamin" data-tab-link="egzamin">Wszystkie wyniki</a></p>` : ""}`;
   }
 
   /* ---------- paint ---------- */
   function paintSwitch() {
-    switcher.innerHTML = IDS.length > 1 ? IDS.map(id => `<button type="button" data-exam="${id}" aria-pressed="${id === exam}">${esc(PROFILES[id].short || PROFILES[id].title)}</button>`).join("") : "";
+    switcher.innerHTML = IDS.length > 1 ? IDS.map((id, k) => `<button type="button" data-exam="${id}" aria-pressed="${id === exam}"><i style="--c:var(--l${PROFILES[id].line || k + 1})" aria-hidden="true"></i>${esc(PROFILES[id].short || PROFILES[id].title)}</button>`).join("") : "";
   }
   function paint(focus = false) {
     const f = facts(exam);

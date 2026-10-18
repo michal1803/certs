@@ -8,6 +8,7 @@
     terraform: {
       title: "Terraform Associate 004",
       short: "Terraform",
+      line: 5,   // the exam's own line colour (--l5, violet) in the switcher
       vendor: "HashiCorp",
       href: "terraform.html",
       storage: { ui: "exam-ui-v2:terraform-associate-004", progress: "exam-progress:terraform-associate-004:v1" },
@@ -42,6 +43,7 @@
     az104: {
       title: "AZ-104 Azure Administrator",
       short: "AZ-104",
+      line: 2,   // --l2, cobalt
       vendor: "Microsoft",
       href: "az104.html",
       storage: { ui: "exam-ui-v2:microsoft-az-104", progress: "exam-progress:microsoft-az-104:v1" },
