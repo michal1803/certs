@@ -73,8 +73,13 @@
   document.body.appendChild(live);
   const announce = msg => { live.textContent = ""; setTimeout(() => { live.textContent = msg; }, 30); };
 
+  // The study screen stays in the page under the exam: keep it out of reach
+  // of Tab and screen readers while the exam is open.
+  const setStudyInert = on => { const sv = document.querySelector(".xf.sv"); if (sv) sv.inert = on; };
+
   function open() {
     document.body.classList.add("xf-active");
+    setStudyInert(true);
     root.hidden = false;
     document.title = `${P.title} · egzamin`;
     if (A && A.status === "running" && remaining() !== null && remaining() <= 0) finish(true);
@@ -87,6 +92,7 @@
     flushTime(); if (A) save();
     stopTick();
     document.body.classList.remove("xf-active");
+    setStudyInert(false);
     root.hidden = true;
   }
 

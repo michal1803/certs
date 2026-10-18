@@ -539,6 +539,8 @@
 
   /* ---------- start ---------- */
   function boot() {
+    // An exam covers the whole screen: draw nothing (and load no images) under it.
+    if (/^#egzamin/.test(location.hash)) return;
     if (location.hash === "#szybkie" || location.hash === "#szybka") {
       save();
       if (location.hash === "#szybkie" || !session.quick) return startQuick();

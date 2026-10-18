@@ -1,7 +1,0 @@
-# Local planning and tool files: never part of the public repo.
-PRODUCT.md
-DESIGN.md
-AUDIT*.md
-.claude/
-.impeccable/
-skills-lock.json

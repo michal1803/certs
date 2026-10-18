@@ -7,10 +7,13 @@
    - Push: the daily reminder from the push Worker (push/), worded here with
      the due counts the pages copy to IndexedDB.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v12";
+const VERSION = "v13";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
-const MAX_IMAGES = 600;
+// Cross-origin images are opaque, and browsers count each one as several MB
+// of quota, so keep only the most recent ones (pages load images lazily, so
+// only exhibits actually shown get here).
+const MAX_IMAGES = 80;
 
 const PRECACHE = [
   "./",

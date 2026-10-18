@@ -47,7 +47,7 @@
       </div>
       <div role="tabpanel" id="p-${id}-exam" aria-labelledby="t-${id}-exam"${mode === "exam" ? "" : " hidden"}>
         <ul class="facts">
-          <li>${p.exam.minutes} min</li>
+          <li data-minutes="${id}">${window.examMinutes(p, p.exam.defaultCount)} min</li>
           <li>${p.exam.passing ? `próg ${p.exam.passing.score}/${p.exam.passing.scale}` : "próg niepublikowany"}</li>
         </ul>
         <div class="field">
@@ -90,6 +90,7 @@
     const n = parseInt(document.getElementById(`c-${id}`).value, 10);
     const q = window.examQuotas(p, n);
     const max = Math.max(...Object.values(q), 1);
+    document.querySelector(`[data-minutes="${id}"]`).textContent = `${window.examMinutes(p, n)} min`;
     const ul = document.querySelector(`[data-split="${id}"]`);
     if (ul.children.length === p.domains.length) {
       // Same domains, new counts: let the bars glide to their new length.
