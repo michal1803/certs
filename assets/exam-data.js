@@ -7,6 +7,7 @@
   window.EXAM_PROFILES = {
     terraform: {
       title: "Terraform Associate 004",
+      short: "Terraform",
       vendor: "HashiCorp",
       href: "terraform.html",
       storage: { ui: "exam-ui-v2:terraform-associate-004", progress: "exam-progress:terraform-associate-004:v1" },
@@ -40,6 +41,7 @@
     },
     az104: {
       title: "AZ-104 Azure Administrator",
+      short: "AZ-104",
       vendor: "Microsoft",
       href: "az104.html",
       storage: { ui: "exam-ui-v2:microsoft-az-104", progress: "exam-progress:microsoft-az-104:v1" },

@@ -156,7 +156,7 @@
     ].filter(Boolean);
     root.innerHTML = `
       <div class="xf-screen"><div class="xf-col xf-body" role="main">
-        <div class="xf-top"><a class="btn btn-quiet" href="index.html">${icon("left")}Egzaminy</a></div>
+        <div class="xf-top"><a class="btn btn-quiet" href="index.html#egzamin">${icon("left")}Wróć</a></div>
         <div class="xf-head"><h1 tabindex="-1">${esc(P.title)}</h1><p>${lead}</p></div>
         ${running ? `
         <section class="card xf-section" aria-labelledby="resume-h">
@@ -561,7 +561,7 @@
     const weakPct = weakest ? Math.round(weakest.p / weakest.m * 100) : null;
     root.innerHTML = `
       <div class="xf-screen"><div class="xf-col xf-body" role="main" style="padding-bottom:40px">
-        <div class="xf-top"><a class="btn btn-quiet" href="index.html">${icon("home")}Egzaminy</a></div>
+        <div class="xf-top"><a class="btn btn-quiet" href="index.html#egzamin">${icon("home")}Strona główna</a></div>
         <section class="card xf-verdict" aria-labelledby="xf-res-h">
           <h1 id="xf-res-h" tabindex="-1">Wynik: ${esc(P.title)}</h1>
           ${tag}
@@ -579,7 +579,7 @@
           <p class="small muted">Jak na oficjalnym raporcie: krótszy pasek to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
         </section>
         <div class="xf-actions" style="grid-template-columns:1fr 1fr">
-          <a class="btn btn-quiet" href="index.html">Egzaminy</a>
+          <a class="btn btn-quiet" href="index.html#egzamin">Strona główna</a>
           <button class="btn btn-quiet" data-act="again">Nowy egzamin</button>
         </div>
         <section class="xf-section" style="padding:0" aria-labelledby="xf-ans-h">

@@ -142,10 +142,10 @@
     setState("out");
     if (msg) emit("hub:auth-message", msg);
   }
-  async function logout() {
+  async function logout(everywhere = false) {
     if (dirty) await sync().catch(() => {});
-    await call("POST", "/auth/logout").catch(() => {});
-    signOutLocal("Wylogowano. Postęp zostaje w tej przeglądarce.");
+    await call("POST", everywhere ? "/auth/logout-all" : "/auth/logout").catch(() => {});
+    signOutLocal(everywhere ? "Wylogowano na wszystkich urządzeniach. Postęp zostaje w tej przeglądarce." : "Wylogowano. Postęp zostaje w tej przeglądarce.");
   }
   async function deleteAccount() {
     await call("DELETE", "/account");

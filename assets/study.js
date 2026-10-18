@@ -66,7 +66,9 @@
   let lastRendered = null;
 
   const scopeFromHash = () => {
-    if (location.hash === "#nauka:egzamin") return "@exam";
+    // Sets opened from the launcher or the exam results.
+    const set = { "#nauka:egzamin": "exam", "#nauka:bledne": "wrong", "#nauka:gwiazdki": "star", "#nauka:wszystkie": "all" }[location.hash];
+    if (set) return "@" + set;
     const m = location.hash.match(/^#nauka(?:=([a-z-]+))?$/);
     return m ? (m[1] && P.domains.some(d => d.id === m[1]) ? m[1] : "") : null;
   };
@@ -167,7 +169,7 @@
       const k = session.quick.done.length, n = session.quick.n;
       return `
       <div class="xf-top">
-        <a class="pill icon-btn" href="index.html" aria-label="Wróć do listy egzaminów" title="Egzaminy">${icon("home")}</a>
+        <a class="pill icon-btn" href="index.html#nauka" aria-label="Strona główna" title="Strona główna">${icon("home")}</a>
         <button class="pill sv-scope" data-act="quit-quick" title="Zakończ szybką piątkę i ucz się dalej">${icon("close")}<span>Szybka piątka</span></button>
         <span class="pill-gap"></span>
       </div>
@@ -178,7 +180,7 @@
     const starred = id && S.stars.includes(id);
     return `
       <div class="xf-top">
-        <a class="pill icon-btn" href="index.html" aria-label="Wróć do listy egzaminów" title="Egzaminy">${icon("home")}</a>
+        <a class="pill icon-btn" href="index.html#nauka" aria-label="Strona główna" title="Strona główna">${icon("home")}</a>
         <button class="pill sv-scope" data-act="list" aria-haspopup="dialog">${icon("list")}<span>${esc(scopeLabel())}</span></button>
         ${id ? `<button class="pill icon-btn sv-star" data-act="star" aria-pressed="${starred}" aria-label="${starred ? "Usuń gwiazdkę" : "Dodaj gwiazdkę"}" title="Gwiazdka">${icon("star")}</button>` : `<span class="pill-gap"></span>`}
       </div>
@@ -203,7 +205,7 @@
       : Number.isFinite(nextDue) ? `Nic więcej nie czeka na powtórkę. Następne pytania wrócą ${SRS.when(nextDue, now)}.` : "";
     document.title = `${P.title} · szybka piątka`;
     root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body" role="main">
-      <div class="xf-top"><a class="pill icon-btn" href="index.html" aria-label="Wróć do listy egzaminów" title="Egzaminy">${icon("home")}</a></div>
+      <div class="xf-top"><a class="pill icon-btn" href="index.html#nauka" aria-label="Strona główna" title="Strona główna">${icon("home")}</a></div>
       <section class="card xf-section sv-quick" aria-labelledby="sv-quick-h">
         <h1 id="sv-quick-h" class="sv-h1" tabindex="-1">Szybka piątka: ${ok} z ${rows.length}</h1>
         ${after ? `<p class="muted">${after}</p>` : ""}
@@ -216,7 +218,7 @@
       </section>
     </div>
     <nav class="xf-bar" aria-label="Szybka piątka"><div class="xf-bar-inner" style="grid-template-columns:1fr 1.5fr">
-      <a class="btn" href="index.html">Egzaminy</a>
+      <a class="btn" href="index.html#nauka">Strona główna</a>
       <button class="btn btn-primary" data-act="quick-again">Jeszcze ${QUICK} pytań</button>
     </div></nav></div>`;
     root.scrollTop = 0;
@@ -552,8 +554,8 @@
     }
     if (session.quick) { session.quick = null; saveSession(); }
     const fromHash = scopeFromHash();
-    if (fromHash === "@exam") {
-      session.scope = { domain: "", set: "exam" };
+    if (fromHash?.startsWith("@")) {
+      session.scope = { domain: "", set: fromHash.slice(1) };
       session.history = []; session.pos = -1; session.revealed = {};
       history.replaceState(null, "", "#nauka");
     } else if (fromHash !== null && fromHash !== session.scope.domain) {

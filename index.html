@@ -18,37 +18,61 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body class="launcher">
-<main>
-  <header>
-    <h1>Exam Hub</h1>
-    <p>Ucz się z pytań albo zrób egzamin próbny z tym samym czasem i tymi samymi proporcjami domen co na prawdziwym egzaminie.</p>
-    <div class="account" id="account" hidden></div>
+<div class="shell">
+  <header class="top">
+    <div class="exam-switch" id="exam-switch" role="group" aria-label="Egzamin"></div>
+    <button class="pill gear" type="button" id="open-settings" aria-haspopup="dialog" aria-label="Ustawienia i konto"></button>
   </header>
-  <div class="exam-list" id="exams">
+
+  <main id="view" tabindex="-1">
     <noscript><p class="note">Exam Hub potrzebuje włączonego JavaScriptu.</p></noscript>
+  </main>
+
+  <nav class="tabbar" aria-label="Sekcje">
+    <a href="#nauka" data-tab="nauka"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h6a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H3z"/><path d="M21 5h-6a3 3 0 0 0-3 3v12a2 2 0 0 1 2-2h7z"/></svg><span>Nauka</span></a>
+    <a href="#egzamin" data-tab="egzamin"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 2h6"/></svg><span>Egzamin</span></a>
+    <a href="#postep" data-tab="postep"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Postęp</span></a>
+  </nav>
+</div>
+
+<dialog class="xf-sheet settings" id="settings" aria-labelledby="settings-h">
+  <div class="xf-sheet-in">
+    <div class="xf-sheet-head"><h2 id="settings-h">Ustawienia</h2><button class="btn btn-quiet icon-btn" type="button" data-close aria-label="Zamknij"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+
+    <section class="set" id="konto" aria-labelledby="konto-h">
+      <h3 id="konto-h">Konto i synchronizacja</h3>
+      <div class="account" id="account"><p class="small muted">Postęp, gwiazdki i wyniki zapisują się w tej przeglądarce.</p></div>
+    </section>
+
+    <section class="set remind" id="remind" aria-labelledby="remind-h">
+      <h3 id="remind-h">Codzienne przypomnienie</h3>
+      <p class="small muted">Kilka minut dziennie daje więcej niż jedna długa sesja raz w tygodniu. Przypomnienie otwiera szybką piątkę z pytań, które czekają na powtórkę.</p>
+      <div class="field remind-time"><label for="remind-time">Godzina</label><input class="select" type="time" id="remind-time" value="19:00" required></div>
+      <div class="remind-actions">
+        <div data-push hidden></div>
+        <button class="btn" type="button" data-ics>Dodaj do kalendarza</button>
+      </div>
+      <p class="small muted" data-remind-status role="status"></p>
+    </section>
+
+    <section class="set" aria-labelledby="look-h">
+      <h3 id="look-h">Wygląd</h3>
+      <div class="seg" role="group" aria-label="Motyw" data-theme-pick>
+        <button type="button" data-theme-choice="system">Systemowy</button>
+        <button type="button" data-theme-choice="light">Jasny</button>
+        <button type="button" data-theme-choice="dark">Ciemny</button>
+      </div>
+      <div data-shortcuts-slot></div>
+    </section>
+
+    <section class="set about" aria-labelledby="about-h">
+      <h3 id="about-h">O aplikacji</h3>
+      <p class="small muted">Nieoficjalne narzędzie do nauki, niezwiązane z Microsoft ani HashiCorp. Zasady egzaminów pochodzą z ich oficjalnych stron. Pytania i komentarze pochodzą od społeczności ExamTopics.</p>
+      <p class="small"><a href="privacy.html">Polityka prywatności</a></p>
+    </section>
   </div>
-  <section class="card remind" id="remind" aria-labelledby="remind-h">
-    <div>
-      <h2 id="remind-h">Codzienna szybka piątka</h2>
-      <p class="muted">Kilka minut dziennie daje więcej niż jedna długa sesja raz w tygodniu. Wybierz godzinę, a przypomnienie otworzy 5 pytań z tych, które czekają na powtórkę.</p>
-    </div>
-    <div class="field remind-time"><label for="remind-time">Godzina przypomnienia</label><input class="select" type="time" id="remind-time" value="19:00" required></div>
-    <div class="remind-actions">
-      <div data-push hidden></div>
-      <button class="btn" type="button" data-ics>Dodaj do kalendarza</button>
-    </div>
-    <p class="small muted" data-remind-status role="status"></p>
-  </section>
-  <footer>
-    <div class="theme-pick"><span id="theme-l">Motyw</span><div class="seg" role="radiogroup" aria-labelledby="theme-l">
-      <button role="radio" data-theme-choice="system">Systemowy</button>
-      <button role="radio" data-theme-choice="light">Jasny</button>
-      <button role="radio" data-theme-choice="dark">Ciemny</button>
-    </div></div>
-    <p data-storage-note>Postęp, gwiazdki i wyniki zapisują się w tej przeglądarce. Po zalogowaniu przez GitHub synchronizują się między Twoimi urządzeniami.</p>
-    <p>Nieoficjalne narzędzie do nauki, niezwiązane z Microsoft ani HashiCorp. Zasady egzaminów pochodzą z ich oficjalnych stron.</p>
-  </footer>
-</main>
+</dialog>
+
 <script src="assets/exam-data.js"></script>
 <script src="assets/push-config.js"></script>
 <script src="assets/sync.js"></script>
