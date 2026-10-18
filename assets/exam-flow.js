@@ -69,6 +69,7 @@
   const live = document.createElement("div");
   live.className = "sr-live";
   live.setAttribute("aria-live", "polite");
+  live.setAttribute("lang", "pl");
   live.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)";
   document.body.appendChild(live);
   const announce = msg => { live.textContent = ""; setTimeout(() => { live.textContent = msg; }, 30); };
@@ -108,6 +109,7 @@
           if (r <= m * 60000 && r > 0 && !A.warned.includes(m)) {
             A.warned.push(m); save();
             toast(`Zostało ${m} minut`);
+            announce(`Zostało ${m} minut`);
           }
         }
         if (r <= 0) finish(true);
@@ -153,7 +155,7 @@
       P.exam.rules?.breaks ? "Przerwa jest możliwa poza serią Tak/Nie. Zegar biegnie, a pytań sprzed przerwy już nie zobaczysz." : "",
     ].filter(Boolean);
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body">
+      <div class="xf-screen"><div class="xf-col xf-body" role="main">
         <div class="xf-top"><a class="btn btn-quiet" href="index.html">${icon("left")}Egzaminy</a></div>
         <div class="xf-head"><h1 tabindex="-1">${esc(P.title)}</h1><p>${lead}</p></div>
         ${running ? `
@@ -174,6 +176,7 @@
           <div><h3 class="small muted" style="margin-bottom:8px">Pytania z każdej domeny</h3><ul class="split" data-split></ul></div>
           ${P.weightsAreProxy ? `<p class="note">${icon("info")}<span>${esc(P.vendor)} nie publikuje wag domen ani progu. Proporcje liczymy z liczby celów egzaminacyjnych w każdej domenie.</span></p>` : ""}
           <label class="switch"><span><b>Bez limitu czasu</b><br><span class="small muted">Dla nauki w swoim tempie.</span></span><input type="checkbox" id="xf-untimed"></label>
+          ${Hub.shortcuts.html()}
         </section>
         ${keyRules.length ? `<section class="card xf-section xf-keyrules" aria-label="Ważne zasady">${keyRules.map(r => `<p class="note warn">${icon("lock")}<span>${r}</span></p>`).join("")}</section>` : ""}
         <details class="card xf-section xf-more">
@@ -184,7 +187,7 @@
             <li>Typy pytań: ${esc(P.exam.questionTypes)}. Pytania bez klucza odpowiedzi (hotspot, drag &amp; drop) zostają w trybie Nauka.</li>
             ${P.exam.rules?.learnUrl ? "<li>Możesz otworzyć Microsoft Learn w nowej karcie. Zegar w tym czasie biegnie.</li>" : ""}
             <li>Zamknięcie strony nie przerywa egzaminu: po powrocie wracasz do tego samego pytania.</li>
-            <li>Skróty klawiszowe: A–F lub 1–6 wybiera odpowiedź, ← → zmienia pytanie, F oznacza.</li>
+            <li>Skróty klawiszowe: A–F lub 1–6 wybiera odpowiedź, ← → zmienia pytanie, F oznacza. Litery i cyfry możesz wyłączyć w ustawieniach powyżej.</li>
           </ul>
           <p class="small muted">Źródło zasad: oficjalna strona egzaminu, sprawdzone ${esc(P.exam.verified)}. Nieoficjalne narzędzie, niezwiązane z ${esc(P.vendor)}.</p>
         </details>
@@ -243,10 +246,10 @@
     const last = nextIndex() < 0;
     const prev = prevIndex();
     const parts = q.parts.map(p => p.kind === "text"
-      ? `<div class="xf-qtext">${p.html}</div>`
-      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)} do pytania ${i + 1}" loading="lazy" data-src="${esc(src)}"></a></figure>`).join("")}</div>`).join("");
+      ? `<div class="xf-qtext" lang="en">${p.html}</div>`
+      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)} do pytania ${i + 1}: zrzut ekranu bez opisu tekstowego" loading="lazy" data-src="${esc(src)}"></a></figure>`).join("")}</div>`).join("");
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body">
+      <div class="xf-screen"><div class="xf-col xf-body" role="main">
         <div class="xf-top">
           <button class="pill xf-pos" data-act="nav" aria-haspopup="dialog" aria-label="Pytanie ${i + 1} z ${A.count}. Otwórz listę pytań">${icon("grid")}<b>${i + 1}</b><span>z ${A.count}</span></button>
           <div class="right">
@@ -257,7 +260,7 @@
         </div>
         <div class="xf-progress" aria-hidden="true"><i style="width:${lastPct}%"></i></div>
         <article class="card xf-q xf-enter-${motion.dir}" aria-labelledby="xf-qh">
-          <h2 id="xf-qh" tabindex="-1">Pytanie ${i + 1} z ${A.count}</h2>
+          <h1 id="xf-qh" class="xf-qh" tabindex="-1">Pytanie ${i + 1} z ${A.count}</h1>
           ${q.series ? `<p class="note warn">${icon("lock")}<span>Pytanie z serii. Po przejściu dalej nie wrócisz do niego.</span></p>` : ""}
           ${parts}
           ${multi ? `<p class="xf-hint" data-hint>Wybierz ${q.correct.length}. Zaznaczono ${chosen.length}.</p>` : ""}
@@ -268,7 +271,7 @@
                 <input type="${multi ? "checkbox" : "radio"}" name="xf-ans" value="${esc(o.val)}"${chosen.includes(o.val) ? " checked" : ""}>
                 <span class="xf-mark" aria-hidden="true"></span>
                 <span class="xf-letter">${esc(o.val)}</span>
-                <span class="xf-opt-text">${o.html}</span>
+                <span class="xf-opt-text" lang="en">${o.html}</span>
               </label>`).join("")}
           </fieldset>
         </article>
@@ -366,7 +369,7 @@
     const list = A.pool.map((id, i) => ({ id, i })).filter(({ id }) =>
       reviewFilter === "open" ? !A.answers[id] : reviewFilter === "flag" ? A.flags.includes(id) : true);
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body">
+      <div class="xf-screen"><div class="xf-col xf-body" role="main">
         <div class="xf-top"><span></span><div class="pill xf-clock" role="timer"></div></div>
         <div class="xf-head"><h1 tabindex="-1">Przegląd</h1><p>Odpowiedzi: ${A.count - A.pool.filter(id => !A.answers[id]).length} z ${A.count}. Sprawdź pytania bez odpowiedzi i oznaczone, zanim zakończysz.</p></div>
         <div class="xf-chips" role="group" aria-label="Filtr" style="margin:12px 0">
@@ -381,7 +384,7 @@
           const status = locked ? `<span class="s s-lock">${icon("lock")}${done ? "Zapisane" : "Bez odpowiedzi"}</span>`
             : done ? `<span class="s s-done">${flag ? icon("flag") : ""}Odpowiedziane</span>`
             : `<span class="s s-open">${flag ? icon("flag") : ""}Bez odpowiedzi</span>`;
-          return `<li><button class="xf-row" data-go="${i}"${locked ? " disabled" : ""}><span class="n">${i + 1}</span><span class="t">${esc(questions[id].text.slice(0, 120))}</span>${status}<span class="time" aria-label="czas ${clock(A.spent[id] || 0)}">${clock(A.spent[id] || 0)}</span></button></li>`;
+          return `<li><button class="xf-row" data-go="${i}"${locked ? " disabled" : ""}><span class="n">${i + 1}</span><span class="t" lang="en">${esc(questions[id].text.slice(0, 120))}</span>${status}<span class="time" aria-label="czas ${clock(A.spent[id] || 0)}">${clock(A.spent[id] || 0)}</span></button></li>`;
         }).join("") : `<li class="note">${icon("check")}<span>Nic tu nie ma: ${reviewFilter === "open" ? "każde pytanie ma odpowiedź" : "nie oznaczono żadnego pytania"}.</span></li>`}</ul>
       </div>
       <nav class="xf-bar" aria-label="Nawigacja przeglądu"><div class="xf-bar-inner" style="grid-template-columns:1fr 1.5fr">
@@ -452,7 +455,7 @@
     screen = "break";
     const left = A.pool.filter(id => !A.seen.includes(id)).length;
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body">
+      <div class="xf-screen"><div class="xf-col xf-body" role="main">
         <section class="card xf-section xf-break" aria-labelledby="xf-brk-h">
           <h1 id="xf-brk-h" tabindex="-1">Przerwa</h1>
           <p class="muted">Zegar egzaminu biegnie dalej.</p>
@@ -482,7 +485,8 @@
     return new Promise(resolve => {
       const dlg = document.createElement("dialog");
       dlg.className = "xf-dialog";
-      dlg.innerHTML = `<h2>${esc(title)}</h2><p>${esc(text)}</p>
+      dlg.setAttribute("aria-labelledby", "xf-danger-h");
+      dlg.innerHTML = `<h2 id="xf-danger-h">${esc(title)}</h2><p>${esc(text)}</p>
         <div class="xf-actions"><button class="btn btn-danger" data-yes>${esc(yes)}</button><button class="btn btn-primary" data-no>Anuluj</button></div>`;
       root.appendChild(dlg);
       let answer = false;
@@ -555,7 +559,7 @@
     const weakest = byDomain.filter(x => x.n >= 2 && x.m).sort((a, b) => a.p / a.m - b.p / b.m)[0];
     const weakPct = weakest ? Math.round(weakest.p / weakest.m * 100) : null;
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body" style="padding-bottom:40px">
+      <div class="xf-screen"><div class="xf-col xf-body" role="main" style="padding-bottom:40px">
         <div class="xf-top"><a class="btn btn-quiet" href="index.html">${icon("home")}Egzaminy</a></div>
         <section class="card xf-verdict" aria-labelledby="xf-res-h">
           <h1 id="xf-res-h" tabindex="-1">Wynik: ${esc(P.title)}</h1>
@@ -586,15 +590,15 @@
           </div>
           <div class="xf-ans">${list.map(r => `
             <details>
-              <summary><span class="n"><b>${r.i + 1}</b></span>${r.s.exact ? `<span class="ok">${icon("check", "poprawnie")}</span>` : !r.s.chosen.length ? `<span class="skip" role="img" aria-label="bez odpowiedzi">–</span>` : `<span class="bad">${icon("x", r.s.pts ? "częściowo" : "błędnie")}</span>`}<span class="t">${esc(r.q.text.slice(0, 140))}</span><span class="time">${clock(A.spent[r.id] || 0)}</span></summary>
+              <summary><span class="n"><b>${r.i + 1}</b></span>${r.s.exact ? `<span class="ok">${icon("check", "poprawnie")}</span>` : !r.s.chosen.length ? `<span class="skip" role="img" aria-label="bez odpowiedzi">–</span>` : `<span class="bad">${icon("x", r.s.pts ? "częściowo" : "błędnie")}</span>`}<span class="t" lang="en">${esc(r.q.text.slice(0, 140))}</span><span class="time">${clock(A.spent[r.id] || 0)}</span></summary>
               <div class="body">
                 <p class="small muted">${esc(domainOf(r.q.domain).name)}${r.s.max > 1 ? ` · ${r.s.pts}/${r.s.max} pkt` : ""}${!r.s.chosen.length ? " · bez odpowiedzi" : ""}</p>
-                ${r.q.parts.filter(p => p.kind === "text").map(p => `<div class="xf-qtext">${p.html}</div>`).join("")}
+                ${r.q.parts.filter(p => p.kind === "text").map(p => `<div class="xf-qtext" lang="en">${p.html}</div>`).join("")}
                 ${r.q.options.map(o => {
                   const isC = r.q.correct.includes(o.val), mine = r.s.chosen.includes(o.val);
                   const cls = isC ? "correct" : mine ? "wrong" : "";
                   const lbl = isC && mine ? "Twoja · poprawna" : isC ? "Poprawna" : mine ? "Twoja" : "";
-                  return `<div class="opt-r ${cls}"><b>${esc(o.val)}</b><span>${o.html}</span>${lbl ? `<span class="lbl">${lbl}</span>` : ""}</div>`;
+                  return `<div class="opt-r ${cls}"><b>${esc(o.val)}</b><span lang="en">${o.html}</span>${lbl ? `<span class="lbl">${lbl}</span>` : ""}</div>`;
                 }).join("")}
               </div>
             </details>`).join("") || `<p class="note">${icon("check")}<span>Brak pytań w tym filtrze.</span></p>`}</div>
@@ -612,8 +616,8 @@
     const t = e.target.closest("[data-act],[data-go],[data-filter],[data-rfilter]");
     if (!t || t.disabled) return;
     if (t.dataset.go !== undefined && screen === "review") return go(parseInt(t.dataset.go, 10));
-    if (t.dataset.filter) { reviewFilter = t.dataset.filter; return showReview(); }
-    if (t.dataset.rfilter) { resultsFilter = t.dataset.rfilter; return showResults(); }
+    if (t.dataset.filter) { reviewFilter = t.dataset.filter; showReview(); return $(`[data-filter="${reviewFilter}"]`, root)?.focus(); }
+    if (t.dataset.rfilter) { resultsFilter = t.dataset.rfilter; showResults(); return $(`[data-rfilter="${resultsFilter}"]`, root)?.focus(); }
     switch (t.dataset.act) {
       case "begin": {
         if (A && A.status === "running" && A.seen.length) {
@@ -655,8 +659,9 @@
     if (e.target instanceof Element && e.target.matches("input[type=text], textarea, select")) return;
     const k = e.key.toLowerCase();
     const opts = Array.from(root.querySelectorAll(".xf-opts input"));
-    let idx = LETTER_KEYS.indexOf(k);
-    if (idx < 0 && /^[1-8]$/.test(k)) idx = parseInt(k, 10) - 1;
+    const keys = Hub.shortcuts.on();
+    let idx = keys ? LETTER_KEYS.indexOf(k) : -1;
+    if (keys && idx < 0 && /^[1-8]$/.test(k)) idx = parseInt(k, 10) - 1;
     if (idx >= 0 && idx < opts.length) {
       e.preventDefault();
       const box = opts[idx];
@@ -668,7 +673,7 @@
       return; // native radio-group arrows; never change (or lock) a question from here
     } else if (e.key === "ArrowRight") { e.preventDefault(); $('[data-act="next"]', root)?.click(); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); $('[data-act="prev"]', root)?.click(); }
-    else if (k === "f") { e.preventDefault(); toggleFlag(); }
+    else if (k === "f" && keys) { e.preventDefault(); toggleFlag(); }
   });
 
   document.addEventListener("visibilitychange", () => { if (document.hidden) { flushTime(); if (A) save(); } });

@@ -62,7 +62,7 @@
   --text: #f3e9de;
   --text-2: #b8a899;
   --action: #cf4417;
-  --action-hover: #e0552a;
+  --action-hover: #b93c0e;
   --action-tint: #3f2015;
   --action-text: #ef6a3a;
   --on-ink: #17120f;
@@ -91,7 +91,7 @@
   --text: #f3e9de;
   --text-2: #b8a899;
   --action: #cf4417;
-  --action-hover: #e0552a;
+  --action-hover: #b93c0e;
   --action-tint: #3f2015;
   --action-text: #ef6a3a;
   --on-ink: #17120f;
@@ -147,16 +147,16 @@ html { background: var(--ground); }
   transition: background-color .15s, border-color .15s, transform .15s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
-.btn:hover { background: var(--surface); }
+@media (hover: hover) { .btn:hover { background: var(--surface); } }
 .btn:active { transform: scale(.98); }
 .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .btn-primary { background: var(--action); border-color: var(--action); color: #fff; }
-.btn-primary:hover { background: var(--action-hover); border-color: var(--action-hover); }
+@media (hover: hover) { .btn-primary:hover { background: var(--action-hover); border-color: var(--action-hover); } }
 .btn-quiet { border-color: transparent; background: transparent; }
-.btn-quiet:hover { background: var(--surface); }
+@media (hover: hover) { .btn-quiet:hover { background: var(--surface); } }
 .btn-block { width: 100%; }
 .btn-danger { color: var(--bad); border-color: var(--bad); }
-.btn-danger:hover { background: var(--bad-tint); }
+@media (hover: hover) { .btn-danger:hover { background: var(--bad-tint); } }
 
 .pill {
   display: inline-flex; align-items: center; gap: 8px;
@@ -165,7 +165,7 @@ html { background: var(--ground); }
   font: 800 16px/1 var(--font); box-shadow: var(--shadow);
 }
 button.pill { cursor: pointer; }
-button.pill:hover { background: var(--surface); }
+@media (hover: hover) { button.pill:hover { background: var(--surface); } }
 
 .card {
   background: var(--card);
@@ -184,7 +184,8 @@ button.pill:hover { background: var(--surface); }
   min-height: 44px; border: 0; border-radius: 10px; background: transparent;
   font: 700 16px/1 var(--font); color: var(--text-2); cursor: pointer;
 }
-.seg button[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: var(--shadow-knob); }
+/* Selected segment: card fill plus an outline, so the state does not rest on a faint shadow. */
+.seg button[aria-selected="true"], .seg button[aria-checked="true"], .seg button[aria-pressed="true"] { background: var(--card); color: var(--text); box-shadow: var(--shadow-knob), inset 0 0 0 1.5px var(--control-border); }
 
 .field { display: grid; gap: 6px; }
 .field label { font-weight: 700; font-size: 14px; color: var(--text-2); }
@@ -235,7 +236,7 @@ button.pill:hover { background: var(--surface); }
 .account { margin-top: 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .account[hidden] { display: none; }
 .btn-gh { gap: 10px; background: var(--text); border-color: var(--text); color: var(--ground); }
-.btn-gh:hover { background: var(--text); opacity: .9; }
+@media (hover: hover) { .btn-gh:hover { background: var(--text); opacity: .9; } }
 .btn-gh .icon { width: 20px; height: 20px; }
 .acct-who { display: flex; align-items: center; gap: 12px; }
 .acct-who img { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); }
@@ -249,7 +250,7 @@ button.pill:hover { background: var(--surface); }
 .acct-msg { flex-basis: 100%; font-weight: 700; }
 /* quick five + reminder */
 .exam .quick { justify-content: space-between; gap: 12px; background: var(--action-tint); border-color: transparent; }
-.exam .quick:hover { background: var(--surface); }
+@media (hover: hover) { .exam .quick:hover { background: var(--surface); } }
 .exam .quick span { color: var(--text-2); font-weight: 700; font-size: 14px; }
 .remind { margin-top: 16px; padding: 20px; display: grid; gap: 16px; max-width: 512px; }
 .remind h2 { font-size: 20px; line-height: 1.2; font-weight: 700; }
@@ -260,7 +261,7 @@ button.pill:hover { background: var(--surface); }
 .remind-actions [data-push][hidden] { display: none; }
 .remind [data-remind-status]:empty { display: none; }
 .sv-quick-list .xf-row { cursor: default; box-shadow: none; background: var(--surface); }
-.sv-quick-list .xf-row:hover { background: var(--surface); }
+@media (hover: hover) { .sv-quick-list .xf-row:hover { background: var(--surface); } }
 .sv-quick .btn-quiet { justify-self: start; color: var(--text-2); }
 .launcher footer { margin-top: 28px; color: var(--text-2); font-size: 14px; max-width: 70ch; }
 .launcher footer p + p { margin-top: 6px; }
@@ -278,6 +279,7 @@ body.xf-active { overflow: hidden !important; }
 .xf {
   position: fixed; inset: 0; z-index: 2000;
   overflow-y: auto; overscroll-behavior: contain;
+  scroll-padding-bottom: 120px; /* focused options stay clear of the fixed bar */
   -webkit-overflow-scrolling: touch;
 }
 .xf[hidden] { display: none; }
@@ -285,7 +287,7 @@ body.xf-active { overflow: hidden !important; }
 .xf-screen { min-height: 100%; display: flex; flex-direction: column; }
 .xf-body { flex: 1; padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
 
-.xf-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.xf-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .xf-top .right { display: flex; gap: 8px; }
 .xf-pos b { font-size: 24px; font-weight: 700; }
 .xf-pos span { color: var(--text-2); font-weight: 700; }
@@ -298,7 +300,7 @@ body.xf-active { overflow: hidden !important; }
 .xf-q > .note { margin-top: 0 !important; margin-bottom: 12px; }
 .xf-progress { margin-top: 12px; height: 6px; border-radius: 3px; background: var(--surface); overflow: hidden; }
 .xf-progress i { display: block; height: 100%; border-radius: 3px; background: var(--text-2); transition: width .35s var(--ease); }
-.xf-q h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.xf-q h2, .xf-qh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .xf-qtext { margin-top: 0; font-size: 18px; line-height: 1.55; overflow-wrap: anywhere; }
 .xf-qtext img, .xf-exhibit img { max-width: 100%; height: auto; border-radius: 8px; }
 .xf-exhibit { margin-top: 12px; display: grid; gap: 8px; }
@@ -319,7 +321,7 @@ body.xf-active { overflow: hidden !important; }
   transition: border-color .15s, background-color .15s;
   -webkit-tap-highlight-color: transparent;
 }
-.xf-opt:hover { border-color: var(--border-strong); }
+@media (hover: hover) { .xf-opt:hover { border-color: var(--border-strong); } }
 .xf-opt input { position: absolute; opacity: 0; pointer-events: none; }
 .xf-mark {
   width: 24px; height: 24px; flex: none; margin-top: 1px;
@@ -336,7 +338,7 @@ body.xf-active { overflow: hidden !important; }
 }
 .xf-opt:has(input:checked) { border-color: var(--action); }
 .xf-opt:has(input:focus-visible) { outline: 3px solid var(--action); outline-offset: 2px; }
-.xf-opt:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+.xf-opt:has(input:disabled) { opacity: .7; cursor: not-allowed; }
 .xf-letter { font-weight: 800; color: var(--text-2); min-width: 1.2em; }
 .xf-opt-text { flex: 1; overflow-wrap: anywhere; }
 
@@ -347,7 +349,9 @@ body.xf-active { overflow: hidden !important; }
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
 }
 .xf-bar-inner { width: min(648px, 100%); margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 10px; }
-.xf-bar .btn { min-height: 54px; padding: 0 12px; }
+.xf-bar-inner > * { min-width: 0; }
+.xf-bar .btn { min-height: 54px; padding: 0 12px; white-space: normal; text-align: center; line-height: 1.15; }
+@media (max-width: 359px) { .xf-bar .btn { padding: 0 8px; } .xf-bar .btn .icon { display: none; } }
 .xf-flag[aria-pressed="true"] { border-color: var(--text); background: var(--surface); }
 .xf-flag[aria-pressed="true"] .icon { fill: currentColor; }
 
@@ -375,7 +379,7 @@ body.xf-active { overflow: hidden !important; }
 .xf-next { margin-top: 12px; display: grid; gap: 8px; }
 .xf-ans .skip { color: var(--text-2); font-weight: 800; text-align: center; }
 .switch { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
-.switch input { appearance: none; width: 52px; height: 32px; flex: none; border-radius: 999px; background: var(--border-strong); position: relative; cursor: pointer; transition: background-color .15s; }
+.switch input { appearance: none; width: 52px; height: 32px; flex: none; border-radius: 999px; background: var(--control-border); position: relative; cursor: pointer; transition: background-color .15s; }
 .switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: transform .2s var(--ease); }
 .switch input:checked { background: var(--action); }
 .switch input:checked::after { transform: translateX(20px); }
@@ -396,7 +400,7 @@ body.xf-active { overflow: hidden !important; }
   border: 0; background: var(--card); box-shadow: var(--shadow);
   font: 600 15px/1.35 var(--font); color: var(--text); text-align: left; cursor: pointer;
 }
-.xf-row:hover { background: var(--surface); }
+@media (hover: hover) { .xf-row:hover { background: var(--surface); } }
 .xf-row:disabled { cursor: default; background: var(--surface); box-shadow: none; }
 .xf-row .n { grid-area: n; font-weight: 800; align-self: start; padding-top: 1px; }
 .xf-row .t { grid-area: t; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); }
@@ -424,7 +428,8 @@ body.xf-active { overflow: hidden !important; }
   background: var(--card); font: 800 16px/1 var(--font); color: var(--text); cursor: pointer;
 }
 .xf-cell.done { background: var(--text); border-color: var(--text); color: var(--on-ink); }
-.xf-cell.cur { outline: 3px solid var(--action); outline-offset: 2px; }
+/* Current question: dashed ink ring, so it never looks like keyboard focus. */
+.xf-cell.cur { outline: 2px dashed var(--text); outline-offset: 3px; }
 .xf-cell .flag { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: var(--card); color: var(--text); display: grid; place-items: center; box-shadow: var(--shadow); }
 .xf-cell .flag .icon { width: 14px; height: 14px; fill: currentColor; }
 .xf-cell:disabled { background: var(--surface); border-style: dashed; color: var(--text-2); cursor: not-allowed; }
@@ -505,7 +510,7 @@ body.xf-active { overflow: hidden !important; }
 .sv-prev .icon { width: 16px; height: 16px; }
 .sv-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .sv .xf-opts[disabled] .xf-opt { opacity: 1; cursor: default; }
-.sv .xf-opts[disabled] .xf-opt:hover { border-color: transparent; }
+@media (hover: hover) { .sv .xf-opts[disabled] .xf-opt:hover { border-color: transparent; } }
 .xf-opt.is-correct, .xf-opt.is-correct:has(input:checked) { background: var(--ok-tint); border-color: var(--ok); }
 .xf-opt.is-wrong, .xf-opt.is-wrong:has(input:checked) { background: var(--bad-tint); border-color: var(--bad); }
 .xf-opt.is-correct .xf-mark { border-color: var(--ok); }
@@ -549,7 +554,6 @@ body.xf-active { overflow: hidden !important; }
 .sv-list { max-height: 45dvh; overflow-y: auto; padding: 2px; }
 .sv-list .time .icon { width: 16px; height: 16px; color: var(--text); fill: currentColor; }
 .sv-reset { justify-self: start; color: var(--bad); }
-.seg button[aria-checked="true"] { background: var(--card); color: var(--text); box-shadow: var(--shadow-knob); }
 
 /* ===== desktop density =====
    Touch devices (phones, tablets) keep the thumb-sized scale. A computer with
@@ -725,6 +729,6 @@ body.xf-active { overflow: hidden !important; }
   .grow, .icon.pop, .xf-clock.low, .xf-clock.out, .xf-opt input:checked + .xf-mark, .is-checked .sv-tag .icon path { animation: none; }
   .xf-sheet:not([open]), .xf-dialog:not([open]) { transform: none; }
   @starting-style { .xf-sheet[open], .xf-dialog[open] { transform: none; } }
-  .xf-opt:active { transform: none; }
+  .xf-opt:active, .btn:active { transform: none; }
   .xf-progress i, .split .bar i { transition: none; }
 }

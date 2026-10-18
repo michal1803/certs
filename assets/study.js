@@ -123,6 +123,7 @@
   document.body.appendChild(root);
   const live = document.createElement("div");
   live.setAttribute("aria-live", "polite");
+  live.setAttribute("lang", "pl");
   live.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)";
   document.body.appendChild(live);
   const announce = msg => { live.textContent = ""; setTimeout(() => { live.textContent = msg; }, 30); };
@@ -201,7 +202,7 @@
     const after = dueLeft ? `Do powtórki zostało ${dueLeft} ${plural(dueLeft, "pytanie", "pytania", "pytań")}.`
       : Number.isFinite(nextDue) ? `Nic więcej nie czeka na powtórkę. Następne pytania wrócą ${SRS.when(nextDue, now)}.` : "";
     document.title = `${P.title} · szybka piątka`;
-    root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body">
+    root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body" role="main">
       <div class="xf-top"><a class="pill icon-btn" href="index.html" aria-label="Wróć do listy egzaminów" title="Egzaminy">${icon("home")}</a></div>
       <section class="card xf-section sv-quick" aria-labelledby="sv-quick-h">
         <h1 id="sv-quick-h" class="sv-h1" tabindex="-1">Szybka piątka: ${ok} z ${rows.length}</h1>
@@ -226,7 +227,7 @@
   function renderEmpty() {
     const sc = session.scope;
     const why = sc.set === "due" ? "Nic nie czeka na powtórkę w tym zakresie. Wróć później albo ucz się nowych pytań." : sc.set === "wrong" ? "Nie masz błędnych odpowiedzi w tym zakresie." : sc.set === "star" ? "Nie dodałeś jeszcze gwiazdek w tym zakresie." : sc.set === "new" ? "Odpowiedziałeś już na wszystkie pytania w tym zakresie." : "Brak pytań w tym zakresie.";
-    root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body">${topBar()}
+    root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body" role="main">${topBar()}
       <section class="card xf-section" style="margin-top:16px"><h1 class="sv-h1" tabindex="-1">Nic do nauki</h1><p class="muted">${why}</p>
       <button class="btn btn-primary btn-block" data-act="all">Ucz się ze wszystkich pytań</button></section></div></div>`;
     $("h1").focus({ preventScroll: true });
@@ -241,7 +242,7 @@
         <summary>${icon("chat")}<span>Komentarze społeczności (${q.comments.length})</span>${voteLine ? `<span class="sv-votes" aria-label="Głosy">${voteLine}</span>` : ""}</summary>
         <div class="sv-comments-body">
           ${q.comments.length ? q.comments.map(c => `
-            <article class="sv-comment">
+            <article class="sv-comment" lang="en">
               <p class="sv-comment-head"><b>${esc(c.user || "anonim")}</b>${c.answer ? `<span class="sv-vote">głos: ${esc(c.answer)}</span>` : ""}</p>
               <p>${esc(c.text || "").replace(/\n/g, "<br>")}</p>
             </article>`).join("") : `<p class="muted">Brak komentarzy dla tego pytania.</p>`}
@@ -268,8 +269,8 @@
     document.title = `${P.title} · ${session.quick ? "szybka piątka" : "nauka"}`;
 
     const parts = q.parts.map(p => p.kind === "text"
-      ? `<div class="xf-qtext">${p.html}</div>`
-      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)}" loading="lazy" data-src="${esc(src)}"></a></figure>`).join("")}</div>`).join("");
+      ? `<div class="xf-qtext" lang="en">${p.html}</div>`
+      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)}: zrzut ekranu bez opisu tekstowego" loading="lazy" data-src="${esc(src)}"></a></figure>`).join("")}</div>`).join("");
 
     let answerBlock = "";
     if (keyed) {
@@ -286,7 +287,7 @@
               <input type="${multi ? "checkbox" : "radio"}" name="sv-ans" value="${esc(o.val)}"${mine ? " checked" : ""}>
               <span class="xf-mark" aria-hidden="true"></span>
               <span class="xf-letter">${esc(o.val)}</span>
-              <span class="xf-opt-text">${tag ? `<span class="sv-tag">${isC ? icon("check") : icon("x")}${tag}</span>` : ""}${o.html}</span>
+              <span class="xf-opt-text" lang="en">${tag ? `<span class="sv-tag" lang="pl">${isC ? icon("check") : icon("x")}${tag}</span>` : ""}${o.html}</span>
             </label>`;
           }).join("")}
         </fieldset>`;
@@ -319,7 +320,7 @@
 
 
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body">
+      <div class="xf-screen"><div class="xf-col xf-body" role="main">
         ${topBar()}
         <article class="card xf-q ${cardMotion}" aria-labelledby="sv-qh">
           <div class="sv-meta"><span class="sv-num">${esc(q.num)}</span><span class="sv-dom">${esc(domainOf(q.domain).label)}</span>${prior ? `<span class="tag ${prior.ok ? "pass" : "fail"} sv-prev">${icon(prior.ok ? "check" : "x")}${prior.ok ? "ostatnio dobrze" : "ostatnio źle"}</span>` : `<span class="tag neutral sv-prev">nowe</span>`}</div>
@@ -403,8 +404,7 @@
       <div class="field"><span class="sv-label">Kolejność</span><div class="seg" role="radiogroup" aria-label="Kolejność">
         <button role="radio" aria-checked="${S.order !== "bank"}" data-order="smart">Mądra kolejka</button>
         <button role="radio" aria-checked="${S.order === "bank"}" data-order="bank">Jak w bazie</button></div></div>
-      <div class="field"><span class="sv-label">Motyw</span><div class="seg" role="radiogroup" aria-label="Motyw">
-        ${[["system", "Systemowy"], ["light", "Jasny"], ["dark", "Ciemny"]].map(([k, l]) => `<button role="radio" aria-checked="${(window.HubTheme?.get() || "system") === k}" data-theme-choice="${k}">${l}</button>`).join("")}</div></div>
+      ${Hub.shortcuts.html()}
       <p class="small muted" data-count></p>
       <ul class="xf-list sv-list" data-list></ul>
       <button class="btn btn-quiet sv-reset" data-reset>Wyczyść postęp nauki</button>
@@ -419,7 +419,7 @@
       dlg.querySelector("[data-list]").innerHTML = ids.slice(0, 300).map(id => {
         const q = questions[id], a = S.ans[id];
         const st = !a ? `<span class="s s-lock">nowe</span>` : a.ok ? `<span class="s s-done">${icon("check")}${SRS.mastered(a) ? "opanowane" : "dobrze"}</span>` : `<span class="s s-open">${icon("x")}źle</span>`;
-        return `<li><button class="xf-row" data-jump="${id}"><span class="n">${esc(q.num.replace(/^Q/, ""))}</span><span class="t">${esc(q.text.slice(0, 140))}</span>${st}<span class="time">${S.stars.includes(id) ? icon("star", "gwiazdka") : ""}</span></button></li>`;
+        return `<li><button class="xf-row" data-jump="${id}"><span class="n">${esc(q.num.replace(/^Q/, ""))}</span><span class="t" lang="en">${esc(q.text.slice(0, 140))}</span>${st}<span class="time">${S.stars.includes(id) ? icon("star", "gwiazdka") : ""}</span></button></li>`;
       }).join("") || `<li class="note">${icon("info")}<span>Nic nie pasuje do wyszukiwania i filtrów.</span></li>`;
     };
     fill();
@@ -431,8 +431,6 @@
       if (set) { session.scope.set = set.dataset.set; dlg.querySelectorAll("[data-set]").forEach(b => b.setAttribute("aria-pressed", String(b === set))); saveSession(); return fill(); }
       const ord = e.target.closest("[data-order]");
       if (ord) { S.order = ord.dataset.order; save(); dlg.querySelectorAll("[data-order]").forEach(b => b.setAttribute("aria-checked", String(b === ord))); return; }
-      const th = e.target.closest("[data-theme-choice]");
-      if (th) { window.HubTheme?.set(th.dataset.themeChoice); dlg.querySelectorAll("[data-theme-choice]").forEach(b => b.setAttribute("aria-checked", String(b === th))); return; }
       const jump = e.target.closest("[data-jump]");
       if (jump) { jumped = true; dlg.close(); return goTo(jump.dataset.jump); }
       if (e.target.closest("[data-reset]")) { dlg.close(); return confirmReset(); }
@@ -442,6 +440,7 @@
       if (jumped) return;  // goTo already rendered the chosen question
       const cur = session.history[session.pos];
       if (!cur || !inScope(cur)) goTo(pickNext()); else render();
+      $('[data-act="list"]')?.focus({ preventScroll: true });
     });
     dlg.showModal();
   }
@@ -449,7 +448,8 @@
   function confirmReset() {
     const dlg = document.createElement("dialog");
     dlg.className = "xf-dialog";
-    dlg.innerHTML = `<h2>Wyczyścić postęp nauki?</h2><p>Usuniesz odpowiedzi i statystyki dla ${esc(P.title)}. Gwiazdki i wyniki egzaminów zostaną.</p>
+    dlg.setAttribute("aria-labelledby", "sv-reset-h");
+    dlg.innerHTML = `<h2 id="sv-reset-h">Wyczyścić postęp nauki?</h2><p>Usuniesz odpowiedzi i statystyki dla ${esc(P.title)}. Gwiazdki i wyniki egzaminów zostaną.</p>
       <div class="xf-actions"><button class="btn" data-no>Anuluj</button><button class="btn btn-primary" data-yes>Wyczyść</button></div>`;
     root.appendChild(dlg);
     dlg.addEventListener("click", e => {
@@ -518,8 +518,9 @@
     if (e.target instanceof Element && e.target.matches("input[type=search], input[type=text], textarea, select")) return;
     const k = e.key.toLowerCase();
     const opts = Array.from(root.querySelectorAll(".xf-opts:not([disabled]) input"));
-    let idx = LETTERS.indexOf(k);
-    if (idx < 0 && /^[1-8]$/.test(k)) idx = parseInt(k, 10) - 1;
+    const keys = Hub.shortcuts.on();
+    let idx = keys ? LETTERS.indexOf(k) : -1;
+    if (keys && idx < 0 && /^[1-8]$/.test(k)) idx = parseInt(k, 10) - 1;
     if (idx >= 0 && idx < opts.length) {
       e.preventDefault();
       const box = opts[idx];
@@ -534,7 +535,7 @@
       return; // native radio-group arrows move the choice, not the question
     } else if (e.key === "ArrowRight") { e.preventDefault(); next(); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); back(); }
-    else if (k === "s") { e.preventDefault(); root.querySelector('[data-act="star"]')?.click(); }
+    else if (k === "s" && keys) { e.preventDefault(); root.querySelector('[data-act="star"]')?.click(); }
   });
 
   /* ---------- start ---------- */

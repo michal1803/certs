@@ -151,11 +151,23 @@
     el.textContent = 0;
     requestAnimationFrame(step);
   }
+  /* Single-key shortcuts (letters, digits, S, F) can be switched off
+     (WCAG 2.1.4); the switch is only offered where there is a keyboard. */
+  const SHORTCUTS = "exam-hub:shortcuts";
+  const shortcuts = {
+    on: () => { try { return localStorage.getItem(SHORTCUTS) !== "off"; } catch (e) { return true; } },
+    set: on => { try { localStorage.setItem(SHORTCUTS, on ? "on" : "off"); } catch (e) {} },
+    offered: () => window.matchMedia("(hover: hover) and (pointer: fine)").matches,
+    // A labelled switch; data-shortcuts marks it for the click handler.
+    html: () => shortcuts.offered() ? `<label class="switch"><span><b>Skróty klawiszowe</b><br><span class="small muted">Litery i cyfry wybierają odpowiedź.</span></span><input type="checkbox" data-shortcuts${shortcuts.on() ? " checked" : ""}></label>` : "",
+  };
+  document.addEventListener("change", e => { if (e.target.matches?.("[data-shortcuts]")) shortcuts.set(e.target.checked); });
+
   // Let a closing <dialog> play its exit before it leaves the DOM.
   const removeAfterClose = dlg => dlg.addEventListener("close", () => setTimeout(() => dlg.remove(), 260));
 
   window.EXAM_PROFILE = profile;
-  window.Hub = { motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
+  window.Hub = { shortcuts, motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
