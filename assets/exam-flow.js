@@ -681,7 +681,7 @@
   window.addEventListener("pagehide", () => { flushTime(); if (A) save(); });
 
   /* ---------- wiring into the study page ---------- */
-  const wantsExam = () => /^#egzamin(=\d+)?$/.test(location.hash);
+  const wantsExam = Hub.examHash;
   window.addEventListener("hashchange", () => { if (wantsExam()) open(); else if (!root.hidden) close(); });
 
   if (wantsExam()) open();

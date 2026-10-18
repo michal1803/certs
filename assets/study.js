@@ -543,7 +543,7 @@
   /* ---------- start ---------- */
   function boot() {
     // An exam covers the whole screen: draw nothing (and load no images) under it.
-    if (/^#egzamin/.test(location.hash)) return;
+    if (Hub.examHash()) return;
     if (location.hash === "#szybkie" || location.hash === "#szybka") {
       save();
       if (location.hash === "#szybkie" || !session.quick) return startQuick();
@@ -564,7 +564,9 @@
     if (session.pos >= 0 && questions[session.history[session.pos]]) render();
     else goTo(pickNext());
   }
-  window.addEventListener("hashchange", () => { if (!/^#egzamin/.test(location.hash)) boot(); });
+  // Leaving the exam: the exam lifts `inert` in its own handler, which may run
+  // after this one, so lift it here first or the heading cannot take focus.
+  window.addEventListener("hashchange", () => { if (!Hub.examHash()) { root.inert = false; boot(); } });
   // Another device's answers arrived: reload progress and redraw what is on screen.
   window.addEventListener("hub:synced", e => {
     if (!e.detail.changed.includes(KEY)) return;

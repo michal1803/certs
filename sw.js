@@ -68,6 +68,7 @@ self.addEventListener("activate", event => {
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => k.startsWith("exam-hub-core-") && k !== CORE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
+      .then(trimImages)
       .then(warmPages)
   );
 });
@@ -133,7 +134,7 @@ self.addEventListener("fetch", event => {
         if (cached) return cached;
         try {
           const res = await fetch(req);
-          if ((res.ok || res.type === "opaque") && !frugal()) { cache.put(req, res.clone()); trimImages(); }
+          if ((res.ok || res.type === "opaque") && !frugal()) event.waitUntil(cache.put(req, res.clone()).then(trimImages));
           return res;
         } catch (e) {
           return Response.error();
