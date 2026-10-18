@@ -399,8 +399,24 @@ a.row:focus-visible { outline-offset: -3px; }
   .view-head h1 { font-size: 40px; line-height: 1.1; letter-spacing: -.025em; }
 }
 
-/* settings sheet */
+/* settings: a bottom sheet on phones, a centred dialog from 720px */
 .settings .xf-sheet-in { gap: 0; }
+@media (min-width: 720px) {
+  .xf-sheet.settings { margin: auto; width: min(560px, calc(100% - 48px)); max-height: min(86dvh, 800px); border-radius: var(--radius); box-shadow: var(--shadow-dialog); }
+  .settings .xf-sheet-in { padding: 24px 28px 28px; }
+}
+/* Account: a summary row; its actions open as a subview (rare and destructive, so not on the main view). */
+.acct-row {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 8px 0;
+  border: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: none;
+  color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.acct-row > span { display: grid; flex: 1; min-width: 0; }
+.acct-row > .icon { color: var(--text-2); }
+.acct-row img { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); }
+@media (hover: hover) { .acct-row:hover b { color: var(--action-text); } }
+.settings.acct-detail .set:not(#konto), .settings.acct-detail #konto-h { display: none; }
+.acct-back { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 0; text-decoration: none; }
 .set { display: grid; gap: 12px; padding: 20px 0; border-top: 1px solid var(--border); }
 .xf-sheet-head + .set { border-top: 0; padding-top: 12px; }
 .set h3 { font-size: 17px; line-height: 1.2; font-weight: 800; }
@@ -409,9 +425,8 @@ a.row:focus-visible { outline-offset: -3px; }
 .btn-gh { gap: 10px; justify-self: start; }
 .btn-gh .icon { width: 20px; height: 20px; }
 .acct-who { display: flex; align-items: center; gap: 12px; }
-.acct-who img { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); }
+.acct-who img { width: 48px; height: 48px; border-radius: 50%; background: var(--surface); }
 .acct-who div { display: grid; flex: 1; min-width: 0; }
-.acct-who .btn { min-height: 44px; padding: 0 16px; }
 /* Account actions as a ruled list: one action per row, left-aligned. */
 .acct-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border); }
 .acct-list li { border-bottom: 1px solid var(--border); }

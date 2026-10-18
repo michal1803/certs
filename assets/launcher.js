@@ -21,6 +21,7 @@
 
   const ICONS = {
     chev: '<path d="m9 18 6-6-6-6"/>',
+    back: '<path d="m15 18-6-6 6-6"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
     bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
     cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/>',
@@ -277,6 +278,7 @@
   gear.addEventListener("click", () => openSettings());
   sheet.addEventListener("click", e => { if (e.target === sheet || e.target.closest("[data-close]")) sheet.close(); });
   sheet.addEventListener("close", () => {
+    if (acctDetail) { acctDetail = false; paintAccount(); }
     const back = opener && document.contains(opener) && opener !== document.body ? opener : gear;
     paint();
     // paint() redraws the view, so a button inside it is a new node: find it again.
@@ -311,6 +313,7 @@
   /* ---------- account: sign in with GitHub to sync progress ---------- */
   const acct = document.getElementById("account");
   let acctMsg = "";
+  let acctDetail = false;   // the Account subview of Settings is open
   // Only GitHub's avatar host (also allowed by the CSP).
   const avatar = (u, size) => typeof u.avatar === "string" && u.avatar.startsWith("https://avatars.githubusercontent.com/") ? `<img src="${esc(u.avatar + (u.avatar.includes("?") ? "&" : "?") + "s=" + size * 2)}" alt="" width="${size}" height="${size}">` : "";
   function paintGear() {
@@ -326,15 +329,24 @@
     if (!sync?.available) return;
     const u = sync.user;
     const note = sync.state === "syncing" ? "Synchronizuję…" : sync.state === "error" ? "Nie udało się zsynchronizować. Spróbuję ponownie." : sync.lastSync ? `Zsynchronizowano o ${new Date(sync.lastSync).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}` : "";
-    acct.innerHTML = u ? `
-      <div class="acct-who">${avatar(u, 40)}<div><b>${esc(u.login)}</b><span class="small muted" data-acct-note>${esc(note)}</span></div>
-        <button class="btn" type="button" data-acct="sync">Synchronizuj</button></div>
+    if (!u) acctDetail = false;
+    sheet.classList.toggle("acct-detail", acctDetail);
+    // The dialog's title names the view it shows.
+    sheet.querySelector("#settings-h").textContent = acctDetail ? "Konto" : "Ustawienia";
+    acct.innerHTML = u && acctDetail ? `
+      <button class="link acct-back" type="button" data-acct="close">${icon("back")}Wróć do ustawień</button>
+      <div class="acct-who">${avatar(u, 48)}<div><b>${esc(u.login)}</b><span class="small muted" data-acct-note>${esc(note)}</span></div></div>
+      <button class="btn btn-block" type="button" data-acct="sync">Synchronizuj teraz</button>
       <ul class="acct-list">
         <li><button type="button" data-acct="logout">Wyloguj</button></li>
         <li><button type="button" data-acct="logout-all">Wyloguj na wszystkich urządzeniach</button></li>
         <li><button type="button" class="acct-del" data-acct="delete">Usuń konto i dane z serwera</button></li>
       </ul>
-      <p class="small muted">Na serwerze jest tylko identyfikator, login, nazwa i avatar z GitHuba oraz postęp. Bez dostępu do repozytoriów.</p>`
+      <p class="small muted">Na serwerze jest tylko identyfikator, login, nazwa i avatar z GitHuba oraz postęp nauki. Bez dostępu do repozytoriów.</p>`
+      : u ? `
+      <button class="acct-row" type="button" data-acct="open" aria-label="Konto ${esc(u.login)}: ${esc(note || "zalogowano")}">
+        ${avatar(u, 40)}<span><b>${esc(u.login)}</b><span class="small muted" data-acct-note>${esc(note)}</span></span>${icon("chev")}
+      </button>`
       : `<p class="small muted">Bez logowania postęp, gwiazdki i wyniki zostają w tej przeglądarce. Po zalogowaniu przez GitHub synchronizują się między Twoimi urządzeniami.</p>
          <button class="btn btn-gh" type="button" data-acct="login">${GH}Zaloguj przez GitHub</button>`;
     if (acctMsg) acct.insertAdjacentHTML("beforeend", `<p class="acct-msg" role="status">${esc(acctMsg)}</p>`);
@@ -346,6 +358,12 @@
     if (!b) return;
     const act = b.dataset.acct, sync = window.HubSync;
     acctMsg = "";
+    if (act === "open" || act === "close") {
+      acctDetail = act === "open";
+      paintAccount();
+      // Into the subview: its back button; out of it: the row that opened it.
+      return acct.querySelector(acctDetail ? "[data-acct=close]" : "[data-acct=open]")?.focus();
+    }
     if (act === "login") return sync.login();
     if (act === "sync") return sync.sync();
     if (act === "logout") return sync.logout();
