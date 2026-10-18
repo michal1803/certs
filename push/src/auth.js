@@ -2,13 +2,18 @@
    OAuth code for the user's public profile, then hands the page a short-lived one-time
    code in the URL fragment, which the page exchanges for our own session token. */
 import { b64u } from "./webpush.js";
-import { ALLOWED_ORIGIN, LOCAL_ORIGIN, HttpError, readJson, sha256Hex } from "./http.js";
+import { ALLOWED_ORIGIN, isLocalOrigin, HttpError, rateLimit, readJson, sha256Hex } from "./http.js";
 
 const STATE_TTL_MS = 10 * 60_000;
 const CODE_TTL_MS = 2 * 60_000;
-export const SESSION_TTL_MS = 180 * 86_400_000;
+const DAY_MS = 86_400_000;
+// A session ends after 90 days without use, and 180 days after sign-in no matter what.
+export const SESSION_IDLE_MS = 90 * DAY_MS;
+export const SESSION_MAX_MS = 180 * DAY_MS;
+// Accounts with no sign-in or API use for 24 months are deleted with all their data.
+export const ACCOUNT_RETENTION_MS = 730 * DAY_MS;
 // Refresh last_used at most daily so every API call is not a D1 write.
-const TOUCH_GAP_MS = 86_400_000;
+const TOUCH_GAP_MS = DAY_MS;
 
 const enc = new TextEncoder();
 const randomToken = () => b64u.encode(crypto.getRandomValues(new Uint8Array(32)));
@@ -22,12 +27,12 @@ function checkConfig(env) {
 }
 
 // Only our own pages may receive the login code.
-function validReturn(value) {
+function validReturn(value, env) {
   if (typeof value !== "string" || value.length > 2048) return null;
   let url;
   try { url = new URL(value); } catch (e) { return null; }
   if (url.origin === ALLOWED_ORIGIN && url.pathname.startsWith("/certs/")) return url;
-  if (LOCAL_ORIGIN.test(url.origin)) return url;
+  if (isLocalOrigin(url.origin, env)) return url;
   return null;
 }
 
@@ -51,7 +56,7 @@ async function verifyState(env, state) {
     if (!ok) return null;
     const data = JSON.parse(new TextDecoder().decode(b64u.decode(payload)));
     if (typeof data.e !== "number" || data.e < Date.now()) return null;
-    const ret = validReturn(data.r);
+    const ret = validReturn(data.r, env);
     return ret && CHALLENGE.test(data.c) ? { ret, challenge: data.c } : null;
   } catch (e) {
     return null;
@@ -68,7 +73,7 @@ const callbackUrl = req => `${new URL(req.url).origin}/auth/callback`;
 async function login(req, env) {
   checkConfig(env);
   const q = new URL(req.url).searchParams;
-  const ret = validReturn(q.get("return"));
+  const ret = validReturn(q.get("return"), env);
   if (!ret) throw new HttpError(400, "invalid return URL");
   const challenge = q.get("challenge");
   if (!CHALLENGE.test(challenge || "")) throw new HttpError(400, "challenge missing");
@@ -102,7 +107,7 @@ async function callback(req, env) {
   const st = await verifyState(env, q.get("state"));
   if (!st) {
     return new Response("Nieprawidłowe lub wygasłe logowanie. Wróć do aplikacji i spróbuj ponownie.", {
-      status: 400, headers: { "Content-Type": "text/plain; charset=utf-8" },
+      status: 400, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
   const ret = st.ret;
@@ -153,18 +158,20 @@ async function exchange(req, env) {
   return { ok: true, token, user: publicUser(user) };
 }
 
-// Resolves the Bearer token to { user, tokenHash } or throws 401.
+// Resolves the Bearer token to { user, tokenHash } or throws 401 (429 past the per-user limit).
 export async function authenticate(req, env) {
   if (!env.DB) throw new HttpError(503, "login not configured");
   const m = /^Bearer ([A-Za-z0-9_-]{20,200})$/.exec(req.headers.get("Authorization") || "");
   if (!m) throw new HttpError(401, "unauthorized");
   const tokenHash = await sha256Hex(m[1]);
   const row = await env.DB.prepare(
-    `SELECT s.last_used, u.id, u.login, u.name, u.avatar FROM sessions s JOIN users u ON u.id = s.user_id
+    `SELECT s.created, s.last_used, u.id, u.login, u.name, u.avatar FROM sessions s JOIN users u ON u.id = s.user_id
      WHERE s.token_hash = ?`
   ).bind(tokenHash).first();
   const now = Date.now();
-  if (!row || now - row.last_used > SESSION_TTL_MS) throw new HttpError(401, "unauthorized");
+  if (!row || now - row.last_used > SESSION_IDLE_MS || now - row.created > SESSION_MAX_MS)
+    throw new HttpError(401, "unauthorized");
+  await rateLimit(env.RL_API, `user:${row.id}`);
   if (now - row.last_used > TOUCH_GAP_MS) {
     await env.DB.batch([
       env.DB.prepare("UPDATE sessions SET last_used = ? WHERE token_hash = ?").bind(now, tokenHash),
@@ -179,29 +186,39 @@ async function me(req, env) {
   return { ok: true, user };
 }
 
-async function logout(req, env) {
-  const { tokenHash } = await authenticate(req, env);
-  await env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(tokenHash).run();
-  return { ok: true };
+// `?all=1` signs the user out on every device.
+async function logout(req, env, all = new URL(req.url).searchParams.get("all") === "1") {
+  const { user, tokenHash } = await authenticate(req, env);
+  const stmt = all
+    ? env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id)
+    : env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?").bind(tokenHash);
+  const { meta } = await stmt.run();
+  return { ok: true, sessions: meta?.changes ?? 0 };
 }
+
+const deleteUsersWhere = (env, where, ...args) =>
+  ["data", "sessions", "codes"].map(t =>
+    env.DB.prepare(`DELETE FROM ${t} WHERE user_id IN (SELECT id FROM users WHERE ${where})`).bind(...args)
+  ).concat(env.DB.prepare(`DELETE FROM users WHERE ${where}`).bind(...args));
 
 async function deleteAccount(req, env) {
   const { user } = await authenticate(req, env);
-  await env.DB.batch(["data", "sessions", "codes"].map(t =>
-    env.DB.prepare(`DELETE FROM ${t} WHERE user_id = ?`).bind(user.id)
-  ).concat(env.DB.prepare("DELETE FROM users WHERE id = ?").bind(user.id)));
+  await env.DB.batch(deleteUsersWhere(env, "id = ?", user.id));
   return { ok: true };
 }
 
-// Called from the cron: two cheap DELETEs, skipped when D1 is not bound.
-export async function cleanupAuth(env) {
+/* Called from the cron, skipped when D1 is not bound. Indexed DELETEs (migration 0003):
+   expired codes and sessions, then accounts idle for 24 months with everything they own. */
+export async function cleanupAuth(env, now = Date.now()) {
   if (!env.DB) return;
   try {
-    const now = Date.now();
-    await env.DB.batch([
+    const { meta } = (await env.DB.batch([
       env.DB.prepare("DELETE FROM codes WHERE expires < ?").bind(now),
-      env.DB.prepare("DELETE FROM sessions WHERE last_used < ?").bind(now - SESSION_TTL_MS),
-    ]);
+      env.DB.prepare("DELETE FROM sessions WHERE last_used < ?").bind(now - SESSION_IDLE_MS),
+      env.DB.prepare("DELETE FROM sessions WHERE created < ?").bind(now - SESSION_MAX_MS),
+      ...deleteUsersWhere(env, "last_seen < ?", now - ACCOUNT_RETENTION_MS),
+    ])).at(-1);
+    if (meta?.changes) console.log(`deleted ${meta.changes} inactive account(s)`);
   } catch (e) {
     console.error(`auth cleanup failed: ${e.message}`);
   }
@@ -212,6 +229,7 @@ export const authRoutes = {
   "GET /auth/callback": callback,
   "POST /auth/exchange": exchange,
   "POST /auth/logout": logout,
+  "POST /auth/logout-all": (req, env) => logout(req, env, true),
   "GET /me": me,
   "DELETE /account": deleteAccount,
 };
