@@ -36,6 +36,7 @@
   let tick = null;
   let reviewFilter = "all";
   let resultsFilter = "all";
+  let answersOpen = false;   // results: the per-question list starts folded
 
   function startAttempt(count, untimed) {
     const pool = buildPool(count);
@@ -69,24 +70,31 @@
   const live = document.createElement("div");
   live.className = "sr-live";
   live.setAttribute("aria-live", "polite");
+  live.setAttribute("lang", "pl");
   live.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)";
   document.body.appendChild(live);
   const announce = msg => { live.textContent = ""; setTimeout(() => { live.textContent = msg; }, 30); };
 
+  // The study screen stays in the page under the exam: keep it out of reach
+  // of Tab and screen readers while the exam is open.
+  const setStudyInert = on => { const sv = document.querySelector(".xf.sv"); if (sv) sv.inert = on; };
+
   function open() {
     document.body.classList.add("xf-active");
+    setStudyInert(true);
     root.hidden = false;
     document.title = `${P.title} · egzamin`;
     if (A && A.status === "running" && remaining() !== null && remaining() <= 0) finish(true);
     if (A && A.status === "running" && A.onBreak) showBreak();
     else if (A && A.status === "running" && A.seen.length) showQuestion(A.current);
-    else if (A && A.status === "finished" && A.showResults) showResults();
+    else if (A && A.status === "finished" && A.showResults && location.hash !== "#egzamin=nowy") showResults();
     else showStart();
   }
   function close() {
     flushTime(); if (A) save();
     stopTick();
     document.body.classList.remove("xf-active");
+    setStudyInert(false);
     root.hidden = true;
   }
 
@@ -102,6 +110,7 @@
           if (r <= m * 60000 && r > 0 && !A.warned.includes(m)) {
             A.warned.push(m); save();
             toast(`Zostało ${m} minut`);
+            announce(`Zostało ${m} minut`);
           }
         }
         if (r <= 0) finish(true);
@@ -140,15 +149,15 @@
     const running = A && A.status === "running" && A.seen.length;
     const drill = P.exam.drill;
     const lead = drill
-      ? `Trening na czas: tempo prawdziwego egzaminu, ok. 1 minuty na pytanie. Prawdziwy egzamin ${esc(P.vendor)} trwa ${drill.realMinutes} minut i ma ${esc(drill.realCount)} pytań, a baza ma ich ${P.all.length}.`
+      ? `Trening na czas: tempo prawdziwego egzaminu, ok. 1 minuty na pytanie. Prawdziwy egzamin ${esc(P.vendor)} trwa ${drill.realMinutes} minut i ma ${esc(drill.realCount)} pytań${drill.realCountUnofficial ? " (dane nieoficjalne)" : ""}, a baza ma ich ${P.all.length}.`
       : `Symulacja egzaminu ${esc(P.vendor)}: ten sam czas i te same proporcje domen.`;
     const keyRules = [
       P.exam.rules?.seriesNoReturn ? "Do pytań z serii Tak/Nie nie wrócisz po przejściu dalej." : "",
       P.exam.rules?.breaks ? "Przerwa jest możliwa poza serią Tak/Nie. Zegar biegnie, a pytań sprzed przerwy już nie zobaczysz." : "",
     ].filter(Boolean);
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body">
-        <div class="xf-top"><a class="btn btn-quiet" href="index.html">${icon("left")}Egzaminy</a></div>
+      <div class="xf-screen"><div class="xf-col xf-body" role="main">
+        <div class="xf-top"><a class="btn btn-quiet" href="index.html#egzamin">${icon("left")}Wróć</a></div>
         <div class="xf-head"><h1 tabindex="-1">${esc(P.title)}</h1><p>${lead}</p></div>
         ${running ? `
         <section class="card xf-section" aria-labelledby="resume-h">
@@ -157,6 +166,7 @@
           <button class="btn btn-primary btn-block" data-act="resume">Wróć do egzaminu</button>
           <button class="btn btn-danger btn-block" data-act="abandon">Porzuć ten egzamin</button>
         </section>` : ""}
+        ${A && A.status === "finished" ? `<button class="btn btn-quiet xf-last" data-act="last-results">${icon("list")}Zobacz wynik ostatniego egzaminu</button>` : ""}
         <section class="card xf-section" aria-labelledby="setup-h">
           <h2 id="setup-h">Ustawienia</h2>
           <div class="field"><label for="xf-count">Liczba pytań</label>
@@ -168,6 +178,7 @@
           <div><h3 class="small muted" style="margin-bottom:8px">Pytania z każdej domeny</h3><ul class="split" data-split></ul></div>
           ${P.weightsAreProxy ? `<p class="note">${icon("info")}<span>${esc(P.vendor)} nie publikuje wag domen ani progu. Proporcje liczymy z liczby celów egzaminacyjnych w każdej domenie.</span></p>` : ""}
           <label class="switch"><span><b>Bez limitu czasu</b><br><span class="small muted">Dla nauki w swoim tempie.</span></span><input type="checkbox" id="xf-untimed"></label>
+          ${Hub.shortcuts.html()}
         </section>
         ${keyRules.length ? `<section class="card xf-section xf-keyrules" aria-label="Ważne zasady">${keyRules.map(r => `<p class="note warn">${icon("lock")}<span>${r}</span></p>`).join("")}</section>` : ""}
         <details class="card xf-section xf-more">
@@ -178,7 +189,7 @@
             <li>Typy pytań: ${esc(P.exam.questionTypes)}. Pytania bez klucza odpowiedzi (hotspot, drag &amp; drop) zostają w trybie Nauka.</li>
             ${P.exam.rules?.learnUrl ? "<li>Możesz otworzyć Microsoft Learn w nowej karcie. Zegar w tym czasie biegnie.</li>" : ""}
             <li>Zamknięcie strony nie przerywa egzaminu: po powrocie wracasz do tego samego pytania.</li>
-            <li>Skróty klawiszowe: A–F lub 1–6 wybiera odpowiedź, ← → zmienia pytanie, F oznacza.</li>
+            <li>Skróty klawiszowe: A–F lub 1–6 wybiera odpowiedź, ← → zmienia pytanie (w serii Tak/Nie tylko przyciskiem), O oznacza. Litery i cyfry możesz wyłączyć w ustawieniach powyżej.</li>
           </ul>
           <p class="small muted">Źródło zasad: oficjalna strona egzaminu, sprawdzone ${esc(P.exam.verified)}. Nieoficjalne narzędzie, niezwiązane z ${esc(P.vendor)}.</p>
         </details>
@@ -237,21 +248,21 @@
     const last = nextIndex() < 0;
     const prev = prevIndex();
     const parts = q.parts.map(p => p.kind === "text"
-      ? `<div class="xf-qtext">${p.html}</div>`
-      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)} do pytania ${i + 1}" loading="lazy" data-src="${esc(src)}"></a></figure>`).join("")}</div>`).join("");
+      ? `<div class="xf-qtext" lang="en">${p.html}</div>`
+      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)} do pytania ${i + 1}: zrzut ekranu bez opisu tekstowego" loading="lazy" data-src="${esc(src)}"><span class="zoom" aria-hidden="true">${icon("search")}Powiększ</span></a></figure>`).join("")}</div>`).join("");
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body">
+      <div class="xf-screen"><div class="xf-col xf-body" role="main">
         <div class="xf-top">
           <button class="pill xf-pos" data-act="nav" aria-haspopup="dialog" aria-label="Pytanie ${i + 1} z ${A.count}. Otwórz listę pytań">${icon("grid")}<b>${i + 1}</b><span>z ${A.count}</span></button>
           <div class="right">
-            ${P.exam.rules?.breaks ? `<button class="pill icon-btn" data-act="break" aria-label="Zrób przerwę" title="Przerwa"${q.series ? " disabled" : ""}>${icon("coffee")}</button>` : ""}
-            ${P.exam.rules?.learnUrl ? `<a class="pill icon-btn" href="${esc(P.exam.rules.learnUrl)}" target="_blank" rel="noopener" aria-label="Otwórz Microsoft Learn w nowej karcie" title="Microsoft Learn">${icon("book")}</a>` : ""}
+            ${P.exam.rules?.breaks ? `<button class="pill" data-act="break" aria-label="Zrób przerwę" title="Zrób przerwę"${q.series ? " disabled" : ""}>${icon("coffee")}<span>Przerwa</span></button>` : ""}
+            ${P.exam.rules?.learnUrl ? `<a class="pill" href="${esc(P.exam.rules.learnUrl)}" target="_blank" rel="noopener" aria-label="Microsoft Learn (nowa karta)" title="Microsoft Learn">${icon("book")}<span>Learn</span></a>` : ""}
             <div class="pill xf-clock" role="timer"></div>
           </div>
         </div>
         <div class="xf-progress" aria-hidden="true"><i style="width:${lastPct}%"></i></div>
         <article class="card xf-q xf-enter-${motion.dir}" aria-labelledby="xf-qh">
-          <h2 id="xf-qh" tabindex="-1">Pytanie ${i + 1} z ${A.count}</h2>
+          <h1 id="xf-qh" class="xf-qh" tabindex="-1">Pytanie ${i + 1} z ${A.count}</h1>
           ${q.series ? `<p class="note warn">${icon("lock")}<span>Pytanie z serii. Po przejściu dalej nie wrócisz do niego.</span></p>` : ""}
           ${parts}
           ${multi ? `<p class="xf-hint" data-hint>Wybierz ${q.correct.length}. Zaznaczono ${chosen.length}.</p>` : ""}
@@ -262,7 +273,7 @@
                 <input type="${multi ? "checkbox" : "radio"}" name="xf-ans" value="${esc(o.val)}"${chosen.includes(o.val) ? " checked" : ""}>
                 <span class="xf-mark" aria-hidden="true"></span>
                 <span class="xf-letter">${esc(o.val)}</span>
-                <span class="xf-opt-text">${o.html}</span>
+                <span class="xf-opt-text" lang="en">${o.html}</span>
               </label>`).join("")}
           </fieldset>
         </article>
@@ -281,6 +292,7 @@
     root.querySelectorAll(".xf-exhibit img").forEach(img => img.addEventListener("error", () => {
       img.closest("figure").innerHTML = `<p class="xf-imgfail">Nie udało się wczytać obrazka do pytania. <a href="${esc(img.dataset.src)}" target="_blank" rel="noopener">Otwórz obrazek w nowej karcie</a></p>`;
     }, { once: true }));
+    Hub.eagerFirstImage(root);
     applyLimit(q);
     root.scrollTop = 0;
     $("#xf-qh", root).focus({ preventScroll: true });
@@ -360,7 +372,7 @@
     const list = A.pool.map((id, i) => ({ id, i })).filter(({ id }) =>
       reviewFilter === "open" ? !A.answers[id] : reviewFilter === "flag" ? A.flags.includes(id) : true);
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body">
+      <div class="xf-screen"><div class="xf-col xf-body" role="main">
         <div class="xf-top"><span></span><div class="pill xf-clock" role="timer"></div></div>
         <div class="xf-head"><h1 tabindex="-1">Przegląd</h1><p>Odpowiedzi: ${A.count - A.pool.filter(id => !A.answers[id]).length} z ${A.count}. Sprawdź pytania bez odpowiedzi i oznaczone, zanim zakończysz.</p></div>
         <div class="xf-chips" role="group" aria-label="Filtr" style="margin:12px 0">
@@ -373,9 +385,9 @@
           const done = !!A.answers[id];
           const flag = A.flags.includes(id);
           const status = locked ? `<span class="s s-lock">${icon("lock")}${done ? "Zapisane" : "Bez odpowiedzi"}</span>`
-            : done ? `<span class="s s-done">${flag ? icon("flag") : ""}Odpowiedziane</span>`
+            : done ? `<span class="s s-done">${flag ? `${icon("flag")}Oznaczone` : `${icon("check", "odpowiedziane")}`}</span>`
             : `<span class="s s-open">${flag ? icon("flag") : ""}Bez odpowiedzi</span>`;
-          return `<li><button class="xf-row" data-go="${i}"${locked ? " disabled" : ""}><span class="n">${i + 1}</span><span class="t">${esc(questions[id].text.slice(0, 120))}</span>${status}<span class="time" aria-label="czas ${clock(A.spent[id] || 0)}">${clock(A.spent[id] || 0)}</span></button></li>`;
+          return `<li><button class="xf-row" data-go="${i}"${locked ? " disabled" : ""}><span class="n">${i + 1}</span><span class="t" lang="en">${esc(Hub.preview(questions[id], 120))}</span>${status}<span class="time" aria-label="czas ${clock(A.spent[id] || 0)}">${clock(A.spent[id] || 0)}</span></button></li>`;
         }).join("") : `<li class="note">${icon("check")}<span>Nic tu nie ma: ${reviewFilter === "open" ? "każde pytanie ma odpowiedź" : "nie oznaczono żadnego pytania"}.</span></li>`}</ul>
       </div>
       <nav class="xf-bar" aria-label="Nawigacja przeglądu"><div class="xf-bar-inner" style="grid-template-columns:1fr 1.5fr">
@@ -446,7 +458,7 @@
     screen = "break";
     const left = A.pool.filter(id => !A.seen.includes(id)).length;
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body">
+      <div class="xf-screen"><div class="xf-col xf-body" role="main">
         <section class="card xf-section xf-break" aria-labelledby="xf-brk-h">
           <h1 id="xf-brk-h" tabindex="-1">Przerwa</h1>
           <p class="muted">Zegar egzaminu biegnie dalej.</p>
@@ -476,7 +488,8 @@
     return new Promise(resolve => {
       const dlg = document.createElement("dialog");
       dlg.className = "xf-dialog";
-      dlg.innerHTML = `<h2>${esc(title)}</h2><p>${esc(text)}</p>
+      dlg.setAttribute("aria-labelledby", "xf-danger-h");
+      dlg.innerHTML = `<h2 id="xf-danger-h">${esc(title)}</h2><p>${esc(text)}</p>
         <div class="xf-actions"><button class="btn btn-danger" data-yes>${esc(yes)}</button><button class="btn btn-primary" data-no>Anuluj</button></div>`;
       root.appendChild(dlg);
       let answer = false;
@@ -549,14 +562,14 @@
     const weakest = byDomain.filter(x => x.n >= 2 && x.m).sort((a, b) => a.p / a.m - b.p / b.m)[0];
     const weakPct = weakest ? Math.round(weakest.p / weakest.m * 100) : null;
     root.innerHTML = `
-      <div class="xf-screen"><div class="xf-col xf-body" style="padding-bottom:40px">
-        <div class="xf-top"><a class="btn btn-quiet" href="index.html">${icon("home")}Egzaminy</a></div>
+      <div class="xf-screen"><div class="xf-col xf-body" role="main" style="padding-bottom:40px">
+        <div class="xf-top"><a class="btn btn-quiet" href="index.html#egzamin">${icon("home")}Strona główna</a></div>
         <section class="card xf-verdict" aria-labelledby="xf-res-h">
           <h1 id="xf-res-h" tabindex="-1">Wynik: ${esc(P.title)}</h1>
           ${tag}
           ${scoreLine}
-          <p class="muted">Czas: ${mins(used)} min${A.deadline ? ` z ${A.minutes || P.exam.minutes}` : " (bez limitu)"}${A.timeUp ? ". Czas minął, egzamin oddano automatycznie" : ""}.</p>
-          ${weakest && weakPct < 100 ? `<p class="xf-weak">${icon("info")}<span>Najsłabsza domena: <b>${esc(weakest.d.name)}</b> (${weakPct}%). Od niej zacznij naukę.</span></p>` : ""}
+          <p class="muted">Czas: ${used < 60000 ? "poniżej 1" : mins(used)} min${A.deadline ? ` z ${A.minutes || P.exam.minutes}` : " (bez limitu)"}${A.timeUp ? ". Czas minął, egzamin oddano automatycznie" : ""}.</p>
+          ${weakest && weakPct < 100 ? `<p class="xf-weak">${icon("info")}<span>Najsłabsza domena: <b title="${esc(weakest.d.name)}">${esc(weakest.d.label)}</b> (${weakPct}%). Od niej zacznij naukę.</span></p>` : ""}
         </section>
         <div class="xf-next">
           ${missed.length ? `<button class="btn btn-primary btn-block" data-act="study-missed">${icon("undo")}Powtórz błędne z tego egzaminu (${missed.length})</button>` : ""}
@@ -567,12 +580,8 @@
           <ul class="split xf-domains">${byDomain.map((x, k) => `<li><span>${esc(x.d.label)}</span><span class="bar" aria-hidden="true"><i class="grow" style="width:${x.m ? x.p / x.m * 100 : 0}%;--d:${250 + k * 70}ms"></i></span><b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
           <p class="small muted">Jak na oficjalnym raporcie: krótszy pasek to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
         </section>
-        <div class="xf-actions" style="grid-template-columns:1fr 1fr">
-          <a class="btn btn-quiet" href="index.html">Egzaminy</a>
-          <button class="btn btn-quiet" data-act="again">Nowy egzamin</button>
-        </div>
-        <section class="xf-section" style="padding:0" aria-labelledby="xf-ans-h">
-          <h2 id="xf-ans-h" style="margin-top:12px">Twoje odpowiedzi</h2>
+        <details class="card xf-section xf-answers"${answersOpen ? " open" : ""}>
+          <summary><h2 id="xf-ans-h">Twoje odpowiedzi</h2><span class="small muted">${rows.length} ${plural(rows.length, "pytanie", "pytania", "pytań")} · błędne ${rows.filter(r => !r.s.exact).length}</span></summary>
           <div class="xf-chips" role="group" aria-label="Filtr odpowiedzi">
             <button class="chip" data-rfilter="all" aria-pressed="${resultsFilter === "all"}">Wszystkie ${rows.length}</button>
             <button class="chip" data-rfilter="wrong" aria-pressed="${resultsFilter === "wrong"}">Błędne ${rows.filter(r => !r.s.exact).length}</button>
@@ -580,20 +589,25 @@
           </div>
           <div class="xf-ans">${list.map(r => `
             <details>
-              <summary><span class="n"><b>${r.i + 1}</b></span>${r.s.exact ? `<span class="ok">${icon("check", "poprawnie")}</span>` : !r.s.chosen.length ? `<span class="skip" role="img" aria-label="bez odpowiedzi">–</span>` : `<span class="bad">${icon("x", r.s.pts ? "częściowo" : "błędnie")}</span>`}<span class="t">${esc(r.q.text.slice(0, 140))}</span><span class="time">${clock(A.spent[r.id] || 0)}</span></summary>
+              <summary><span class="n"><b>${r.i + 1}</b></span>${r.s.exact ? `<span class="ok">${icon("check", "poprawnie")}</span>` : !r.s.chosen.length ? `<span class="skip" role="img" aria-label="bez odpowiedzi">–</span>` : `<span class="bad">${icon("x", r.s.pts ? "częściowo" : "błędnie")}</span>`}<span class="t" lang="en">${esc(Hub.preview(r.q))}</span><span class="time">${clock(A.spent[r.id] || 0)}</span></summary>
               <div class="body">
                 <p class="small muted">${esc(domainOf(r.q.domain).name)}${r.s.max > 1 ? ` · ${r.s.pts}/${r.s.max} pkt` : ""}${!r.s.chosen.length ? " · bez odpowiedzi" : ""}</p>
-                ${r.q.parts.filter(p => p.kind === "text").map(p => `<div class="xf-qtext">${p.html}</div>`).join("")}
+                ${r.q.parts.filter(p => p.kind === "text").map(p => `<div class="xf-qtext" lang="en">${p.html}</div>`).join("")}
                 ${r.q.options.map(o => {
                   const isC = r.q.correct.includes(o.val), mine = r.s.chosen.includes(o.val);
                   const cls = isC ? "correct" : mine ? "wrong" : "";
                   const lbl = isC && mine ? "Twoja · poprawna" : isC ? "Poprawna" : mine ? "Twoja" : "";
-                  return `<div class="opt-r ${cls}"><b>${esc(o.val)}</b><span>${o.html}</span>${lbl ? `<span class="lbl">${lbl}</span>` : ""}</div>`;
+                  return `<div class="opt-r ${cls}"><b>${esc(o.val)}</b><span lang="en">${o.html}</span>${lbl ? `<span class="lbl">${lbl}</span>` : ""}</div>`;
                 }).join("")}
               </div>
             </details>`).join("") || `<p class="note">${icon("check")}<span>Brak pytań w tym filtrze.</span></p>`}</div>
-        </section>
+        </details>
+        <div class="xf-actions" style="grid-template-columns:1fr 1fr">
+          <a class="btn" href="index.html#egzamin">Strona główna</a>
+          <button class="btn" data-act="again">Nowy egzamin</button>
+        </div>
       </div></div>`;
+    root.querySelector(".xf-answers").addEventListener("toggle", e => { answersOpen = e.target.open; });
     root.scrollTop = 0;
     if (!resultsAnimated) { resultsAnimated = true; countUp($("[data-count]", root), parseInt($("[data-count]", root).dataset.count, 10)); }
     else root.querySelectorAll(".grow").forEach(i => i.classList.remove("grow"));
@@ -606,10 +620,12 @@
     const t = e.target.closest("[data-act],[data-go],[data-filter],[data-rfilter]");
     if (!t || t.disabled) return;
     if (t.dataset.go !== undefined && screen === "review") return go(parseInt(t.dataset.go, 10));
-    if (t.dataset.filter) { reviewFilter = t.dataset.filter; return showReview(); }
-    if (t.dataset.rfilter) { resultsFilter = t.dataset.rfilter; return showResults(); }
+    if (t.dataset.filter) { reviewFilter = t.dataset.filter; showReview(); return $(`[data-filter="${reviewFilter}"]`, root)?.focus(); }
+    if (t.dataset.rfilter) { resultsFilter = t.dataset.rfilter; showResults(); return $(`[data-rfilter="${resultsFilter}"]`, root)?.focus(); }
     switch (t.dataset.act) {
       case "begin": {
+        // Launched as #egzamin=nowy: from now on a reload should resume, not show the start screen.
+        if (location.hash === "#egzamin=nowy") history.replaceState(null, "", "#egzamin");
         if (A && A.status === "running" && A.seen.length) {
           const n = parseInt($("#xf-count", root).value, 10), u = $("#xf-untimed", root).checked;
           return confirmDanger("Zacząć nowy egzamin?", `Trwający egzamin zostanie usunięty. ${runningLabel()}`, "Usuń i zacznij").then(ok => { if (ok) { startAttempt(n, u); showQuestion(0); } });
@@ -618,6 +634,7 @@
         return showQuestion(0);
       }
       case "resume": return showQuestion(A.current);
+      case "last-results": A.showResults = true; save(); history.replaceState(null, "", "#egzamin"); return showResults();
       case "abandon": return confirmDanger("Porzucić egzamin?", `Trwający egzamin zostanie usunięty bez wyniku. ${runningLabel()}`, "Porzuć").then(ok => { if (ok) { A = null; localStorage.removeItem(ATTEMPT_KEY); showStart(); } });
       case "nav": return openNavigator();
       case "prev": { const p = prevIndex(); if (p >= 0) go(p); return; }
@@ -649,8 +666,9 @@
     if (e.target instanceof Element && e.target.matches("input[type=text], textarea, select")) return;
     const k = e.key.toLowerCase();
     const opts = Array.from(root.querySelectorAll(".xf-opts input"));
-    let idx = LETTER_KEYS.indexOf(k);
-    if (idx < 0 && /^[1-8]$/.test(k)) idx = parseInt(k, 10) - 1;
+    const keys = Hub.shortcuts.on();
+    let idx = keys ? LETTER_KEYS.indexOf(k) : -1;
+    if (keys && idx < 0 && /^[1-8]$/.test(k)) idx = parseInt(k, 10) - 1;
     if (idx >= 0 && idx < opts.length) {
       e.preventDefault();
       const box = opts[idx];
@@ -660,16 +678,16 @@
       onAnswerChange();
     } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && e.target instanceof Element && e.target.matches("input[type=radio], input[type=checkbox]")) {
       return; // native radio-group arrows; never change (or lock) a question from here
-    } else if (e.key === "ArrowRight") { e.preventDefault(); $('[data-act="next"]', root)?.click(); }
-    else if (e.key === "ArrowLeft") { e.preventDefault(); $('[data-act="prev"]', root)?.click(); }
-    else if (k === "f") { e.preventDefault(); toggleFlag(); }
+    } else if (e.key === "ArrowRight") { if (questions[A.pool[A.current]].series) return; e.preventDefault(); $('[data-act="next"]', root)?.click(); }
+    else if (e.key === "ArrowLeft") { if (questions[A.pool[A.current]].series) return; e.preventDefault(); $('[data-act="prev"]', root)?.click(); }
+    else if (k === "o" && keys) { e.preventDefault(); toggleFlag(); }
   });
 
   document.addEventListener("visibilitychange", () => { if (document.hidden) { flushTime(); if (A) save(); } });
   window.addEventListener("pagehide", () => { flushTime(); if (A) save(); });
 
   /* ---------- wiring into the study page ---------- */
-  const wantsExam = () => /^#egzamin(=\d+)?$/.test(location.hash);
+  const wantsExam = Hub.examHash;
   window.addEventListener("hashchange", () => { if (wantsExam()) open(); else if (!root.hidden) close(); });
 
   if (wantsExam()) open();

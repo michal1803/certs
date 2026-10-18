@@ -7,6 +7,7 @@
   window.EXAM_PROFILES = {
     terraform: {
       title: "Terraform Associate 004",
+      short: "Terraform",
       vendor: "HashiCorp",
       href: "terraform.html",
       storage: { ui: "exam-ui-v2:terraform-associate-004", progress: "exam-progress:terraform-associate-004:v1" },
@@ -20,7 +21,7 @@
         partialCredit: false,
         // The bank (28) is far smaller than the real exam (~57, unofficial), so
         // this is a timed drill at the real pace (~63 s per question), not a mock.
-        drill: { secondsPerQuestion: 63, realMinutes: 60, realCount: "ok. 57 (nieoficjalnie)" },
+        drill: { secondsPerQuestion: 63, realMinutes: 60, realCount: "ok. 57", realCountUnofficial: true },
         questionTypes: "prawda/fałsz, jednokrotny i wielokrotny wybór",
         source: "https://developer.hashicorp.com/certifications/terraform-associate",
         verified: "2026-10-09",
@@ -40,6 +41,7 @@
     },
     az104: {
       title: "AZ-104 Azure Administrator",
+      short: "AZ-104",
       vendor: "Microsoft",
       href: "az104.html",
       storage: { ui: "exam-ui-v2:microsoft-az-104", progress: "exam-progress:microsoft-az-104:v1" },

@@ -2,7 +2,7 @@
    study reminder at each subscriber's local time (cron every 15 minutes).
    Also GitHub login and progress sync in D1 (see auth.js, sync.js). */
 import { sendPush } from "./webpush.js";
-import { corsHeaders, json, HttpError, readJson, sha256Hex } from "./http.js";
+import { clientIp, corsHeaders, json, HttpError, rateLimit, readJson, sha256Hex } from "./http.js";
 import { authRoutes, cleanupAuth } from "./auth.js";
 import { syncRoutes } from "./sync.js";
 
@@ -17,6 +17,11 @@ const WINDOW_MIN = 15;     // matches the cron interval
 const TEST_GAP_MS = 60_000;
 // Free plan allows 50 subrequests per invocation; keep headroom.
 const MAX_PUSHES_PER_RUN = 45;
+// Caps on stored subscriptions; counted in D1 (migration 0003), skipped without D1.
+const MAX_SUBS = 1000;
+const MAX_NEW_SUBS_PER_IP_PER_DAY = 5;
+// 400/403 from the push service this many times in a row removes the subscription (404/410 at once).
+const MAX_PUSH_FAILURES = 3;
 
 const PUSH_HOSTS = /(^|\.)(fcm\.googleapis\.com|android\.googleapis\.com|push\.services\.mozilla\.com|push\.apple\.com|notify\.windows\.com)$/;
 
@@ -79,6 +84,44 @@ const save = (env, id, rec) =>
 
 const vapidOf = env => ({ publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT });
 
+const utcDay = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
+async function hmacHex(secret, msg) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return [...new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(msg)))].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/* Before storing a new subscription: refuse when the total is at MAX_SUBS or this IP
+   already added MAX_NEW_SUBS_PER_IP_PER_DAY today. The IP is kept only as an HMAC with
+   the dedicated secret IP_HASH_SECRET and the day, and the row is dropped the next day.
+   Without that secret the per-IP quota is skipped rather than hashed with a public value. */
+async function admitNewSub(req, env) {
+  if (!env.DB) return;
+  const total = await env.DB.prepare("SELECT value FROM stats WHERE name = 'subs'").first("value");
+  if (total >= MAX_SUBS) throw new HttpError(503, "subscription limit reached");
+  const day = utcDay();
+  const n = !env.IP_HASH_SECRET ? 0 : await env.DB.prepare(
+    `INSERT INTO sub_quota (ip_hash, day, count) VALUES (?, ?, 1)
+     ON CONFLICT(ip_hash) DO UPDATE SET count = count + 1 RETURNING count`
+  ).bind(await hmacHex(env.IP_HASH_SECRET, `${day}|${clientIp(req)}`), day).first("count");
+  if (n > MAX_NEW_SUBS_PER_IP_PER_DAY) throw new HttpError(429, "too many new subscriptions today", { "Retry-After": "86400" });
+  // The exact count is rewritten by every cron run; this keeps the cap tight in between.
+  await env.DB.prepare(
+    "INSERT INTO stats (name, value) VALUES ('subs', 1) ON CONFLICT(name) DO UPDATE SET value = value + 1"
+  ).run();
+}
+
+/* 404/410: gone for good, delete now. 400/403: delete after MAX_PUSH_FAILURES in a row.
+   Returns true when the subscription was deleted. The caller resets rec.fails on success. */
+async function handlePushStatus(env, id, rec, status) {
+  if (status === 404 || status === 410) { await env.SUBS.delete(id); return true; }
+  if (status !== 400 && status !== 403) return false;
+  rec.fails = (rec.fails || 0) + 1;
+  if (rec.fails >= MAX_PUSH_FAILURES) { await env.SUBS.delete(id); return true; }
+  await save(env, id, rec);
+  return false;
+}
+
 async function subscribe(req, env) {
   const body = await readJson(req);
   const sub = body.subscription;
@@ -97,12 +140,14 @@ async function subscribe(req, env) {
 
   const id = await idFor(sub.endpoint);
   const prev = await env.SUBS.get(id, "json");
+  if (!prev) await admitNewSub(req, env);
   // Keep lastSent so moving the time later today does not send a second reminder.
   await save(env, id, {
     subscription: { endpoint: sub.endpoint, keys: { p256dh, auth } },
     time, tz: body.tz, days,
     lastSent: prev?.lastSent || null,
     lastTest: prev?.lastTest || 0,
+    fails: prev?.fails || 0,
     created: prev?.created || Date.now(),
   });
   return { ok: true };
@@ -125,20 +170,32 @@ async function test(req, env) {
   rec.lastTest = Date.now();
   await save(env, id, rec);
   const res = await sendPush(rec.subscription, PAYLOAD, vapidOf(env), PUSH_OPTS);
-  if (res.status === 404 || res.status === 410) {
-    await env.SUBS.delete(id);
-    throw new HttpError(410, "subscription expired");
-  }
+  if (await handlePushStatus(env, id, rec, res.status)) throw new HttpError(410, "subscription expired");
   if (!res.ok) throw new HttpError(502, `push service answered ${res.status}`);
+  if (rec.fails) { rec.fails = 0; await save(env, id, rec); }
   return { ok: true };
+}
+
+// Exact subscription count for the MAX_SUBS check; yesterday's per-IP counters dropped.
+async function recordSubCount(env, total, now) {
+  if (!env.DB) return;
+  try {
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO stats (name, value) VALUES ('subs', ?1) ON CONFLICT(name) DO UPDATE SET value = ?1").bind(total),
+      env.DB.prepare("DELETE FROM sub_quota WHERE day < ?").bind(utcDay(now.getTime())),
+    ]);
+  } catch (e) {
+    console.error(`subscription count failed: ${e.message}`);
+  }
 }
 
 async function runCron(env) {
   const now = new Date();
   const due = [];
-  let cursor;
+  let cursor, total = 0;
   do {
     const page = await env.SUBS.list({ cursor });
+    total += page.keys.length;
     for (const k of page.keys) {
       const meta = k.metadata;
       if (!meta?.time || !validTz(meta.tz)) continue;
@@ -147,6 +204,7 @@ async function runCron(env) {
     }
     cursor = page.list_complete ? null : page.cursor;
   } while (cursor);
+  await recordSubCount(env, total, now);
 
   if (due.length > MAX_PUSHES_PER_RUN) console.warn(`${due.length} due, sending ${MAX_PUSHES_PER_RUN} this run`);
   let sent = 0, removed = 0, failed = 0;
@@ -155,9 +213,10 @@ async function runCron(env) {
       const rec = await env.SUBS.get(id, "json");
       if (!rec) continue;
       const res = await sendPush(rec.subscription, PAYLOAD, vapidOf(env), PUSH_OPTS);
-      if (res.status === 404 || res.status === 410) { await env.SUBS.delete(id); removed++; continue; }
+      if (await handlePushStatus(env, id, rec, res.status)) { removed++; continue; }
       if (!res.ok) { failed++; console.warn(`push ${id.slice(0, 8)} -> ${res.status}`); continue; }
       rec.lastSent = date;
+      rec.fails = 0;
       await save(env, id, rec);
       sent++;
     } catch (e) {
@@ -167,6 +226,23 @@ async function runCron(env) {
   }
   console.log(`cron: ${due.length} due, ${sent} sent, ${removed} removed, ${failed} failed`);
 }
+
+/* Per-IP limits (wrangler.toml [[ratelimits]]); authenticate() adds a per-user one on RL_API.
+   GET /vapid is not limited. */
+const LIMITS = {
+  "POST /subscribe": "RL_PUSH",
+  "POST /unsubscribe": "RL_PUSH",
+  "POST /test": "RL_PUSH",
+  "GET /auth/login": "RL_AUTH",
+  "GET /auth/callback": "RL_AUTH",
+  "POST /auth/exchange": "RL_AUTH",
+  "POST /auth/logout": "RL_API",
+  "POST /auth/logout-all": "RL_API",
+  "GET /me": "RL_API",
+  "GET /sync": "RL_API",
+  "PUT /sync": "RL_API",
+  "DELETE /account": "RL_API",
+};
 
 const routes = {
   ...authRoutes,
@@ -179,22 +255,24 @@ const routes = {
 
 export default {
   async fetch(req, env) {
-    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
-    const route = routes[`${req.method} ${new URL(req.url).pathname}`];
-    if (!route) return json(req, 404, { ok: false, error: "not found" });
+    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req, env) });
+    const name = `${req.method} ${new URL(req.url).pathname}`;
+    const route = routes[name];
+    if (!route) return json(req, env, 404, { ok: false, error: "not found" });
     try {
+      if (LIMITS[name]) await rateLimit(env[LIMITS[name]], `ip:${clientIp(req)}`);
       const out = await route(req, env);
       // Redirects and plain-text pages come back as ready Responses.
-      return out instanceof Response ? out : json(req, 200, out);
+      return out instanceof Response ? out : json(req, env, 200, out);
     } catch (e) {
-      if (e instanceof HttpError) return json(req, e.status, { ok: false, error: e.message });
+      if (e instanceof HttpError) return json(req, env, e.status, { ok: false, error: e.message }, e.headers);
       console.error(e);
-      return json(req, 500, { ok: false, error: "internal error" });
+      return json(req, env, 500, { ok: false, error: "internal error" });
     }
   },
 
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runCron(env));
-    ctx.waitUntil(cleanupAuth(env));
+    ctx.waitUntil(cleanupAuth(env, controller.scheduledTime));
   },
 };
