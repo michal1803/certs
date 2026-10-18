@@ -946,3 +946,16 @@ body.xf-active { overflow: hidden !important; }
 /* narrow phones: give option text more of the width */
 @media (max-width: 359px) { .xf-opt { padding: 12px; gap: 10px; } }
 .xf-last { justify-self: start; margin-top: 8px; color: var(--text-2); }
+
+/* Wider screens: the action bar follows the question instead of sitting at the
+   window's bottom edge, far from the answers. It sticks to the bottom only when
+   the question is longer than the window. Phones keep the fixed thumb bar. */
+@media (min-width: 720px) {
+  .xf .xf-body { flex: none; padding-bottom: 20px; }
+  .xf .xf-bar {
+    position: sticky; left: auto; bottom: 16px; transform: none;
+    width: min(648px, calc(100% - 32px)); margin: 0 auto 24px; padding: 10px;
+    border-radius: var(--radius); box-shadow: var(--shadow-dialog);
+  }
+  .xf { scroll-padding-bottom: 96px; }
+}
