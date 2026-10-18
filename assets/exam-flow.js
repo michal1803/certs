@@ -87,7 +87,7 @@
     if (A && A.status === "running" && remaining() !== null && remaining() <= 0) finish(true);
     if (A && A.status === "running" && A.onBreak) showBreak();
     else if (A && A.status === "running" && A.seen.length) showQuestion(A.current);
-    else if (A && A.status === "finished" && A.showResults) showResults();
+    else if (A && A.status === "finished" && A.showResults && location.hash !== "#egzamin=nowy") showResults();
     else showStart();
   }
   function close() {
@@ -149,7 +149,7 @@
     const running = A && A.status === "running" && A.seen.length;
     const drill = P.exam.drill;
     const lead = drill
-      ? `Trening na czas: tempo prawdziwego egzaminu, ok. 1 minuty na pytanie. Prawdziwy egzamin ${esc(P.vendor)} trwa ${drill.realMinutes} minut i ma ${esc(drill.realCount)} pytań, a baza ma ich ${P.all.length}.`
+      ? `Trening na czas: tempo prawdziwego egzaminu, ok. 1 minuty na pytanie. Prawdziwy egzamin ${esc(P.vendor)} trwa ${drill.realMinutes} minut i ma ${esc(drill.realCount)} pytań${drill.realCountUnofficial ? " (dane nieoficjalne)" : ""}, a baza ma ich ${P.all.length}.`
       : `Symulacja egzaminu ${esc(P.vendor)}: ten sam czas i te same proporcje domen.`;
     const keyRules = [
       P.exam.rules?.seriesNoReturn ? "Do pytań z serii Tak/Nie nie wrócisz po przejściu dalej." : "",
@@ -166,6 +166,7 @@
           <button class="btn btn-primary btn-block" data-act="resume">Wróć do egzaminu</button>
           <button class="btn btn-danger btn-block" data-act="abandon">Porzuć ten egzamin</button>
         </section>` : ""}
+        ${A && A.status === "finished" ? `<button class="btn btn-quiet xf-last" data-act="last-results">${icon("list")}Zobacz wynik ostatniego egzaminu</button>` : ""}
         <section class="card xf-section" aria-labelledby="setup-h">
           <h2 id="setup-h">Ustawienia</h2>
           <div class="field"><label for="xf-count">Liczba pytań</label>
@@ -188,7 +189,7 @@
             <li>Typy pytań: ${esc(P.exam.questionTypes)}. Pytania bez klucza odpowiedzi (hotspot, drag &amp; drop) zostają w trybie Nauka.</li>
             ${P.exam.rules?.learnUrl ? "<li>Możesz otworzyć Microsoft Learn w nowej karcie. Zegar w tym czasie biegnie.</li>" : ""}
             <li>Zamknięcie strony nie przerywa egzaminu: po powrocie wracasz do tego samego pytania.</li>
-            <li>Skróty klawiszowe: A–F lub 1–6 wybiera odpowiedź, ← → zmienia pytanie, F oznacza. Litery i cyfry możesz wyłączyć w ustawieniach powyżej.</li>
+            <li>Skróty klawiszowe: A–F lub 1–6 wybiera odpowiedź, ← → zmienia pytanie (w serii Tak/Nie tylko przyciskiem), O oznacza. Litery i cyfry możesz wyłączyć w ustawieniach powyżej.</li>
           </ul>
           <p class="small muted">Źródło zasad: oficjalna strona egzaminu, sprawdzone ${esc(P.exam.verified)}. Nieoficjalne narzędzie, niezwiązane z ${esc(P.vendor)}.</p>
         </details>
@@ -386,7 +387,7 @@
           const status = locked ? `<span class="s s-lock">${icon("lock")}${done ? "Zapisane" : "Bez odpowiedzi"}</span>`
             : done ? `<span class="s s-done">${flag ? `${icon("flag")}Oznaczone` : `${icon("check", "odpowiedziane")}`}</span>`
             : `<span class="s s-open">${flag ? icon("flag") : ""}Bez odpowiedzi</span>`;
-          return `<li><button class="xf-row" data-go="${i}"${locked ? " disabled" : ""}><span class="n">${i + 1}</span><span class="t" lang="en">${esc(questions[id].text.slice(0, 120))}</span>${status}<span class="time" aria-label="czas ${clock(A.spent[id] || 0)}">${clock(A.spent[id] || 0)}</span></button></li>`;
+          return `<li><button class="xf-row" data-go="${i}"${locked ? " disabled" : ""}><span class="n">${i + 1}</span><span class="t" lang="en">${esc(Hub.preview(questions[id], 120))}</span>${status}<span class="time" aria-label="czas ${clock(A.spent[id] || 0)}">${clock(A.spent[id] || 0)}</span></button></li>`;
         }).join("") : `<li class="note">${icon("check")}<span>Nic tu nie ma: ${reviewFilter === "open" ? "każde pytanie ma odpowiedź" : "nie oznaczono żadnego pytania"}.</span></li>`}</ul>
       </div>
       <nav class="xf-bar" aria-label="Nawigacja przeglądu"><div class="xf-bar-inner" style="grid-template-columns:1fr 1.5fr">
@@ -567,7 +568,7 @@
           <h1 id="xf-res-h" tabindex="-1">Wynik: ${esc(P.title)}</h1>
           ${tag}
           ${scoreLine}
-          <p class="muted">Czas: ${mins(used)} min${A.deadline ? ` z ${A.minutes || P.exam.minutes}` : " (bez limitu)"}${A.timeUp ? ". Czas minął, egzamin oddano automatycznie" : ""}.</p>
+          <p class="muted">Czas: ${used < 60000 ? "poniżej 1" : mins(used)} min${A.deadline ? ` z ${A.minutes || P.exam.minutes}` : " (bez limitu)"}${A.timeUp ? ". Czas minął, egzamin oddano automatycznie" : ""}.</p>
           ${weakest && weakPct < 100 ? `<p class="xf-weak">${icon("info")}<span>Najsłabsza domena: <b title="${esc(weakest.d.name)}">${esc(weakest.d.label)}</b> (${weakPct}%). Od niej zacznij naukę.</span></p>` : ""}
         </section>
         <div class="xf-next">
@@ -588,7 +589,7 @@
           </div>
           <div class="xf-ans">${list.map(r => `
             <details>
-              <summary><span class="n"><b>${r.i + 1}</b></span>${r.s.exact ? `<span class="ok">${icon("check", "poprawnie")}</span>` : !r.s.chosen.length ? `<span class="skip" role="img" aria-label="bez odpowiedzi">–</span>` : `<span class="bad">${icon("x", r.s.pts ? "częściowo" : "błędnie")}</span>`}<span class="t" lang="en">${esc(r.q.text.slice(0, 140))}</span><span class="time">${clock(A.spent[r.id] || 0)}</span></summary>
+              <summary><span class="n"><b>${r.i + 1}</b></span>${r.s.exact ? `<span class="ok">${icon("check", "poprawnie")}</span>` : !r.s.chosen.length ? `<span class="skip" role="img" aria-label="bez odpowiedzi">–</span>` : `<span class="bad">${icon("x", r.s.pts ? "częściowo" : "błędnie")}</span>`}<span class="t" lang="en">${esc(Hub.preview(r.q))}</span><span class="time">${clock(A.spent[r.id] || 0)}</span></summary>
               <div class="body">
                 <p class="small muted">${esc(domainOf(r.q.domain).name)}${r.s.max > 1 ? ` · ${r.s.pts}/${r.s.max} pkt` : ""}${!r.s.chosen.length ? " · bez odpowiedzi" : ""}</p>
                 ${r.q.parts.filter(p => p.kind === "text").map(p => `<div class="xf-qtext" lang="en">${p.html}</div>`).join("")}
@@ -631,6 +632,7 @@
         return showQuestion(0);
       }
       case "resume": return showQuestion(A.current);
+      case "last-results": A.showResults = true; save(); history.replaceState(null, "", "#egzamin"); return showResults();
       case "abandon": return confirmDanger("Porzucić egzamin?", `Trwający egzamin zostanie usunięty bez wyniku. ${runningLabel()}`, "Porzuć").then(ok => { if (ok) { A = null; localStorage.removeItem(ATTEMPT_KEY); showStart(); } });
       case "nav": return openNavigator();
       case "prev": { const p = prevIndex(); if (p >= 0) go(p); return; }
@@ -674,9 +676,9 @@
       onAnswerChange();
     } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && e.target instanceof Element && e.target.matches("input[type=radio], input[type=checkbox]")) {
       return; // native radio-group arrows; never change (or lock) a question from here
-    } else if (e.key === "ArrowRight") { e.preventDefault(); $('[data-act="next"]', root)?.click(); }
+    } else if (e.key === "ArrowRight") { if (questions[A.pool[A.current]].series) return; e.preventDefault(); $('[data-act="next"]', root)?.click(); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); $('[data-act="prev"]', root)?.click(); }
-    else if (k === "f" && keys) { e.preventDefault(); toggleFlag(); }
+    else if (k === "o" && keys) { e.preventDefault(); toggleFlag(); }
   });
 
   document.addEventListener("visibilitychange", () => { if (document.hidden) { flushTime(); if (A) save(); } });

@@ -21,7 +21,7 @@
         partialCredit: false,
         // The bank (28) is far smaller than the real exam (~57, unofficial), so
         // this is a timed drill at the real pace (~63 s per question), not a mock.
-        drill: { secondsPerQuestion: 63, realMinutes: 60, realCount: "ok. 57 (nieoficjalnie)" },
+        drill: { secondsPerQuestion: 63, realMinutes: 60, realCount: "ok. 57", realCountUnofficial: true },
         questionTypes: "prawda/fałsz, jednokrotny i wielokrotny wybór",
         source: "https://developer.hashicorp.com/certifications/terraform-associate",
         verified: "2026-10-09",

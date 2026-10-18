@@ -164,14 +164,29 @@
   document.addEventListener("change", e => { if (e.target.matches?.("[data-shortcuts]")) shortcuts.set(e.target.checked); });
 
   // The exam flow owns #egzamin and #egzamin=<count>; study draws nothing under it.
-  const examHash = () => /^#egzamin(=\d+)?$/.test(location.hash);
+  // #egzamin=nowy (from the launcher) opens the start screen even after a finished attempt.
+  const examHash = () => /^#egzamin(=(\d+|nowy))?$/.test(location.hash);
+  /* List previews only: many questions open with the same series boilerplate,
+     so skip it (and lead with the solution when there is one). The question
+     itself is never changed. */
+  const BOILER = [
+    /^\s*Note: The question is included in a number of questions that depicts? the identical set-up\. However, every question has a distinctive result\. Establish if the solution satisfies the requirements\.\s*/i,
+    /^\s*Note: This question is part of a series of questions that present the same scenario\.[\s\S]*?(review screen\.|correct solution\.)\s*/i,
+  ];
+  const preview = (q, n = 140) => {
+    let t = q.text;
+    BOILER.forEach(re => { t = t.replace(re, ""); });
+    const sol = t.match(/Solution:\s*([\s\S]*?)(Does (this|the solution) meet the goal\?|$)/);
+    if (sol && sol[1].trim()) t = `Solution: ${sol[1].trim()} · ${t.slice(0, sol.index)}`;
+    return t.trim().slice(0, n);
+  };
   // The first exhibit is usually the largest thing on screen: load it right away.
   const eagerFirstImage = root => { const img = root.querySelector(".xf-exhibit img"); if (img) { img.fetchPriority = "high"; img.loading = "eager"; } };
   // Let a closing <dialog> play its exit before it leaves the DOM.
   const removeAfterClose = dlg => dlg.addEventListener("close", () => setTimeout(() => dlg.remove(), 260));
 
   window.EXAM_PROFILE = profile;
-  window.Hub = { examHash, shortcuts, eagerFirstImage, motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
+  window.Hub = { preview, examHash, shortcuts, eagerFirstImage, motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

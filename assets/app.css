@@ -133,7 +133,7 @@ html { background: var(--ground); }
   border-radius: 8px;
 }
 /* Headings get focus from code (for screen readers), not from the user: no ring. */
-.xf [tabindex="-1"]:focus-visible { outline: none; }
+.xf [tabindex="-1"]:focus-visible, .launcher [tabindex="-1"]:focus-visible { outline: none; }
 .xf h1, .xf h2, .xf h3, .xf p, .launcher h1, .launcher h2, .launcher h3, .launcher p { margin: 0; }
 
 .icon { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -464,17 +464,17 @@ body.xf-active { overflow: hidden !important; }
 .xf-head p { margin-top: 6px; color: var(--text-2); font-size: 17px; }
 .xf-section { margin-top: 16px; padding: 20px; display: grid; gap: 14px; }
 .xf-section h2 { font-size: 19px; font-weight: 700; }
-.xf-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.xf-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
 .xf-facts div { padding: 12px; border-radius: var(--radius-sm); background: var(--surface); }
 .xf-facts b { display: block; font-size: 22px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
 .xf-facts span { font-size: 14px; color: var(--text-2); }
 .xf-rules { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 .xf-keyrules { gap: 8px; }
-.xf-more summary, .xf-answers summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
-.xf-answers summary { flex-wrap: wrap; justify-content: flex-start; }
-.xf-answers summary::-webkit-details-marker { display: none; }
-.xf-answers summary::after { content: ""; margin-left: auto; width: 9px; height: 9px; margin-right: 4px; border: solid var(--text-2); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .2s var(--ease); }
-.xf-answers[open] summary::after { transform: rotate(-135deg); }
+.xf-more summary, .xf-answers > summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.xf-answers > summary { flex-wrap: wrap; justify-content: flex-start; }
+.xf-answers > summary::-webkit-details-marker { display: none; }
+.xf-answers > summary::after { content: ""; margin-left: auto; width: 9px; height: 9px; margin-right: 4px; border: solid var(--text-2); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .2s var(--ease); }
+.xf-answers[open] > summary::after { transform: rotate(-135deg); }
 .xf-answers:not([open]) { gap: 0; }
 .xf-more summary::-webkit-details-marker { display: none; }
 .xf-more summary::after { content: ""; width: 9px; height: 9px; margin-right: 4px; border: solid var(--text-2); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .2s var(--ease); }
@@ -512,8 +512,9 @@ body.xf-active { overflow: hidden !important; }
 .xf-row .t { grid-area: t; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); }
 .xf-row .time { grid-area: time; color: var(--text-2); font-weight: 600; text-align: right; min-width: 4ch; }
 .xf-row .s { grid-area: s; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; white-space: nowrap; }
-.s-open { color: var(--warn); }
-.s-bad { color: var(--bad); }
+.s-open, .s-bad { padding: 3px 8px; border-radius: 999px; }
+.s-open { color: var(--warn); background: var(--warn-tint); }
+.s-bad { color: var(--bad); background: var(--bad-tint); }
 .s-done { color: var(--text); }
 .s-lock { color: var(--text-2); }
 
@@ -537,6 +538,7 @@ body.xf-active { overflow: hidden !important; }
 .xf-cell.done { background: var(--text); border-color: var(--text); color: var(--on-ink); }
 /* Current question: dashed ink ring, so it never looks like keyboard focus. */
 .xf-cell.cur { outline: 2px dashed var(--text); outline-offset: 3px; }
+.xf-cell.cur:focus-visible { outline: 3px solid var(--action); outline-offset: 2px; }
 .xf-cell .flag { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; background: var(--card); color: var(--text); display: grid; place-items: center; box-shadow: var(--shadow); }
 .xf-cell .flag .icon { width: 14px; height: 14px; fill: currentColor; }
 .xf-cell:disabled { background: var(--surface); border-style: dashed; color: var(--text-2); cursor: not-allowed; }
@@ -608,7 +610,7 @@ body.xf-active { overflow: hidden !important; }
 .pill-gap { width: 44px; }
 .sv-star[aria-pressed="true"] { box-shadow: inset 0 0 0 1.5px var(--text), var(--shadow); background: var(--surface); }
 .sv-star[aria-pressed="true"] .icon { fill: currentColor; }
-.sv-mastery { margin-top: 12px; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 12px; font-size: 14px; color: var(--text-2); }
+.sv-mastery { margin-top: 12px; display: grid; grid-template-columns: 1fr; align-items: center; gap: 8px; font-size: 14px; color: var(--text-2); }
 .sv-mastery b { color: var(--text); }
 .sv-mastery .xf-progress { margin: 0; }
 .sv-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 12px; font-size: 14px; font-weight: 700; color: var(--text-2); }
@@ -667,81 +669,82 @@ body.xf-active { overflow: hidden !important; }
    a mouse or trackpad gets a compact scale, detected by the input device
    rather than by width alone (desktop OS scaling of 125–150% would otherwise
    make the phone scale look oversized). */
+/* Scoped to study and exam (.xf); the launcher keeps its own, larger scale. */
 @media (hover: hover) and (pointer: fine) and (min-width: 700px) {
   .xf { font-size: 14px; line-height: 1.45; }
-  .btn { min-height: 38px; padding: 0 16px; font-size: 14px; border-radius: 10px; }
-  .pill { min-height: 34px; padding: 6px 12px; font-size: 14px; gap: 6px; }
-  .icon-btn { width: 34px; padding: 0; }
-  .icon { width: 16px; height: 16px; }
-  .seg { padding: 3px; }
-  .seg button { min-height: 30px; font-size: 14px; }
-  .select { min-height: 36px; font-size: 14px; padding-left: 12px; border-radius: 10px; background-position: right 10px center; }
-  .field { gap: 4px; }
-  .field label, .sv-label { font-size: 13px; }
-  .chip { min-height: 30px; padding: 0 12px; font-size: 13px; }
-  .note { font-size: 13px; padding: 8px 10px; }
-  .split { gap: 4px; }
-  .split li { font-size: 13px; grid-template-columns: 7.5rem minmax(0, 1fr) 2ch; gap: 10px; }
-  .split.mastery li { grid-template-columns: 7.5rem minmax(0, 1fr) 6ch; }
-  .split .bar { height: 5px; }
+  .xf .btn { min-height: 38px; padding: 0 16px; font-size: 14px; border-radius: 10px; }
+  .xf .pill { min-height: 34px; padding: 6px 12px; font-size: 14px; gap: 6px; }
+  .xf .icon-btn { width: 34px; padding: 0; }
+  .xf .icon { width: 16px; height: 16px; }
+  .xf .seg { padding: 3px; }
+  .xf .seg button { min-height: 30px; font-size: 14px; }
+  .xf .select { min-height: 36px; font-size: 14px; padding-left: 12px; border-radius: 10px; background-position: right 10px center; }
+  .xf .field { gap: 4px; }
+  .xf .field label, .xf .sv-label { font-size: 13px; }
+  .xf .chip { min-height: 30px; padding: 0 12px; font-size: 13px; }
+  .xf .note { font-size: 13px; padding: 8px 10px; }
+  .xf .split { gap: 4px; }
+  .xf .split li { font-size: 13px; grid-template-columns: 7.5rem minmax(0, 1fr) 2ch; gap: 10px; }
+  .xf .split.mastery li { grid-template-columns: 7.5rem minmax(0, 1fr) 6ch; }
+  .xf .split .bar { height: 5px; }
 
 
-  .xf-col { padding-top: 24px; }
-  .xf-body { padding-bottom: 90px; }
-  .xf-head h1 { font-size: 22px; }
-  .xf-head p { font-size: 14px; }
-  .xf-section { margin-top: 12px; padding: 16px; gap: 10px; }
-  .xf-section h2 { font-size: 16px; }
-  .xf-facts div { padding: 8px 10px; }
-  .xf-facts b { font-size: 17px; }
-  .xf-facts span { font-size: 12px; }
-  .xf-rules { gap: 4px; }
-  .switch input { width: 44px; height: 26px; }
-  .switch input::after { width: 20px; height: 20px; }
-  .switch input:checked::after { transform: translateX(18px); }
-  .xf-pos b { font-size: 17px; }
-  .xf-progress { height: 4px; }
-  .xf-q { margin-top: 10px; padding: 16px; }
-  .xf-qtext { font-size: 15px; line-height: 1.55; }
-  .xf-exhibit figcaption { font-size: 12px; }
-  .xf-exhibit img { max-height: min(340px, 45vh); width: auto; }
-  .xf-opts { gap: 6px; margin-top: 10px; }
-  .xf-opt { min-height: 40px; padding: 9px 12px; gap: 10px; font-size: 14px; border-radius: 12px; }
-  .xf-mark { width: 18px; height: 18px; }
-  .xf-opt input[type="radio"]:checked + .xf-mark { border-width: 5px; }
-  .xf-opt input[type="checkbox"]:checked + .xf-mark::after { width: 9px; height: 5px; }
-  .xf-hint { font-size: 13px; margin-top: 8px; }
-  .xf-bar { padding: 8px 16px; border-radius: 16px 16px 0 0; }
-  .xf-bar .btn { min-height: 38px; }
-  .xf-row { min-height: 40px; padding: 8px 12px; font-size: 13px; }
-  .xf-list { gap: 6px; }
-  .xf-cell { height: 36px; font-size: 14px; border-radius: 10px; }
-  .xf-grid { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; }
-  .xf-sheet-in { padding: 16px; gap: 12px; }
-  .xf-sheet-head h2, .xf-dialog h2 { font-size: 17px; }
-  .xf-dialog { padding: 18px; }
-  .xf-legend { font-size: 12px; }
-  .xf-verdict { padding: 18px 16px; }
-  .xf-score { font-size: 34px; }
-  .xf-score small { font-size: 16px; }
-  .xf-verdict h1 { font-size: 18px; }
-  .tag { font-size: 13px; padding: 4px 10px; }
-  .xf-ans summary { min-height: 40px; font-size: 13px; padding: 8px 12px; }
-  .xf-ans .opt-r { font-size: 13px; padding: 8px 10px; }
+  .xf .xf-col { padding-top: 24px; }
+  .xf .xf-body { padding-bottom: 90px; }
+  .xf .xf-head h1 { font-size: 22px; }
+  .xf .xf-head p { font-size: 14px; }
+  .xf .xf-section { margin-top: 12px; padding: 16px; gap: 10px; }
+  .xf .xf-section h2 { font-size: 16px; }
+  .xf .xf-facts div { padding: 8px 10px; }
+  .xf .xf-facts b { font-size: 17px; }
+  .xf .xf-facts span { font-size: 12px; }
+  .xf .xf-rules { gap: 4px; }
+  .xf .switch input { width: 44px; height: 26px; }
+  .xf .switch input::after { width: 20px; height: 20px; }
+  .xf .switch input:checked::after { transform: translateX(18px); }
+  .xf .xf-pos b { font-size: 17px; }
+  .xf .xf-progress { height: 4px; }
+  .xf .xf-q { margin-top: 10px; padding: 16px; }
+  .xf .xf-qtext { font-size: 15px; line-height: 1.55; }
+  .xf .xf-exhibit figcaption { font-size: 12px; }
+  .xf .xf-exhibit img { max-height: min(340px, 45vh); width: auto; }
+  .xf .xf-opts { gap: 6px; margin-top: 10px; }
+  .xf .xf-opt { min-height: 40px; padding: 9px 12px; gap: 10px; font-size: 14px; border-radius: 12px; }
+  .xf .xf-mark { width: 18px; height: 18px; }
+  .xf .xf-opt input[type="radio"]:checked + .xf-mark { border-width: 5px; }
+  .xf .xf-opt input[type="checkbox"]:checked + .xf-mark::after { width: 9px; height: 5px; }
+  .xf .xf-hint { font-size: 13px; margin-top: 8px; }
+  .xf .xf-bar { padding: 8px 16px; border-radius: 16px 16px 0 0; }
+  .xf .xf-bar .btn { min-height: 38px; }
+  .xf .xf-row { min-height: 40px; padding: 8px 12px; font-size: 13px; }
+  .xf .xf-list { gap: 6px; }
+  .xf .xf-cell { height: 36px; font-size: 14px; border-radius: 10px; }
+  .xf .xf-grid { grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; }
+  .xf .xf-sheet-in { padding: 16px; gap: 12px; }
+  .xf .xf-sheet-head h2, .xf .xf-dialog h2 { font-size: 17px; }
+  .xf .xf-dialog { padding: 18px; }
+  .xf .xf-legend { font-size: 12px; }
+  .xf .xf-verdict { padding: 18px 16px; }
+  .xf .xf-score { font-size: 34px; }
+  .xf .xf-score small { font-size: 16px; }
+  .xf .xf-verdict h1 { font-size: 18px; }
+  .xf .tag { font-size: 13px; padding: 4px 10px; }
+  .xf .xf-ans summary { min-height: 40px; font-size: 13px; padding: 8px 12px; }
+  .xf .xf-ans .opt-r { font-size: 13px; padding: 8px 10px; }
 
-  .sv-num { font-size: 16px; }
-  .sv-meta { font-size: 12px; margin-bottom: 8px; }
-  .sv-prev { font-size: 12px; padding: 3px 8px; }
-  .sv-tag { font-size: 12px; }
-  .sv-result { font-size: 14px; padding: 8px 12px; margin-top: 10px; }
-  .sv-after .btn-quiet { min-height: 34px; }
-  .sv-comments summary { min-height: 40px; font-size: 14px; padding: 8px 12px; }
-  .sv-comment { font-size: 13px; padding: 10px; }
-  .sv-vote { font-size: 12px; }
-  .sv-search input { min-height: 36px; font-size: 14px; padding-left: 38px; }
-  .sv-search .icon { left: 12px; }
-  .sv-mastery { font-size: 12px; margin-top: 8px; }
-  .sv-self-btns .btn { min-height: 38px; }
+  .xf .sv-num { font-size: 16px; }
+  .xf .sv-meta { font-size: 12px; margin-bottom: 8px; }
+  .xf .sv-prev { font-size: 12px; padding: 3px 8px; }
+  .xf .sv-tag { font-size: 12px; }
+  .xf .sv-result { font-size: 14px; padding: 8px 12px; margin-top: 10px; }
+  .xf .sv-after .btn-quiet { min-height: 34px; }
+  .xf .sv-comments summary { min-height: 40px; font-size: 14px; padding: 8px 12px; }
+  .xf .sv-comment { font-size: 13px; padding: 10px; }
+  .xf .sv-vote { font-size: 12px; }
+  .xf .sv-search input { min-height: 36px; font-size: 14px; padding-left: 38px; }
+  .xf .sv-search .icon { left: 12px; }
+  .xf .sv-mastery { font-size: 12px; margin-top: 8px; }
+  .xf .sv-self-btns .btn { min-height: 38px; }
 }
 
 /* ===== motion =====
@@ -833,3 +836,7 @@ body.xf-active { overflow: hidden !important; }
 .sv-sheet .chip { flex: none; }
 .sv-more summary { min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--text-2); cursor: pointer; }
 .sv-more-in { display: grid; gap: 14px; padding-top: 8px; }
+
+/* narrow phones: give option text more of the width */
+@media (max-width: 359px) { .xf-opt { padding: 12px; gap: 10px; } .xf-q { padding: 16px; } }
+.xf-last { justify-self: start; margin-top: 8px; color: var(--text-2); }

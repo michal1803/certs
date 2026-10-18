@@ -164,7 +164,7 @@
     return set ? `${dom} · ${set}` : dom;
   }
 
-  function topBar() {
+  function topBar(noStar = false) {
     if (session.quick) {
       const k = session.quick.done.length, n = session.quick.n;
       return `
@@ -176,7 +176,7 @@
       <div class="sv-mastery"><span>Pytanie <b>${Math.min(k + 1, n)}</b> z ${n}</span><span class="xf-progress" aria-hidden="true"><i style="width:${k / n * 100}%"></i></span></div>`;
     }
     const m = mastered();
-    const id = session.history[session.pos];
+    const id = noStar ? null : session.history[session.pos];
     const starred = id && S.stars.includes(id);
     return `
       <div class="xf-top">
@@ -205,17 +205,16 @@
       : Number.isFinite(nextDue) ? `Nic więcej nie czeka na powtórkę. Następne pytania wrócą ${SRS.when(nextDue, now)}.` : "";
     document.title = `${P.title} · szybka piątka`;
     root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body" role="main">
-      <div class="xf-top"><a class="pill icon-btn" href="index.html#nauka" aria-label="Strona główna" title="Strona główna">${icon("home")}</a></div>
       <section class="card xf-section sv-quick" aria-labelledby="sv-quick-h">
         <h1 id="sv-quick-h" class="sv-h1" tabindex="-1">Szybka piątka: ${ok} z ${rows.length}</h1>
         ${after ? `<p class="muted">${after}</p>` : ""}
         <ul class="xf-list sv-quick-list">${rows.map(({ q, a }) => `<li><span class="xf-row">
           <span class="n">${esc(q.num.replace(/^Q/, ""))}</span>
-          <span class="t" lang="en">${esc(q.text.slice(0, 120))}</span>
+          <span class="t" lang="en">${esc(Hub.preview(q, 120))}</span>
           ${a?.ok ? `<span class="s s-done">${icon("check")}${SRS.when(a.due, now)}</span>` : `<span class="s s-bad">${icon("x")}wróci</span>`}
         </span></li>`).join("")}</ul>
         <button class="btn btn-quiet" data-act="quit-quick">${icon("book")}Ucz się dalej bez limitu</button>
-        ${load("exam-hub:remind", {}).push ? "" : `<a class="btn btn-quiet" href="index.html#przypomnienie">${icon("clock")}Ustaw codzienne przypomnienie</a>`}
+        ${load("exam-hub:remind", {}).push ? "" : `<p class="small muted">Kilka minut dziennie wystarczy. <a href="index.html#przypomnienie">Ustaw codzienne przypomnienie</a></p>`}
       </section>
     </div>
     <nav class="xf-bar" aria-label="Szybka piątka"><div class="xf-bar-inner" style="grid-template-columns:1fr 1.5fr">
@@ -229,10 +228,11 @@
 
   function renderEmpty() {
     const sc = session.scope;
-    const why = sc.set === "due" ? "Nic nie czeka na powtórkę w tym zakresie. Wróć później albo ucz się nowych pytań." : sc.set === "wrong" ? "Nie masz błędnych odpowiedzi w tym zakresie." : sc.set === "star" ? "Nie dodałeś jeszcze gwiazdek w tym zakresie." : sc.set === "new" ? "Odpowiedziałeś już na wszystkie pytania w tym zakresie." : "Brak pytań w tym zakresie.";
-    root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body" role="main">${topBar()}
+    const why = sc.set === "due" ? "Nic nie czeka na powtórkę w tym zakresie. Wróć później albo ucz się nowych pytań." : sc.set === "wrong" ? "Nie masz błędnych odpowiedzi w tym zakresie." : sc.set === "star" ? "Brak pytań z gwiazdką w tym zakresie." : sc.set === "new" ? "Wszystkie pytania w tym zakresie mają już odpowiedź." : "Brak pytań w tym zakresie.";
+    root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body" role="main">${topBar(true)}
       <section class="card xf-section" style="margin-top:16px"><h1 class="sv-h1" tabindex="-1">Nic do nauki</h1><p class="muted">${why}</p>
-      <button class="btn btn-primary btn-block" data-act="all">Ucz się ze wszystkich pytań</button></section></div></div>`;
+      <button class="btn btn-primary btn-block" data-act="all">Ucz się ze wszystkich pytań</button>
+      <button class="btn btn-block" data-act="list">Zmień filtr</button></section></div></div>`;
     $("h1").focus({ preventScroll: true });
   }
 
@@ -278,7 +278,7 @@
     let answerBlock = "";
     if (keyed) {
       answerBlock = `
-        ${!checked && Object.keys(S.ans).length < 5 ? `<p class="xf-hint sv-guess-hint">Nie masz pewności? Po wyborze odpowiedzi kliknij „Strzelam”. Trafienie na strzał wróci jutro, zamiast przesunąć pytanie dalej.</p>` : ""}
+        ${!checked && Object.keys(S.ans).length < 5 ? `<p class="xf-hint sv-guess-hint">Nie masz pewności? Po wyborze odpowiedzi wybierz „Strzelam”. Trafienie na strzał wróci jutro, zamiast przesunąć pytanie dalej.</p>` : ""}
         ${multi && !checked ? `<p class="xf-hint" data-hint>Wybierz ${q.correct.length}. Zaznaczono ${chosen.length}.</p>` : ""}
         <fieldset class="xf-opts"${checked ? " disabled" : ""}>
           <legend>Odpowiedzi${multi ? `, wybierz ${q.correct.length}` : ""}</legend>
@@ -314,10 +314,10 @@
         answerBlock = `
           <p class="note warn">${icon("info")}<span>Baza nie ma oficjalnego rozwiązania tego pytania. Porównaj swoją odpowiedź z komentarzami społeczności i dyskusją.</span></p>
           ${q.answerArea.length ? `<div class="xf-exhibit">${q.answerArea.map(src => `<figure><figcaption>Pole odpowiedzi z pytania (bez rozwiązania)</figcaption><img src="${esc(src)}" alt="Pole odpowiedzi" loading="lazy" data-src="${esc(src)}"></figure>`).join("")}</div>` : ""}
-          ${communityHTML(q, true)}
           ${rec.kind === "self"
-            ? `<p class="sv-result ${rec.ok ? "ok" : "bad"}">${icon(rec.ok ? "check" : "x")}<span>${rec.ok ? `Oznaczone jako: wiedziałem. ${nextLine(rec)}` : "Oznaczone jako: nie wiedziałem. Wróci w kolejce."}</span></p>`
-            : `<div class="sv-self"><p><b>Jak poszło?</b></p><div class="sv-self-btns"><button class="btn" data-self="0">${icon("x")}Nie wiedziałem</button><button class="btn" data-self="1">${icon("check")}Wiedziałem</button></div></div>`}`;
+            ? `<p class="sv-result ${rec.ok ? "ok" : "bad"}">${icon(rec.ok ? "check" : "x")}<span>${rec.ok ? `Oznaczone: wiem. ${nextLine(rec)}` : "Oznaczone: nie wiem. Wróci w kolejce."}</span></p>`
+            : `<div class="sv-self"><p><b>Jak poszło?</b></p><div class="sv-self-btns"><button class="btn" data-self="0">${icon("x")}Nie wiem</button><button class="btn" data-self="1">${icon("check")}Wiem</button></div></div>`}
+          ${communityHTML(q, true)}`;
       }
     }
 
@@ -428,7 +428,7 @@
       dlg.querySelector("[data-list]").innerHTML = ids.slice(0, 300).map(id => {
         const q = questions[id], a = S.ans[id];
         const st = !a ? `<span class="s s-lock">nowe</span>` : a.ok ? `<span class="s s-done">${icon("check")}${SRS.mastered(a) ? "opanowane" : "dobrze"}</span>` : `<span class="s s-bad">${icon("x")}źle</span>`;
-        return `<li><button class="xf-row" data-jump="${id}"><span class="n">${esc(q.num.replace(/^Q/, ""))}</span><span class="t" lang="en">${esc(q.text.slice(0, 140))}</span>${st}<span class="time">${S.stars.includes(id) ? icon("star", "gwiazdka") : ""}</span></button></li>`;
+        return `<li><button class="xf-row" data-jump="${id}"><span class="n">${esc(q.num.replace(/^Q/, ""))}</span><span class="t" lang="en">${esc(Hub.preview(q))}</span>${st}<span class="time">${S.stars.includes(id) ? icon("star", "gwiazdka") : ""}</span></button></li>`;
       }).join("") || `<li class="note">${icon("info")}<span>Nic nie pasuje do wyszukiwania i filtrów.</span></li>`;
     };
     fill();
@@ -449,7 +449,7 @@
       if (jumped) return;  // goTo already rendered the chosen question
       const cur = session.history[session.pos];
       if (!cur || !inScope(cur)) goTo(pickNext()); else render();
-      $('[data-act="list"]')?.focus({ preventScroll: true });
+      if ($("#sv-qh")) $('[data-act="list"]')?.focus({ preventScroll: true });
     });
     dlg.showModal();
   }
@@ -538,8 +538,8 @@
       box.dispatchEvent(new Event("change", { bubbles: true }));
       box.focus({ preventScroll: true });
     } else if (e.key === "Enter" && !(e.target instanceof HTMLButtonElement) && !(e.target instanceof HTMLAnchorElement) && !(e.target instanceof HTMLElement && e.target.closest("summary"))) {
-      const p = root.querySelector(".xf-bar-inner").lastElementChild;
-      if (p) { e.preventDefault(); p.click(); }
+      const p = root.querySelector(".xf-bar-inner")?.lastElementChild;
+      if (p?.classList.contains("btn-primary")) { e.preventDefault(); p.click(); }
     } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && e.target instanceof Element && e.target.matches("input[type=radio], input[type=checkbox]")) {
       return; // native radio-group arrows move the choice, not the question
     } else if (e.key === "ArrowRight") { e.preventDefault(); next(); }
@@ -563,9 +563,11 @@
       session.scope = { domain: "", set: fromHash.slice(1) };
       session.history = []; session.pos = -1; session.revealed = {};
       history.replaceState(null, "", "#nauka");
-    } else if (fromHash !== null && fromHash !== session.scope.domain) {
+    } else if (fromHash) {
+      // A domain link (launcher Postęp, exam results) always starts that domain afresh.
       session.scope = { domain: fromHash, set: "all" };
       session.history = []; session.pos = -1; session.revealed = {};
+      history.replaceState(null, "", "#nauka");
     }
     save();
     if (session.pos >= 0 && questions[session.history[session.pos]]) render();

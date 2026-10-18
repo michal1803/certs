@@ -82,7 +82,7 @@
     const drill = !!f.p.exam.drill;
     return `<section class="card hero" aria-labelledby="hero-h">
       <h2 id="hero-h">Niedokończony ${drill ? "trening" : "egzamin"}</h2>
-      <p>Pytanie ${int(a.current) + 1} z ${int(a.count)}${left === null ? " · bez limitu czasu" : left > 0 ? ` · zostało ${clock(left)}. Zegar biegnie dalej, jak na prawdziwym egzaminie.` : ". Czas minął: wynik czeka."}</p>
+      <p>Pytanie ${int(a.current) + 1} z ${int(a.count)}${left === null ? " · bez limitu czasu" : left > 0 ? ` · zostało ${clock(left)}. Zegar biegnie dalej, jak na prawdziwym egzaminie.` : ". Czas minął: wynik czeka."}${left === null ? "." : ""}</p>
       <a class="btn btn-primary btn-block" href="${esc(f.p.href)}#egzamin">${left !== null && left <= 0 ? "Zobacz wynik" : "Wróć do egzaminu"}</a>
     </section>`;
   }
@@ -110,7 +110,7 @@
       hero = `<section class="card hero" aria-labelledby="hero-h">
         <h2 id="hero-h">Powtórki na dziś zrobione</h2>
         <p>${f.nextDue ? `Następne pytania wrócą ${window.SRS.when(f.nextDue, Date.now())}. ` : ""}W międzyczasie ucz się nowych pytań.</p>
-        <a class="btn btn-primary btn-block" href="${esc(href)}#nauka">Ucz się dalej</a>
+        <a class="btn btn-primary btn-block" href="${esc(href)}#nauka:wszystkie">Ucz się dalej</a>
         ${masteryLine(f)}
       </section>`;
     } else {
@@ -124,8 +124,8 @@
     const rows = [
       heroIs !== "quick" ? row(`${href}#szybkie`, "Szybka piątka", f.due ? `${f.due} do powtórki · ok. 3 min` : "5 pytań · ok. 3 min") : "",
       heroIs !== "all" ? row(`${href}#nauka:wszystkie`, "Wszystkie pytania", "Najpierw błędne i zaległe, potem nowe", "") : "",
-      f.wrong ? row(`${href}#nauka:bledne`, "Błędne odpowiedzi", "Pytania, na które ostatnio odpowiedziałeś źle", f.wrong) : "",
-      f.stars ? row(`${href}#nauka:gwiazdki`, "Z gwiazdką", "Pytania, które oznaczyłeś", f.stars) : "",
+      f.wrong ? row(`${href}#nauka:bledne`, "Błędne odpowiedzi", "Ostatnia odpowiedź była błędna", f.wrong) : "",
+      f.stars ? row(`${href}#nauka:gwiazdki`, "Z gwiazdką", "Twoje oznaczone pytania", f.stars) : "",
       row("#postep", "Jedna domena", "Wybierz ją w zakładce Postęp"),
     ].join("");
     return `${header(esc(p.title), `${esc(p.vendor)} · ${pytan(p.all.length)} w bazie`)}
@@ -153,18 +153,18 @@
   /* ---------- Egzamin: the real parameters, one start ---------- */
   function egzamin(f) {
     const p = f.p, x = p.exam, drill = x.drill;
-    const counts = x.counts.length > 1 ? `${x.counts[0]}–${x.counts[x.counts.length - 1]} pytań` : pytan(x.counts[0]);
+    const counts = x.counts.length === 2 ? `${x.counts[0]} lub ${x.counts[1]} pytań` : x.counts.length > 2 ? `${x.counts[0]}–${x.counts[x.counts.length - 1]} pytań` : pytan(x.counts[0]);
     const chips = drill
       ? [`ok. 1 min na pytanie`, counts, "próg niepublikowany"]
       : [`${x.minutes} min`, counts, x.passing ? `próg ${x.passing.score}/${x.passing.scale}` : "próg niepublikowany"];
     const lead = drill
-      ? `Prawdziwy egzamin ${esc(p.vendor)} trwa ${drill.realMinutes} minut i ma ${esc(drill.realCount)} pytań. Baza ma ich ${p.all.length}, więc to trening w tym samym tempie, nie pełna symulacja.`
+      ? `Prawdziwy egzamin ${esc(p.vendor)} trwa ${drill.realMinutes} minut i ma ${esc(drill.realCount)} pytań${drill.realCountUnofficial ? " (dane nieoficjalne)" : ""}. Baza ma ich ${p.all.length}, więc to trening w tym samym tempie, nie pełna symulacja.`
       : `Pytania losowane w proporcjach domen z oficjalnego opisu egzaminu. Możesz oznaczać pytania i wracać do nich przed oddaniem.`;
     const card = f.running ? resumeCard(f) : `<section class="card hero" aria-labelledby="hero-h">
         <h2 id="hero-h">${drill ? "W tempie prawdziwego egzaminu" : "Jak na prawdziwym egzaminie"}</h2>
         <ul class="facts">${chips.map(c => `<li>${esc(c)}</li>`).join("")}</ul>
         <p>${lead}</p>
-        <a class="btn btn-primary btn-block" href="${esc(p.href)}#egzamin">${drill ? "Przygotuj trening" : "Przygotuj egzamin"}</a>
+        <a class="btn btn-primary btn-block" href="${esc(p.href)}#egzamin=nowy">${drill ? "Przygotuj trening" : "Przygotuj egzamin"}</a>
         <p class="small muted">Liczbę pytań i tryb bez limitu czasu wybierzesz na następnym ekranie.</p>
       </section>`;
     const pass = h => x.passing ? int(h.pct) / 100 >= x.passing.score / x.passing.scale : null;
@@ -172,7 +172,7 @@
       const ok = pass(h);
       return `<li><div class="row"><span class="row-t"><b>${int(h.pct)}%</b><span>${esc(date(int(h.at)))} · ${pytan(int(h.count))}${h.untimed ? " · bez limitu" : ""}</span></span>${ok === null ? "" : `<span class="tag ${ok ? "pass" : "fail"}">${icon(ok ? "check" : "x")}${ok ? "zdany" : "niezdany"}</span>`}</div></li>`;
     }).join("")}</ul>${x.passing ? `<p class="small muted">Zdany lub niezdany to szacunek: ${esc(p.vendor)} skaluje wynik, więc próg ${x.passing.score} to nie to samo co ${Math.round(x.passing.score / x.passing.scale * 100)}%.</p>` : ""}`
-      : `<p class="empty">Tu pojawią się wyniki Twoich egzaminów.</p>`;
+      : `<p class="empty">Tu pojawią się wyniki Twoich ${drill ? "treningów" : "egzaminów"}.</p>`;
     return `${header(drill ? "Trening na czas" : "Egzamin próbny", esc(p.title))}
       ${card}
       <h2 class="list-h">Twoje wyniki</h2>
@@ -262,8 +262,9 @@
   /* ---------- settings sheet ---------- */
   const sheet = document.getElementById("settings");
   const gear = document.getElementById("open-settings");
+  let opener = null;
   function openSettings(section) {
-    if (!sheet.open) sheet.showModal();
+    if (!sheet.open) { opener = document.activeElement; sheet.showModal(); }
     const target = section === "remind" ? document.getElementById("remind") : section === "konto" ? document.getElementById("konto") : null;
     if (target) {
       target.scrollIntoView({ block: "start" });
@@ -272,14 +273,19 @@
   }
   gear.addEventListener("click", () => openSettings());
   sheet.addEventListener("click", e => { if (e.target === sheet || e.target.closest("[data-close]")) sheet.close(); });
-  sheet.addEventListener("close", () => { paint(); gear.focus({ preventScroll: true }); });
+  sheet.addEventListener("close", () => {
+    const back = opener && document.contains(opener) && opener !== document.body ? opener : gear;
+    paint();
+    // paint() redraws the view, so a button inside it is a new node: find it again.
+    const again = back.dataset?.open ? view.querySelector(`[data-open="${back.dataset.open}"]`) : back;
+    (again || gear).focus({ preventScroll: true });
+  });
   // Links from other pages: index.html#przypomnienie / #konto open the sheet there.
   function deepLink() {
     const section = location.hash === "#przypomnienie" ? "remind" : "konto";
     history.replaceState(null, "", "#nauka");
     openSettings(section);
   }
-  if (location.hash === "#konto" || location.hash === "#przypomnienie") deepLink();
 
   // Theme.
   const themePick = sheet.querySelector("[data-theme-pick]");
@@ -358,6 +364,8 @@
     }
   });
   paintAccount();
+  // After the account is drawn, so #konto can focus its sign-in button.
+  if (location.hash === "#konto" || location.hash === "#przypomnienie") deepLink();
 
   window.HubDue.publish();
 
