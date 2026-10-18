@@ -418,7 +418,7 @@ a.row:focus-visible { outline-offset: -3px; }
 
 /* privacy policy and other documents */
 .doc-main { width: min(720px, 100%); margin: 0 auto; padding: calc(16px + env(safe-area-inset-top)) 16px 64px; }
-.doc-back { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; text-decoration: none; }
+.doc-back { display: inline-flex; align-items: center; min-height: 44px; font-weight: 800; text-decoration: none; color: var(--action-text); }
 .doc h1 { margin: 12px 0 16px; font-size: 34px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }
 .doc h2 { margin: 36px 0 10px; font-size: 21px; line-height: 1.25; font-weight: 700; }
 .doc h3 { margin: 20px 0 6px; font-size: 17px; font-weight: 800; }
