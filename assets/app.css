@@ -200,7 +200,7 @@ a.pill { text-decoration: none; }
   padding: 4px; border-radius: var(--radius-sm); background: var(--surface);
 }
 .seg button {
-  min-height: 44px; border: 0; border-radius: 10px; background: transparent;
+  min-height: 44px; border: 0; border-radius: 6px; background: transparent;
   font: 700 16px/1 var(--font); color: var(--text-2); cursor: pointer;
 }
 /* Selected segment: card fill plus an outline, so the state does not rest on a faint shadow. */
@@ -623,7 +623,7 @@ body.xf-active { overflow: hidden !important; }
 .xf-cell:disabled { background: var(--surface); border-style: dashed; color: var(--text-2); cursor: not-allowed; }
 .xf-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--text-2); }
 .xf-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.xf-legend i { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--border-strong); background: var(--card); }
+.xf-legend i { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--border-strong); background: var(--card); }
 .xf-legend i.d { background: var(--text); border-color: var(--text); }
 .xf-legend i.l { background: var(--surface); border-style: dashed; }
 
@@ -773,7 +773,6 @@ body.xf-active { overflow: hidden !important; }
   .xf .xf-head h1 { font-size: 22px; }
   .xf .xf-head p { font-size: 14px; }
   .xf .xf-section { margin-top: 18px; padding: 16px 0 0; gap: 10px; }
-  .xf .xf-section h2 { font-size: 16px; }
   .xf .xf-facts div { padding: 8px 8px 8px 0; }
   .xf .xf-facts div + div { padding-left: 10px; }
   .xf .xf-facts b { font-size: 17px; }
@@ -918,5 +917,5 @@ body.xf-active { overflow: hidden !important; }
 .sv-more-in { display: grid; gap: 14px; padding-top: 8px; }
 
 /* narrow phones: give option text more of the width */
-@media (max-width: 359px) { .xf-opt { padding: 12px; gap: 10px; } .xf-q { padding: 16px; } }
+@media (max-width: 359px) { .xf-opt { padding: 12px; gap: 10px; } }
 .xf-last { justify-self: start; margin-top: 8px; color: var(--text-2); }
