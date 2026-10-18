@@ -4,7 +4,7 @@
   "description": "Cloudflare Worker for Exam Hub: daily Web Push reminder, GitHub login and progress sync.",
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-site.mjs",
+    "build": "node scripts/build-bank.mjs",
     "dev": "npm run build && wrangler dev --local --test-scheduled",
     "deploy": "npm run build && wrangler deploy"
   },

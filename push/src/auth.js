@@ -2,7 +2,7 @@
    OAuth code for the user's public profile, then hands the page a short-lived one-time
    code in the URL fragment, which the page exchanges for our own session token. */
 import { b64u } from "./webpush.js";
-import { ALLOWED_ORIGINS, isLocalOrigin, HttpError, rateLimit, readJson, sha256Hex } from "./http.js";
+import { ALLOWED_ORIGIN, isLocalOrigin, HttpError, rateLimit, readJson, sha256Hex } from "./http.js";
 
 const STATE_TTL_MS = 10 * 60_000;
 const CODE_TTL_MS = 2 * 60_000;
@@ -31,7 +31,7 @@ function validReturn(value, env) {
   if (typeof value !== "string" || value.length > 2048) return null;
   let url;
   try { url = new URL(value); } catch (e) { return null; }
-  if (ALLOWED_ORIGINS.includes(url.origin) && url.pathname.startsWith("/certs/")) return url;
+  if (url.origin === ALLOWED_ORIGIN && url.pathname.startsWith("/certs/")) return url;
   if (isLocalOrigin(url.origin, env)) return url;
   return null;
 }
@@ -82,8 +82,7 @@ async function login(req, env) {
   return redirect(`${oauthBase(env)}/login/oauth/authorize?${params}`);
 }
 
-// Swaps an OAuth code for the user's public profile (also used by the site gate).
-export async function githubUser(env, code, redirectUri) {
+async function githubUser(env, code, redirectUri) {
   const tokenRes = await fetch(`${oauthBase(env)}/login/oauth/access_token`, {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "exam-hub" },

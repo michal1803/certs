@@ -327,14 +327,14 @@
     const u = sync.user;
     const note = sync.state === "syncing" ? "Synchronizuję…" : sync.state === "error" ? "Nie udało się zsynchronizować. Spróbuję ponownie." : sync.lastSync ? `Zsynchronizowano o ${new Date(sync.lastSync).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}` : "";
     acct.innerHTML = u ? `
-      <div class="acct-who">${avatar(u, 40)}<div><b>${esc(u.login)}</b><span class="small muted" data-acct-note>${esc(note)}</span></div></div>
-      <div class="acct-menu">
-        <button class="btn" type="button" data-acct="sync">Synchronizuj teraz</button>
-        <button class="btn" type="button" data-acct="logout">Wyloguj</button>
-        <button class="btn btn-quiet" type="button" data-acct="logout-all">Wyloguj na wszystkich urządzeniach</button>
-      </div>
-      <p class="small muted">Na serwerze zapisujemy tylko identyfikator, login, nazwę i avatar z GitHuba oraz postęp nauki i wyniki egzaminów. Nie mamy dostępu do Twoich repozytoriów.</p>
-      <button class="btn btn-quiet acct-del" type="button" data-acct="delete">Usuń konto i dane z serwera</button>`
+      <div class="acct-who">${avatar(u, 40)}<div><b>${esc(u.login)}</b><span class="small muted" data-acct-note>${esc(note)}</span></div>
+        <button class="btn" type="button" data-acct="sync">Synchronizuj</button></div>
+      <ul class="acct-list">
+        <li><button type="button" data-acct="logout">Wyloguj</button></li>
+        <li><button type="button" data-acct="logout-all">Wyloguj na wszystkich urządzeniach</button></li>
+        <li><button type="button" class="acct-del" data-acct="delete">Usuń konto i dane z serwera</button></li>
+      </ul>
+      <p class="small muted">Na serwerze jest tylko identyfikator, login, nazwa i avatar z GitHuba oraz postęp. Bez dostępu do repozytoriów.</p>`
       : `<p class="small muted">Bez logowania postęp, gwiazdki i wyniki zostają w tej przeglądarce. Po zalogowaniu przez GitHub synchronizują się między Twoimi urządzeniami.</p>
          <button class="btn btn-gh" type="button" data-acct="login">${GH}Zaloguj przez GitHub</button>`;
     if (acctMsg) acct.insertAdjacentHTML("beforeend", `<p class="acct-msg" role="status">${esc(acctMsg)}</p>`);

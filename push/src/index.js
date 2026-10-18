@@ -1,7 +1,6 @@
 /* Exam Hub push: stores Web Push subscriptions in KV and sends one daily
    study reminder at each subscriber's local time (cron every 15 minutes).
    Also GitHub login and progress sync in D1 (see auth.js, sync.js). */
-import { gate } from "./gate.js";
 import { sendPush } from "./webpush.js";
 import { clientIp, corsHeaders, json, HttpError, rateLimit, readJson, sha256Hex } from "./http.js";
 import { authRoutes, authenticate, cleanupAuth } from "./auth.js";
@@ -273,11 +272,6 @@ const routes = {
 export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req, env) });
-    // The app's pages and the site sign-in; null means an API route.
-    if (req.method === "GET" || req.method === "HEAD") {
-      const site = await gate(req, env);
-      if (site) return site;
-    }
     const name = `${req.method} ${new URL(req.url).pathname}`;
     const route = routes[name];
     if (!route) return json(req, env, 404, { ok: false, error: "not found" });
