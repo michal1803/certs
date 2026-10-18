@@ -333,9 +333,11 @@
     root.querySelectorAll(".xf-exhibit img").forEach(img => img.addEventListener("error", () => {
       img.closest("figure").innerHTML = `<p class="xf-imgfail">Nie udało się wczytać obrazka. <a href="${esc(img.dataset.src)}" target="_blank" rel="noopener">Otwórz w nowej karcie</a></p>`;
     }, { once: true }));
+    Hub.eagerFirstImage(root);
     applyLimit(q, checked);
-    // After "Sprawdź" bring the verdict into view (it can sit below the fold on a phone).
-    if (justChecked) $(".sv-result, .sv-self")?.scrollIntoView({ block: "nearest", behavior: reduced() ? "auto" : "smooth" });
+    // After "Sprawdź" bring the verdict into view (it can sit below the fold on a phone);
+    // on the next frame, so it does not force a layout in the middle of rendering.
+    if (justChecked) requestAnimationFrame(() => $(".sv-result, .sv-self")?.scrollIntoView({ block: "nearest", behavior: reduced() ? "auto" : "smooth" }));
     else root.scrollTop = 0;
     $("#sv-qh").focus({ preventScroll: true });
   }

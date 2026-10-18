@@ -163,11 +163,13 @@
   };
   document.addEventListener("change", e => { if (e.target.matches?.("[data-shortcuts]")) shortcuts.set(e.target.checked); });
 
+  // The first exhibit is usually the largest thing on screen: load it right away.
+  const eagerFirstImage = root => { const img = root.querySelector(".xf-exhibit img"); if (img) { img.fetchPriority = "high"; img.loading = "eager"; } };
   // Let a closing <dialog> play its exit before it leaves the DOM.
   const removeAfterClose = dlg => dlg.addEventListener("close", () => setTimeout(() => dlg.remove(), 260));
 
   window.EXAM_PROFILE = profile;
-  window.Hub = { shortcuts, motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
+  window.Hub = { shortcuts, eagerFirstImage, motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

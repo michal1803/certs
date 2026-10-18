@@ -290,6 +290,7 @@
     root.querySelectorAll(".xf-exhibit img").forEach(img => img.addEventListener("error", () => {
       img.closest("figure").innerHTML = `<p class="xf-imgfail">Nie udało się wczytać obrazka do pytania. <a href="${esc(img.dataset.src)}" target="_blank" rel="noopener">Otwórz obrazek w nowej karcie</a></p>`;
     }, { once: true }));
+    Hub.eagerFirstImage(root);
     applyLimit(q);
     root.scrollTop = 0;
     $("#xf-qh", root).focus({ preventScroll: true });

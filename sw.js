@@ -1,5 +1,8 @@
 /* Exam Hub service worker: offline use and faster starts.
-   - Pages: network first, so a new deploy shows up when online; cached copy offline.
+   - Pages: network first, so a new deploy shows up when online; the cached
+     copy offline, or when the network has not answered within 3 s.
+   - The shell is precached; the exam pages (large) are cached in the
+     background after install, unless the connection is slow or Save-Data.
    - Own scripts and styles: network first too (bypassing the HTTP cache), so a
      deploy never pairs new pages with old CSS/JS; cached copy offline.
    - Fonts and icons: cache first (they never change in place).
@@ -7,7 +10,7 @@
    - Push: the daily reminder from the push Worker (push/), worded here with
      the due counts the pages copy to IndexedDB.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v13";
+const VERSION = "v14";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
 // Cross-origin images are opaque, and browsers count each one as several MB
@@ -18,8 +21,6 @@ const MAX_IMAGES = 80;
 const PRECACHE = [
   "./",
   "index.html",
-  "terraform.html",
-  "az104.html",
   "manifest.webmanifest",
   "assets/app.css",
   "assets/theme.js",
@@ -33,6 +34,7 @@ const PRECACHE = [
   "assets/sync.js",
   "assets/fonts/nunito-latin.woff2",
   "assets/fonts/nunito-latin-ext.woff2",
+  "assets/icons/icon-96.png",
   "assets/icons/icon-192.png",
   "assets/icons/icon-512.png",
   "assets/icons/maskable-512.png",
@@ -47,11 +49,26 @@ self.addEventListener("install", event => {
     .then(() => self.skipWaiting()));
 });
 
+// Exam pages are big (az104.html ~560 KB gzip): fetch them for offline use
+// only on a decent connection. The HTTP cache usually already holds the page
+// just visited, so this rarely downloads it twice.
+const PAGES = ["terraform.html", "az104.html"];
+const frugal = () => { const c = self.navigator.connection; return !!c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || "")); };
+async function warmPages() {
+  if (frugal()) return;
+  const cache = await caches.open(CORE);
+  for (const page of PAGES) {
+    if (await cache.match(page)) continue;
+    try { const res = await fetch(page); if (res.ok) await cache.put(page, res); } catch (e) {}
+  }
+}
+
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => k.startsWith("exam-hub-core-") && k !== CORE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
+      .then(warmPages)
   );
 });
 
@@ -67,17 +84,24 @@ self.addEventListener("fetch", event => {
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
 
-  // Pages: network first, fall back to the cached page (ignoring #hash/?query).
+  // Pages: network first; after 3 s without an answer (or offline) the cached
+  // page (ignoring #hash/?query), refreshed in the background.
   if (req.mode === "navigate" && sameOrigin) {
-    event.respondWith(
-      fetch(req, { cache: "no-cache" }).then(res => {
-        if (res.ok) { const copy = res.clone(); caches.open(CORE).then(c => c.put(url.pathname, copy)); }
-        return res;
-      }).catch(async () =>
-        (await caches.match(req, { ignoreSearch: true })) ||
-        (await caches.match(url.pathname)) ||
-        (await caches.match("index.html")))
-    );
+    const network = fetch(req, { cache: "no-cache" }).then(res => {
+      if (res.ok) { const copy = res.clone(); caches.open(CORE).then(c => c.put(url.pathname, copy)); }
+      return res;
+    });
+    network.catch(() => {});
+    const cached = async () => (await caches.match(req, { ignoreSearch: true })) || (await caches.match(url.pathname));
+    event.respondWith((async () => {
+      try {
+        return await Promise.race([network, new Promise((_, fail) => setTimeout(() => fail(new Error("timeout")), 3000))]);
+      } catch (e) {
+        const hit = await cached();
+        if (hit) { event.waitUntil(network.catch(() => {})); return hit; }
+        try { return await network; } catch (e2) { return (await caches.match("index.html")) || Response.error(); }
+      }
+    })());
     return;
   }
 
@@ -101,7 +125,7 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Question images on other hosts: cache first.
+  // Question images on other hosts: cache first (stored only when not on Save-Data or 2G).
   if (req.destination === "image") {
     event.respondWith(
       caches.open(IMAGES).then(async cache => {
@@ -109,7 +133,7 @@ self.addEventListener("fetch", event => {
         if (cached) return cached;
         try {
           const res = await fetch(req);
-          if (res.ok || res.type === "opaque") { cache.put(req, res.clone()); trimImages(); }
+          if ((res.ok || res.type === "opaque") && !frugal()) { cache.put(req, res.clone()); trimImages(); }
           return res;
         } catch (e) {
           return Response.error();
