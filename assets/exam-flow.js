@@ -11,7 +11,6 @@
   const LETTER_KEYS = "abcdefgh";
 
   const { esc, load, store, clock, plural, shuffle, icon, questions, domainOf, motion, pop, countUp, removeAfterClose } = Hub;
-  let lastPct = 0;
   let resultsAnimated = false; // the score reveal plays once per results visit
   const $ = (sel, root = document) => root.querySelector(sel);
   const mins = ms => Math.max(0, Math.round(ms / 60000));
@@ -204,7 +203,7 @@
       scorable.forEach(q => { avail[q.domain] = (avail[q.domain] || 0) + 1; });
       const q = window.examQuotas(P, n, avail);
       const max = Math.max(...Object.values(q), 1);
-      $("[data-split]", root).innerHTML = P.domains.map(d => `<li><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${(q[d.id] / max) * 100}%"></i></span><b>${q[d.id]}</b></li>`).join("");
+      $("[data-split]", root).innerHTML = P.domains.map((d, k) => `<li style="--c:var(--l${k % 8 + 1})"><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${(q[d.id] / max) * 100}%"></i></span><b>${q[d.id]}</b></li>`).join("");
       $('[data-f="minutes"]', root).textContent = window.examMinutes(P, n);
     };
     sel.addEventListener("change", renderSplit);
@@ -260,7 +259,7 @@
             <div class="pill xf-clock" role="timer"></div>
           </div>
         </div>
-        <div class="xf-progress" aria-hidden="true"><i style="width:${lastPct}%"></i></div>
+        <div class="route${A.count > 20 ? " dense" : ""}" style="--n:${A.count}" aria-hidden="true">${A.pool.map((qid, k) => `<i class="${k === i ? "cur" : A.flags.includes(qid) ? "flag" : A.answers[qid] ? "done" : ""}"></i>`).join("")}</div>
         <article class="card xf-q xf-enter-${motion.dir}" aria-labelledby="xf-qh">
           <h1 id="xf-qh" class="xf-qh" tabindex="-1">Pytanie ${i + 1} z ${A.count}</h1>
           ${q.series ? `<p class="note warn">${icon("lock")}<span>Pytanie z serii. Po przejściu dalej nie wrócisz do niego.</span></p>` : ""}
@@ -286,9 +285,7 @@
       </div>`;
     renderClock($(".xf-clock", root));
     startTick();
-    const pct = (i + 1) / A.count * 100, bar = $(".xf-progress i", root);
-    requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = pct + "%"; }));
-    lastPct = pct; motion.dir = "next";
+    motion.dir = "next";
     root.querySelectorAll(".xf-exhibit img").forEach(img => img.addEventListener("error", () => {
       img.closest("figure").innerHTML = `<p class="xf-imgfail">Nie udało się wczytać obrazka do pytania. <a href="${esc(img.dataset.src)}" target="_blank" rel="noopener">Otwórz obrazek w nowej karcie</a></p>`;
     }, { once: true }));
@@ -577,8 +574,8 @@
         </div>
         <section class="card xf-section" aria-labelledby="xf-dom-h">
           <h2 id="xf-dom-h">Wynik w domenach</h2>
-          <ul class="split xf-domains">${byDomain.map((x, k) => `<li><span>${esc(x.d.label)}</span><span class="bar" aria-hidden="true"><i class="grow" style="width:${x.m ? x.p / x.m * 100 : 0}%;--d:${250 + k * 70}ms"></i></span><b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
-          <p class="small muted">Jak na oficjalnym raporcie: krótszy pasek to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
+          <ul class="split xf-domains">${byDomain.map(x => `<li><span>${esc(x.d.label)}</span>${window.HubLine(P.domains.indexOf(x.d), x.m ? x.p / x.m : 0)}<b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
+          <p class="small muted">Jak na oficjalnym raporcie, tylko jako linie: mniej zapalonych stacji to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
         </section>
         <details class="card xf-section xf-answers"${answersOpen ? " open" : ""}>
           <summary><h2 id="xf-ans-h">Twoje odpowiedzi</h2><span class="small muted">${rows.length} ${plural(rows.length, "pytanie", "pytania", "pytań")} · błędne ${rows.filter(r => !r.s.exact).length}</span></summary>
