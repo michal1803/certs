@@ -1,7 +1,7 @@
 {
   "name": "Exam Hub",
   "short_name": "Exam Hub",
-  "id": "./index.html",
+  "id": "/certs/index.html",
   "description": "Nauka i egzaminy próbne do certyfikatów IT (AZ-104, Terraform Associate) z tym samym czasem i proporcjami domen co prawdziwy egzamin.",
   "lang": "pl",
   "start_url": "./index.html",

@@ -10,17 +10,18 @@
    - Push: the daily reminder from the push Worker (push/), worded here with
      the due counts the pages copy to IndexedDB.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v15";
+const VERSION = "v16";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
-// Cross-origin images are opaque, and browsers count each one as several MB
-// of quota, so keep only the most recent ones (pages load images lazily, so
-// only exhibits actually shown get here).
-const MAX_IMAGES = 80;
+// Cross-origin images are opaque, and Chrome counts each one as ~7 MB of
+// quota, so keep only the most recent few (pages load images lazily, so only
+// exhibits actually shown get here; the HTTP cache keeps the rest for a year).
+const MAX_IMAGES = 20;
 
 const PRECACHE = [
   "./",
   "index.html",
+  "privacy.html",
   "manifest.webmanifest",
   "assets/app.css",
   "assets/theme.js",
@@ -45,7 +46,8 @@ const PRECACHE = [
 self.addEventListener("install", event => {
   // cache: "reload" skips the browser HTTP cache, so the precache is always fresh.
   event.waitUntil(caches.open(CORE)
-    .then(c => c.addAll(PRECACHE.map(u => new Request(u, { cache: "reload" }))))
+    // Fonts and icons never change in place: the HTTP cache copy is fine.
+    .then(c => c.addAll(PRECACHE.map(u => new Request(u, { cache: /\/(fonts|icons)\//.test(u) ? "default" : "reload" }))))
     .then(() => self.skipWaiting()));
 });
 
@@ -54,14 +56,17 @@ self.addEventListener("install", event => {
 // just visited, so this rarely downloads it twice.
 const PAGES = ["terraform.html", "az104.html"];
 const frugal = () => { const c = self.navigator.connection; return !!c && (c.saveData || /(^|-)2g$/.test(c.effectiveType || "")); };
+// Started by a page message after activation, never inside `activate`:
+// navigations wait for activation, so a slow warm would hold them up.
 async function warmPages() {
   if (frugal()) return;
   const cache = await caches.open(CORE);
-  for (const page of PAGES) {
-    if (await cache.match(page)) continue;
-    try { const res = await fetch(page); if (res.ok) await cache.put(page, res); } catch (e) {}
-  }
+  await Promise.all(PAGES.map(async page => {
+    if (await cache.match(page)) return;
+    try { const res = await fetch(page, { signal: AbortSignal.timeout(15000) }); if (res.ok) await cache.put(page, res); } catch (e) {}
+  }));
 }
+self.addEventListener("message", event => { if (event.data === "warm") event.waitUntil(warmPages()); });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
@@ -69,7 +74,6 @@ self.addEventListener("activate", event => {
       .then(keys => Promise.all(keys.filter(k => k.startsWith("exam-hub-core-") && k !== CORE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
       .then(trimImages)
-      .then(warmPages)
   );
 });
 
@@ -89,7 +93,7 @@ self.addEventListener("fetch", event => {
   // page (ignoring #hash/?query), refreshed in the background.
   if (req.mode === "navigate" && sameOrigin) {
     const network = fetch(req, { cache: "no-cache" }).then(res => {
-      if (res.ok) { const copy = res.clone(); caches.open(CORE).then(c => c.put(url.pathname, copy)); }
+      if (res.ok) { const copy = res.clone(); event.waitUntil(caches.open(CORE).then(c => c.put(url.pathname, copy)).catch(() => {})); }
       return res;
     });
     network.catch(() => {});

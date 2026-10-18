@@ -189,6 +189,7 @@
   window.Hub = { preview, examHash, shortcuts, eagerFirstImage, motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+    // Once a worker is active, ask it to cache the exam pages for offline use.
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").then(() => navigator.serviceWorker.ready).then(r => r.active?.postMessage("warm")).catch(() => {}));
   }
 })();
