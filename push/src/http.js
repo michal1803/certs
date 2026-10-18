@@ -1,8 +1,6 @@
 /* Shared HTTP helpers: CORS, JSON responses, errors, body parsing, hashing, rate limits. */
 
-// The app is served by this Worker (behind the site gate); the old GitHub Pages
-// origin stays allowed so a page still open there can finish syncing.
-export const ALLOWED_ORIGINS = ["https://exam-hub-push.michaw49.workers.dev", "https://michal1803.github.io"];
+export const ALLOWED_ORIGIN = "https://michal1803.github.io";
 const LOCAL_ORIGIN = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 const MAX_BODY = 4096;
 
@@ -11,7 +9,7 @@ export const isLocalOrigin = (origin, env) => env?.DEV_ORIGINS === "1" && LOCAL_
 
 export function corsHeaders(req, env) {
   const origin = req.headers.get("Origin") || "";
-  if (!ALLOWED_ORIGINS.includes(origin) && !isLocalOrigin(origin, env)) return {};
+  if (origin !== ALLOWED_ORIGIN && !isLocalOrigin(origin, env)) return {};
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
