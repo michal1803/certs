@@ -43,7 +43,16 @@ export async function sha256Hex(text) {
   return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-export const clientIp = req => req.headers.get("CF-Connecting-IP") || "unknown";
+// Only Cloudflare's header is trusted. IPv6 is keyed by its /64: one connection
+// usually owns a whole /64, so per-address keys would be trivial to rotate.
+export const clientIp = req => {
+  const ip = req.headers.get("CF-Connecting-IP") || "unknown";
+  if (!ip.includes(":")) return ip;
+  const [head, tail = ""] = ip.split("::");
+  const left = head ? head.split(":") : [], right = tail ? tail.split(":") : [];
+  const groups = [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill("0"), ...right];
+  return groups.slice(0, 4).map(g => (g || "0").toLowerCase().replace(/^0+(?=.)/, "")).join(":") + "::/64";
+};
 
 // Must match `period` of the [[ratelimits]] bindings in wrangler.toml.
 const RATE_PERIOD_S = 60;

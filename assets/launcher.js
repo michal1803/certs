@@ -302,11 +302,13 @@
   /* ---------- account: sign in with GitHub to sync progress ---------- */
   const acct = document.getElementById("account");
   let acctMsg = "";
-  const avatar = (u, size) => u.avatar ? `<img src="${esc(u.avatar + (u.avatar.includes("?") ? "&" : "?") + "s=" + size * 2)}" alt="" width="${size}" height="${size}">` : "";
+  // Only GitHub's avatar host (also allowed by the CSP).
+  const avatar = (u, size) => typeof u.avatar === "string" && u.avatar.startsWith("https://avatars.githubusercontent.com/") ? `<img src="${esc(u.avatar + (u.avatar.includes("?") ? "&" : "?") + "s=" + size * 2)}" alt="" width="${size}" height="${size}">` : "";
   function paintGear() {
     const u = window.HubSync?.user;
-    gear.innerHTML = u && u.avatar ? avatar(u, 28) : icon("gear");
-    gear.classList.toggle("has-avatar", !!(u && u.avatar));
+    const pic = u ? avatar(u, 28) : "";
+    gear.innerHTML = pic || icon("gear");
+    gear.classList.toggle("has-avatar", !!pic);
     gear.setAttribute("aria-label", u ? `Ustawienia i konto (${u.login})` : "Ustawienia i konto");
   }
   function paintAccount() {
@@ -322,7 +324,7 @@
         <button class="btn" type="button" data-acct="logout">Wyloguj</button>
         <button class="btn btn-quiet" type="button" data-acct="logout-all">Wyloguj na wszystkich urządzeniach</button>
       </div>
-      <p class="small muted">Na serwerze zapisujemy tylko login, nazwę i avatar z GitHuba oraz postęp nauki i wyniki egzaminów. Nie mamy dostępu do Twoich repozytoriów.</p>
+      <p class="small muted">Na serwerze zapisujemy tylko identyfikator, login, nazwę i avatar z GitHuba oraz postęp nauki i wyniki egzaminów. Nie mamy dostępu do Twoich repozytoriów.</p>
       <button class="btn btn-quiet acct-del" type="button" data-acct="delete">Usuń konto i dane z serwera</button>`
       : `<p class="small muted">Bez logowania postęp, gwiazdki i wyniki zostają w tej przeglądarce. Po zalogowaniu przez GitHub synchronizują się między Twoimi urządzeniami.</p>
          <button class="btn btn-gh" type="button" data-acct="login">${GH}Zaloguj przez GitHub</button>`;

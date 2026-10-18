@@ -79,6 +79,7 @@ Zmiana kluczy VAPID unieważnia wszystkie istniejące subskrypcje (użytkownicy 
 | `GITHUB_CLIENT_ID` | zmienna w `wrangler.toml` | Client ID aplikacji OAuth GitHub |
 | `GITHUB_CLIENT_SECRET` | sekret | Client secret aplikacji OAuth GitHub |
 | `SESSION_SECRET` | sekret | losowy klucz HMAC podpisujący parametr `state` logowania |
+| `IP_HASH_SECRET` | sekret | osobny losowy klucz HMAC do dziennego licznika nowych subskrypcji na IP; bez niego ten licznik jest pomijany |
 | `DB` | D1 (`exam-hub`) | użytkownicy, sesje, kody jednorazowe, postępy (`migrations/`) |
 | `RL_AUTH`, `RL_PUSH`, `RL_API` | Rate Limiting (`[[ratelimits]]` w `wrangler.toml`) | limity zapytań, patrz [Limity](#limity); `namespace_id` to dowolna liczba unikalna w koncie Cloudflare |
 | `GITHUB_OAUTH_BASE`, `GITHUB_API_BASE` | tylko `.dev.vars` | adres udawanego GitHuba przy testach lokalnych |
@@ -106,7 +107,7 @@ Pozostałe wymagają nagłówka `Authorization: Bearer <token>`, inaczej 401 `{ 
 
 - `GET /me` → `{ "ok": true, "user": {...} }`
 - `GET /sync` → `{ "ok": true, "items": { "<klucz>": { "value": "<tekst>", "updated": <ms> } } }`
-- `PUT /sync` `{ "items": { "<klucz>": "<tekst>" } }` → `{ "ok": true, "updated": <ms> }`. 1–20 kluczy, klucz `study:<id>:v1`, `exam-history:<id>:v1` (`<id>` = `[a-z0-9-]{1,40}`) albo `exam-hub:theme`; wartość to tekst do 200 000 znaków; całe ciało do 1 MB.
+- `PUT /sync` `{ "items": { "<klucz>": "<tekst>" } }` → `{ "ok": true, "updated": <ms> }`. 1–20 kluczy, klucz `study:<id>:v1`, `exam-history:<id>:v1` (`<id>` = `az104` albo `terraform`) albo `exam-hub:theme`; wartość to tekst do 200 000 znaków; całe ciało do 1 MB.
 - `POST /auth/logout` → usuwa bieżącą sesję: `{ "ok": true, "sessions": 1 }`.
 - `POST /auth/logout?all=1` albo `POST /auth/logout-all` → wylogowuje ze wszystkich urządzeń (usuwa wszystkie sesje użytkownika, także bieżącą); `sessions` = liczba usuniętych.
 - `DELETE /account` → usuwa postępy, sesje i konto.

@@ -85,20 +85,25 @@ const save = (env, id, rec) =>
 const vapidOf = env => ({ publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY, subject: env.VAPID_SUBJECT });
 
 const utcDay = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
+async function hmacHex(secret, msg) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return [...new Uint8Array(await crypto.subtle.sign("HMAC", key, enc.encode(msg)))].map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 /* Before storing a new subscription: refuse when the total is at MAX_SUBS or this IP
-   already added MAX_NEW_SUBS_PER_IP_PER_DAY today. The IP is kept only as a salted hash
-   (salt = the day and SESSION_SECRET if set) and the row is dropped the next day. */
+   already added MAX_NEW_SUBS_PER_IP_PER_DAY today. The IP is kept only as an HMAC with
+   the dedicated secret IP_HASH_SECRET and the day, and the row is dropped the next day.
+   Without that secret the per-IP quota is skipped rather than hashed with a public value. */
 async function admitNewSub(req, env) {
   if (!env.DB) return;
   const total = await env.DB.prepare("SELECT value FROM stats WHERE name = 'subs'").first("value");
   if (total >= MAX_SUBS) throw new HttpError(503, "subscription limit reached");
   const day = utcDay();
-  const ipHash = await sha256Hex(`${day}|${env.SESSION_SECRET || env.VAPID_PUBLIC_KEY}|${clientIp(req)}`);
-  const n = await env.DB.prepare(
+  const n = !env.IP_HASH_SECRET ? 0 : await env.DB.prepare(
     `INSERT INTO sub_quota (ip_hash, day, count) VALUES (?, ?, 1)
      ON CONFLICT(ip_hash) DO UPDATE SET count = count + 1 RETURNING count`
-  ).bind(ipHash, day).first("count");
+  ).bind(await hmacHex(env.IP_HASH_SECRET, `${day}|${clientIp(req)}`), day).first("count");
   if (n > MAX_NEW_SUBS_PER_IP_PER_DAY) throw new HttpError(429, "too many new subscriptions today", { "Retry-After": "86400" });
   // The exact count is rewritten by every cron run; this keeps the cap tight in between.
   await env.DB.prepare(
@@ -229,6 +234,7 @@ const LIMITS = {
   "POST /unsubscribe": "RL_PUSH",
   "POST /test": "RL_PUSH",
   "GET /auth/login": "RL_AUTH",
+  "GET /auth/callback": "RL_AUTH",
   "POST /auth/exchange": "RL_AUTH",
   "POST /auth/logout": "RL_API",
   "POST /auth/logout-all": "RL_API",

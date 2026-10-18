@@ -144,8 +144,14 @@
   }
   async function logout(everywhere = false) {
     if (dirty) await sync().catch(() => {});
-    await call("POST", everywhere ? "/auth/logout-all" : "/auth/logout").catch(() => {});
-    signOutLocal(everywhere ? "Wylogowano na wszystkich urządzeniach. Postęp zostaje w tej przeglądarce." : "Wylogowano. Postęp zostaje w tej przeglądarce.");
+    if (everywhere) {
+      // Only claim success when the server really ended the other sessions.
+      try { await call("POST", "/auth/logout-all"); }
+      catch (e) { if (auth) emit("hub:auth-message", "Nie udało się wylogować ze wszystkich urządzeń. Sprawdź połączenie i spróbuj ponownie."); return; }
+      return signOutLocal("Wylogowano na wszystkich urządzeniach. Postęp zostaje w tej przeglądarce.");
+    }
+    await call("POST", "/auth/logout").catch(() => {});
+    signOutLocal("Wylogowano. Postęp zostaje w tej przeglądarce.");
   }
   async function deleteAccount() {
     await call("DELETE", "/account");
