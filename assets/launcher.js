@@ -205,39 +205,6 @@
   });
   paintAccount();
 
-  /* Install: one tap where the browser offers it (Android, desktop Chrome/Edge),
-     steps for iPhone, where "Add to Home Screen" sits in the Share menu. */
-  const inst = document.getElementById("install");
-  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  if (inst && !standalone) {
-    const ua = navigator.userAgent;
-    const ios = /iP(hone|ad|od)/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const inApp = /FBAN|FBAV|Instagram|Line\/|GSA\/|Messenger/.test(ua);
-    let deferred = null;
-    window.addEventListener("beforeinstallprompt", e => {
-      e.preventDefault(); deferred = e;
-      inst.hidden = false;
-      inst.innerHTML = `<button class="btn" type="button" data-install>Zainstaluj aplikację</button><span class="small muted">Ikona na ekranie, działa offline, przypomnienia.</span>`;
-    });
-    inst.addEventListener("click", async e => {
-      if (!e.target.closest("[data-install]") || !deferred) return;
-      deferred.prompt();
-      await deferred.userChoice.catch(() => {});
-      deferred = null; inst.hidden = true;
-    });
-    window.addEventListener("appinstalled", () => { inst.hidden = true; });
-    if (ios) {
-      inst.hidden = false;
-      inst.innerHTML = `<details class="install-ios"><summary class="btn">Dodaj aplikację do ekranu początkowego</summary>
-        <ol class="small">
-          ${inApp ? "<li>Otwórz tę stronę w Safari (menu ⋯, potem „Otwórz w Safari”).</li>" : ""}
-          <li>Stuknij <b>Udostępnij</b> (kwadrat ze strzałką). W iOS 26 najpierw stuknij <b>⋯</b> obok paska adresu.</li>
-          <li>Przewiń w dół i wybierz <b>Do ekranu początkowego</b>. Jeśli go nie ma, stuknij <b>Więcej</b> albo „Edytuj czynności”.</li>
-          <li>Otwieraj Exam Hub z ikony: wtedy działają przypomnienia.</li>
-        </ol></details>`;
-    }
-  }
-
   window.HubDue.publish();
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
