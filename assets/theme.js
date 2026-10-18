@@ -17,7 +17,7 @@
     const isDark = choice === "dark" || (choice === "system" && dark.matches);
     let meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) { meta = document.createElement("meta"); meta.name = "theme-color"; document.head.appendChild(meta); }
-    meta.content = isDark ? "#0b1230" : "#f3f4f7";
+    meta.content = isDark ? "#0a0b0f" : "#f3f4f7";
   }
 
   apply(read());
