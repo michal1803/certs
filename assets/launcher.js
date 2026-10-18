@@ -76,12 +76,8 @@
   /* Signature: each domain is a transit line. Its length is the domain's share
      of the bank, with ten stations along it, lit up to the mastered share;
      the open ring marks where the line continues from. */
-  const lineOf = (k, ok, total, max, stations = 10) => {
-    const share = total ? Math.min(1, ok / total) : 0, lit = Math.floor(share * stations + 1e-9);
-    const w = max && total ? Math.max(40, total / max * 100) : 100;
-    return `<span class="line" style="--c:var(--l${k % 8 + 1});--p:${(share * 100).toFixed(1)}%;--w:${w.toFixed(1)}%" aria-hidden="true">${
-      Array.from({ length: stations }, (_, s) => `<i${s < lit ? ' class="lit"' : s === lit ? ' class="here"' : ""}></i>`).join("")}</span>`;
-  };
+  const lineOf = (k, ok, total, max, stations) =>
+    window.HubLine(k, total ? ok / total : 0, max && total ? Math.max(40, total / max * 100) : 100, stations);
   // The domains as one network; each line opens study for its domain.
   function network(f, full = false) {
     const max = Math.max(0, ...f.domains.map(x => x.total || 0));

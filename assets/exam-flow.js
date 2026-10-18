@@ -574,7 +574,7 @@
         </div>
         <section class="card xf-section" aria-labelledby="xf-dom-h">
           <h2 id="xf-dom-h">Wynik w domenach</h2>
-          <ul class="split xf-domains">${byDomain.map((x, k) => `<li style="--c:var(--l${P.domains.indexOf(x.d) % 8 + 1})"><span>${esc(x.d.label)}</span><span class="bar" aria-hidden="true"><i class="grow" style="width:${x.m ? x.p / x.m * 100 : 0}%;--d:${250 + k * 70}ms"></i></span><b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
+          <ul class="split xf-domains">${byDomain.map(x => `<li><span>${esc(x.d.label)}</span>${window.HubLine(P.domains.indexOf(x.d), x.m ? x.p / x.m : 0)}<b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
           <p class="small muted">Jak na oficjalnym raporcie: krótszy pasek to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
         </section>
         <details class="card xf-section xf-answers"${answersOpen ? " open" : ""}>

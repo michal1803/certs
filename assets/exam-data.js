@@ -83,6 +83,16 @@
 
   /* Time limit for an exam of n questions: the official limit, or for a
      drill the real exam pace scaled to the number of questions. */
+  /* Signature: a domain drawn as a transit line (CSS .line). k = domain
+     index (its ink --l1…--l8), share = 0..1 done, width = % of the row.
+     Stations up to the share are lit; the open ring marks where it goes on. */
+  window.HubLine = function (k, share, width = 100, stations = 10) {
+    share = Math.max(0, Math.min(1, share || 0));
+    const lit = Math.floor(share * stations + 1e-9);
+    return `<span class="line" style="--c:var(--l${k % 8 + 1});--p:${(share * 100).toFixed(1)}%;--w:${width.toFixed(1)}%" aria-hidden="true">${
+      Array.from({ length: stations }, (_, s) => `<i${s < lit ? ' class="lit"' : s === lit ? ' class="here"' : ""}></i>`).join("")}</span>`;
+  };
+
   window.examMinutes = function (profile, n) {
     const drill = profile.exam.drill;
     return drill ? Math.ceil(n * drill.secondsPerQuestion / 60) : profile.exam.minutes;
