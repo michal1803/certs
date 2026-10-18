@@ -575,7 +575,7 @@
         <section class="card xf-section" aria-labelledby="xf-dom-h">
           <h2 id="xf-dom-h">Wynik w domenach</h2>
           <ul class="split xf-domains">${byDomain.map(x => `<li><span>${esc(x.d.label)}</span>${window.HubLine(P.domains.indexOf(x.d), x.m ? x.p / x.m : 0)}<b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
-          <p class="small muted">Jak na oficjalnym raporcie: krótszy pasek to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
+          <p class="small muted">Jak na oficjalnym raporcie, tylko jako linie: mniej zapalonych stacji to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
         </section>
         <details class="card xf-section xf-answers"${answersOpen ? " open" : ""}>
           <summary><h2 id="xf-ans-h">Twoje odpowiedzi</h2><span class="small muted">${rows.length} ${plural(rows.length, "pytanie", "pytania", "pytań")} · błędne ${rows.filter(r => !r.s.exact).length}</span></summary>

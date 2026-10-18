@@ -49,7 +49,7 @@
   --warn-tint: #fbefd3;
   --l1: #d1192a; --l2: #1c4fe0; --l3: #a87800; --l4: #178a39;
   --l5: #7445c4; --l6: #00808f; --l7: #8a5526; --l8: #c23d7f;
-  --station: #ffffff;      /* fill of a lit station */
+  --station: #0b1230;      /* fill of a lit station: ink by day, porcelain at night */
   --radius: 12px;
   --radius-sm: 8px;
   --font: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -287,7 +287,7 @@ a.pill { text-decoration: none; }
 /* The line ridden so far: thick enamel in full ink. */
 .line::after { content: ""; position: absolute; left: 0; width: var(--p, 0%); top: 50%; height: 6px; margin-top: -3px; border-radius: 3px; background: var(--c); }
 .line i { position: relative; z-index: 1; width: 8px; height: 8px; border-radius: 50%; background: var(--ground); box-shadow: 0 0 0 2px var(--c); }
-.line i.lit { width: 10px; height: 10px; background: var(--station); box-shadow: 0 0 0 2px #0b1230; }
+.line i.lit { width: 10px; height: 10px; background: var(--station); box-shadow: 0 0 0 2px var(--ground); }
 .line i.here { width: 14px; height: 14px; background: var(--ground); box-shadow: 0 0 0 3px var(--text); }
 .network { list-style: none; margin: 0; padding: 0; display: grid; }
 .net-row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 5ch; align-items: center; gap: 12px; min-height: 48px; padding: 6px 4px; color: var(--text); text-decoration: none; border-radius: var(--radius-sm); }
@@ -347,6 +347,11 @@ a.row:focus-visible { outline-offset: -3px; }
 .facts.stats li + li { padding-left: 10px; border-left: 1px solid var(--border); }
 .facts.stats b { font-size: 26px; line-height: 1.1; font-weight: 800; }
 .facts.stats span { font-size: 13px; font-weight: 700; color: var(--text-2); }
+@media (max-width: 419px) {
+  .facts.stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facts.stats li:nth-child(3) { padding-left: 0; border-left: 0; }
+  .facts.stats li:nth-child(n+3) { border-top: 1px solid var(--border); }
+}
 .last-exam b { font-weight: 800; }
 
 .launcher .status-lines { margin-top: 28px; display: grid; gap: 4px; }
