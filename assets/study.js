@@ -215,6 +215,7 @@
           ${a?.ok ? `<span class="s s-done">${icon("check")}${SRS.when(a.due, now)}</span>` : `<span class="s s-bad">${icon("x")}wróci</span>`}
         </span></li>`).join("")}</ul>
         <button class="btn btn-quiet" data-act="quit-quick">${icon("book")}Ucz się dalej bez limitu</button>
+        ${load("exam-hub:remind", {}).push ? "" : `<a class="btn btn-quiet" href="index.html#przypomnienie">${icon("clock")}Ustaw codzienne przypomnienie</a>`}
       </section>
     </div>
     <nav class="xf-bar" aria-label="Szybka piątka"><div class="xf-bar-inner" style="grid-template-columns:1fr 1.5fr">

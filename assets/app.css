@@ -295,7 +295,7 @@ a.row:focus-visible { outline-offset: -3px; }
 }
 .launcher .tabbar a {
   display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 56px; padding: 4px;
-  border-radius: 14px; color: var(--text-2); text-decoration: none; font: 700 13px/1.1 var(--font);
+  border-radius: var(--radius-sm); color: var(--text-2); text-decoration: none; font: 700 13px/1.1 var(--font);
   -webkit-tap-highlight-color: transparent;
 }
 .tabbar a .icon { width: 24px; height: 24px; padding: 3px 16px; box-sizing: content-box; border-radius: 999px; transition: background-color .2s var(--ease); }
