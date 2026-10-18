@@ -4,7 +4,7 @@
 import { gate } from "./gate.js";
 import { sendPush } from "./webpush.js";
 import { clientIp, corsHeaders, json, HttpError, rateLimit, readJson, sha256Hex } from "./http.js";
-import { authRoutes, cleanupAuth } from "./auth.js";
+import { authRoutes, authenticate, cleanupAuth } from "./auth.js";
 import { syncRoutes } from "./sync.js";
 
 const PAYLOAD = JSON.stringify({
@@ -243,7 +243,21 @@ const LIMITS = {
   "GET /sync": "RL_API",
   "PUT /sync": "RL_API",
   "DELETE /account": "RL_API",
+  "GET /bank/az104": "RL_API",
+  "GET /bank/terraform": "RL_API",
 };
+
+/* The private question bank (push/bank/*.html, deployed as assets under
+   /bank/): only the owner's signed-in session gets it. The pages put it back
+   in place of their empty question list (assets/bank.js). */
+async function bank(req, env) {
+  const { user } = await authenticate(req, env);
+  if (String(user.id) !== String(env.OWNER_GITHUB_ID)) throw new HttpError(403, "forbidden");
+  const id = new URL(req.url).pathname.split("/")[2];
+  const res = await env.ASSETS.fetch(new Request(new URL(`/bank/${id}.html`, req.url)));
+  if (!res.ok) throw new HttpError(404, "not found");
+  return new Response(res.body, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...corsHeaders(req, env) } });
+}
 
 const routes = {
   ...authRoutes,
@@ -252,6 +266,8 @@ const routes = {
   "POST /unsubscribe": unsubscribe,
   "POST /test": test,
   "GET /vapid": (req, env) => ({ publicKey: env.VAPID_PUBLIC_KEY }),
+  "GET /bank/az104": bank,
+  "GET /bank/terraform": bank,
 };
 
 export default {
