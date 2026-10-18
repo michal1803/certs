@@ -187,6 +187,8 @@
     available: !!API,
     get state() { return state; },
     get user() { return auth?.user || null; },
+    // The session token, for the private question bank (assets/bank.js).
+    get token() { return auth?.token || null; },
     get lastSync() { return auth?.lastSync || null; },
     login, logout, deleteAccount, schedule, sync,
   };
