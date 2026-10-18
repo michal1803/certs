@@ -624,6 +624,8 @@
     if (t.dataset.rfilter) { resultsFilter = t.dataset.rfilter; showResults(); return $(`[data-rfilter="${resultsFilter}"]`, root)?.focus(); }
     switch (t.dataset.act) {
       case "begin": {
+        // Launched as #egzamin=nowy: from now on a reload should resume, not show the start screen.
+        if (location.hash === "#egzamin=nowy") history.replaceState(null, "", "#egzamin");
         if (A && A.status === "running" && A.seen.length) {
           const n = parseInt($("#xf-count", root).value, 10), u = $("#xf-untimed", root).checked;
           return confirmDanger("Zacząć nowy egzamin?", `Trwający egzamin zostanie usunięty. ${runningLabel()}`, "Usuń i zacznij").then(ok => { if (ok) { startAttempt(n, u); showQuestion(0); } });
@@ -677,7 +679,7 @@
     } else if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && e.target instanceof Element && e.target.matches("input[type=radio], input[type=checkbox]")) {
       return; // native radio-group arrows; never change (or lock) a question from here
     } else if (e.key === "ArrowRight") { if (questions[A.pool[A.current]].series) return; e.preventDefault(); $('[data-act="next"]', root)?.click(); }
-    else if (e.key === "ArrowLeft") { e.preventDefault(); $('[data-act="prev"]', root)?.click(); }
+    else if (e.key === "ArrowLeft") { if (questions[A.pool[A.current]].series) return; e.preventDefault(); $('[data-act="prev"]', root)?.click(); }
     else if (k === "o" && keys) { e.preventDefault(); toggleFlag(); }
   });
 

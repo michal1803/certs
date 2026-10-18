@@ -132,11 +132,11 @@ Limity zapytań (Workers Rate Limiting, liczone osobno w każdej lokalizacji Clo
 
 | Powiązanie | Trasy | Limit |
 | --- | --- | --- |
-| `RL_AUTH` | `GET /auth/login`, `POST /auth/exchange` | 10 na minutę z jednego IP |
+| `RL_AUTH` | `GET /auth/login`, `GET /auth/callback`, `POST /auth/exchange` | 10 na minutę z jednego IP (IPv6: z jednej sieci /64) |
 | `RL_PUSH` | `POST /subscribe`, `/unsubscribe`, `/test` | 10 na minutę z jednego IP |
 | `RL_API` | `GET /me`, `GET`/`PUT /sync`, `POST /auth/logout*`, `DELETE /account` | 60 na minutę z jednego IP i osobno 60 na minutę na użytkownika |
 
-Bez powiązań (np. stara konfiguracja lokalna) limity są po prostu pomijane. `GET /vapid` i `/auth/callback` (wymaga podpisanego `state` z `/auth/login`) nie mają limitu.
+Bez powiązań (np. stara konfiguracja lokalna) limity są po prostu pomijane. `GET /vapid` nie ma limitu.
 
 Subskrypcje: najwyżej 1000 w KV i najwyżej 5 nowych dziennie z jednego IP (liczniki w D1, tabele `stats` i `sub_quota`; IP zapisany tylko jako skrót SHA-256 z solą, usuwany następnego dnia; bez D1 te limity są pomijane). Cron po każdym przebiegu zapisuje dokładną liczbę subskrypcji. Subskrypcja jest usuwana od razu po odpowiedzi 404/410 usługi push, a po 400/403 dopiero po 3 takich odpowiedziach z rzędu (udane wysłanie zeruje licznik).
 

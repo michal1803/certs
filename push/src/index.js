@@ -228,7 +228,7 @@ async function runCron(env) {
 }
 
 /* Per-IP limits (wrangler.toml [[ratelimits]]); authenticate() adds a per-user one on RL_API.
-   GET /vapid and the OAuth callback (needs a signed state from /auth/login) are not limited. */
+   GET /vapid is not limited. */
 const LIMITS = {
   "POST /subscribe": "RL_PUSH",
   "POST /unsubscribe": "RL_PUSH",

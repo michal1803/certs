@@ -48,6 +48,8 @@ export async function sha256Hex(text) {
 export const clientIp = req => {
   const ip = req.headers.get("CF-Connecting-IP") || "unknown";
   if (!ip.includes(":")) return ip;
+  const v4 = ip.match(/(\d{1,3}(\.\d{1,3}){3})$/); // IPv4-mapped (::ffff:a.b.c.d)
+  if (v4) return v4[1];
   const [head, tail = ""] = ip.split("::");
   const left = head ? head.split(":") : [], right = tail ? tail.split(":") : [];
   const groups = [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill("0"), ...right];
