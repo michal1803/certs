@@ -302,7 +302,7 @@
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
     const slot = sheet.querySelector("[data-shortcuts-slot]");
     let on = true; try { on = localStorage.getItem("exam-hub:shortcuts") !== "off"; } catch (e) {}
-    slot.innerHTML = `<label class="switch"><span><b>Skróty klawiszowe</b><br><span class="small muted">Litery i cyfry wybierają odpowiedź w nauce i na egzaminie.</span></span><input type="checkbox" data-shortcuts${on ? " checked" : ""}></label>`;
+    slot.innerHTML = `<label class="switch"><span><b>Skróty klawiszowe</b><br><span class="small muted">Litery i cyfry wybierają odpowiedź.</span></span><input type="checkbox" data-shortcuts${on ? " checked" : ""}></label>`;
     slot.addEventListener("change", e => { try { localStorage.setItem("exam-hub:shortcuts", e.target.checked ? "on" : "off"); } catch (err) {} });
   }
 
@@ -347,7 +347,7 @@
       <button class="acct-row" type="button" data-acct="open" aria-label="Konto ${esc(u.login)}: ${esc(note || "zalogowano")}">
         ${avatar(u, 40)}<span><b>${esc(u.login)}</b><span class="small muted" data-acct-note>${esc(note)}</span></span>${icon("chev")}
       </button>`
-      : `<p class="small muted">Bez logowania postęp, gwiazdki i wyniki zostają w tej przeglądarce. Po zalogowaniu przez GitHub synchronizują się między Twoimi urządzeniami.</p>
+      : `<p class="small muted">Zaloguj się, żeby mieć pytania i postęp na każdym urządzeniu.</p>
          <button class="btn btn-gh" type="button" data-acct="login">${GH}Zaloguj przez GitHub</button>`;
     if (acctMsg) acct.insertAdjacentHTML("beforeend", `<p class="acct-msg" role="status">${esc(acctMsg)}</p>`);
   }
