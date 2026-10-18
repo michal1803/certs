@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0b1230"/>
+  <rect width="512" height="512" fill="#0a0b0f"/>
   <g fill="none" stroke-width="36" stroke-linecap="round" stroke-linejoin="round">
     <path d="M104 256H408" stroke="#3d74ff"/>
     <path d="M148 148L256 256V404" stroke="#ef3340"/>
     <path d="M364 148L256 256" stroke="#ffc20e"/>
   </g>
-  <circle cx="256" cy="256" r="46" fill="#0b1230" stroke="#f4f1ea" stroke-width="24"/>
+  <circle cx="256" cy="256" r="46" fill="#0a0b0f" stroke="#f4f1ea" stroke-width="24"/>
 </svg>
