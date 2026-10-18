@@ -36,6 +36,7 @@
   let tick = null;
   let reviewFilter = "all";
   let resultsFilter = "all";
+  let answersOpen = false;   // results: the per-question list starts folded
 
   function startAttempt(count, untimed) {
     const pool = buildPool(count);
@@ -247,14 +248,14 @@
     const prev = prevIndex();
     const parts = q.parts.map(p => p.kind === "text"
       ? `<div class="xf-qtext" lang="en">${p.html}</div>`
-      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)} do pytania ${i + 1}: zrzut ekranu bez opisu tekstowego" loading="lazy" data-src="${esc(src)}"></a></figure>`).join("")}</div>`).join("");
+      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)} do pytania ${i + 1}: zrzut ekranu bez opisu tekstowego" loading="lazy" data-src="${esc(src)}"><span class="zoom" aria-hidden="true">${icon("search")}Powiększ</span></a></figure>`).join("")}</div>`).join("");
     root.innerHTML = `
       <div class="xf-screen"><div class="xf-col xf-body" role="main">
         <div class="xf-top">
           <button class="pill xf-pos" data-act="nav" aria-haspopup="dialog" aria-label="Pytanie ${i + 1} z ${A.count}. Otwórz listę pytań">${icon("grid")}<b>${i + 1}</b><span>z ${A.count}</span></button>
           <div class="right">
-            ${P.exam.rules?.breaks ? `<button class="pill icon-btn" data-act="break" aria-label="Zrób przerwę" title="Przerwa"${q.series ? " disabled" : ""}>${icon("coffee")}</button>` : ""}
-            ${P.exam.rules?.learnUrl ? `<a class="pill icon-btn" href="${esc(P.exam.rules.learnUrl)}" target="_blank" rel="noopener" aria-label="Otwórz Microsoft Learn w nowej karcie" title="Microsoft Learn">${icon("book")}</a>` : ""}
+            ${P.exam.rules?.breaks ? `<button class="pill" data-act="break" aria-label="Zrób przerwę" title="Zrób przerwę"${q.series ? " disabled" : ""}>${icon("coffee")}<span>Przerwa</span></button>` : ""}
+            ${P.exam.rules?.learnUrl ? `<a class="pill" href="${esc(P.exam.rules.learnUrl)}" target="_blank" rel="noopener" aria-label="Microsoft Learn (nowa karta)" title="Microsoft Learn">${icon("book")}<span>Learn</span></a>` : ""}
             <div class="pill xf-clock" role="timer"></div>
           </div>
         </div>
@@ -383,7 +384,7 @@
           const done = !!A.answers[id];
           const flag = A.flags.includes(id);
           const status = locked ? `<span class="s s-lock">${icon("lock")}${done ? "Zapisane" : "Bez odpowiedzi"}</span>`
-            : done ? `<span class="s s-done">${flag ? icon("flag") : ""}Odpowiedziane</span>`
+            : done ? `<span class="s s-done">${flag ? `${icon("flag")}Oznaczone` : `${icon("check", "odpowiedziane")}`}</span>`
             : `<span class="s s-open">${flag ? icon("flag") : ""}Bez odpowiedzi</span>`;
           return `<li><button class="xf-row" data-go="${i}"${locked ? " disabled" : ""}><span class="n">${i + 1}</span><span class="t" lang="en">${esc(questions[id].text.slice(0, 120))}</span>${status}<span class="time" aria-label="czas ${clock(A.spent[id] || 0)}">${clock(A.spent[id] || 0)}</span></button></li>`;
         }).join("") : `<li class="note">${icon("check")}<span>Nic tu nie ma: ${reviewFilter === "open" ? "każde pytanie ma odpowiedź" : "nie oznaczono żadnego pytania"}.</span></li>`}</ul>
@@ -567,7 +568,7 @@
           ${tag}
           ${scoreLine}
           <p class="muted">Czas: ${mins(used)} min${A.deadline ? ` z ${A.minutes || P.exam.minutes}` : " (bez limitu)"}${A.timeUp ? ". Czas minął, egzamin oddano automatycznie" : ""}.</p>
-          ${weakest && weakPct < 100 ? `<p class="xf-weak">${icon("info")}<span>Najsłabsza domena: <b>${esc(weakest.d.name)}</b> (${weakPct}%). Od niej zacznij naukę.</span></p>` : ""}
+          ${weakest && weakPct < 100 ? `<p class="xf-weak">${icon("info")}<span>Najsłabsza domena: <b title="${esc(weakest.d.name)}">${esc(weakest.d.label)}</b> (${weakPct}%). Od niej zacznij naukę.</span></p>` : ""}
         </section>
         <div class="xf-next">
           ${missed.length ? `<button class="btn btn-primary btn-block" data-act="study-missed">${icon("undo")}Powtórz błędne z tego egzaminu (${missed.length})</button>` : ""}
@@ -578,12 +579,8 @@
           <ul class="split xf-domains">${byDomain.map((x, k) => `<li><span>${esc(x.d.label)}</span><span class="bar" aria-hidden="true"><i class="grow" style="width:${x.m ? x.p / x.m * 100 : 0}%;--d:${250 + k * 70}ms"></i></span><b>${x.m ? Math.round(x.p / x.m * 100) : 0}%</b></li>`).join("")}</ul>
           <p class="small muted">Jak na oficjalnym raporcie: krótszy pasek to słabsza domena. Domeny z małą liczbą pytań wahają się mocno.</p>
         </section>
-        <div class="xf-actions" style="grid-template-columns:1fr 1fr">
-          <a class="btn btn-quiet" href="index.html#egzamin">Strona główna</a>
-          <button class="btn btn-quiet" data-act="again">Nowy egzamin</button>
-        </div>
-        <section class="xf-section" style="padding:0" aria-labelledby="xf-ans-h">
-          <h2 id="xf-ans-h" style="margin-top:12px">Twoje odpowiedzi</h2>
+        <details class="card xf-section xf-answers"${answersOpen ? " open" : ""}>
+          <summary><h2 id="xf-ans-h">Twoje odpowiedzi</h2><span class="small muted">${rows.length} ${plural(rows.length, "pytanie", "pytania", "pytań")} · błędne ${rows.filter(r => !r.s.exact).length}</span></summary>
           <div class="xf-chips" role="group" aria-label="Filtr odpowiedzi">
             <button class="chip" data-rfilter="all" aria-pressed="${resultsFilter === "all"}">Wszystkie ${rows.length}</button>
             <button class="chip" data-rfilter="wrong" aria-pressed="${resultsFilter === "wrong"}">Błędne ${rows.filter(r => !r.s.exact).length}</button>
@@ -603,8 +600,13 @@
                 }).join("")}
               </div>
             </details>`).join("") || `<p class="note">${icon("check")}<span>Brak pytań w tym filtrze.</span></p>`}</div>
-        </section>
+        </details>
+        <div class="xf-actions" style="grid-template-columns:1fr 1fr">
+          <a class="btn" href="index.html#egzamin">Strona główna</a>
+          <button class="btn" data-act="again">Nowy egzamin</button>
+        </div>
       </div></div>`;
+    root.querySelector(".xf-answers").addEventListener("toggle", e => { answersOpen = e.target.open; });
     root.scrollTop = 0;
     if (!resultsAnimated) { resultsAnimated = true; countUp($("[data-count]", root), parseInt($("[data-count]", root).dataset.count, 10)); }
     else root.querySelectorAll(".grow").forEach(i => i.classList.remove("grow"));

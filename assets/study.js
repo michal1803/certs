@@ -201,7 +201,7 @@
     const ok = rows.filter(r => r.a?.ok).length;
     const dueLeft = order.filter(id => SRS.isDue(S.ans[id], now)).length;
     const nextDue = Math.min(...order.map(id => S.ans[id]).filter(a => a && a.due > now).map(a => a.due));
-    const after = dueLeft ? `Do powtórki zostało ${dueLeft} ${plural(dueLeft, "pytanie", "pytania", "pytań")}.`
+    const after = dueLeft ? `Do powtórki ${plural(dueLeft, "zostało", "zostały", "zostało")} ${dueLeft} ${plural(dueLeft, "pytanie", "pytania", "pytań")}.`
       : Number.isFinite(nextDue) ? `Nic więcej nie czeka na powtórkę. Następne pytania wrócą ${SRS.when(nextDue, now)}.` : "";
     document.title = `${P.title} · szybka piątka`;
     root.innerHTML = `<div class="xf-screen"><div class="xf-col xf-body" role="main">
@@ -211,8 +211,8 @@
         ${after ? `<p class="muted">${after}</p>` : ""}
         <ul class="xf-list sv-quick-list">${rows.map(({ q, a }) => `<li><span class="xf-row">
           <span class="n">${esc(q.num.replace(/^Q/, ""))}</span>
-          <span class="t">${esc(domainOf(q.domain).label)}</span>
-          ${a?.ok ? `<span class="s s-done">${icon("check")}${SRS.when(a.due, now)}</span>` : `<span class="s s-open">${icon("x")}wróci</span>`}
+          <span class="t" lang="en">${esc(q.text.slice(0, 120))}</span>
+          ${a?.ok ? `<span class="s s-done">${icon("check")}${SRS.when(a.due, now)}</span>` : `<span class="s s-bad">${icon("x")}wróci</span>`}
         </span></li>`).join("")}</ul>
         <button class="btn btn-quiet" data-act="quit-quick">${icon("book")}Ucz się dalej bez limitu</button>
       </section>
@@ -272,7 +272,7 @@
 
     const parts = q.parts.map(p => p.kind === "text"
       ? `<div class="xf-qtext" lang="en">${p.html}</div>`
-      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)}: zrzut ekranu bez opisu tekstowego" loading="lazy" data-src="${esc(src)}"></a></figure>`).join("")}</div>`).join("");
+      : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)}: zrzut ekranu bez opisu tekstowego" loading="lazy" data-src="${esc(src)}"><span class="zoom" aria-hidden="true">${icon("search")}Powiększ</span></a></figure>`).join("")}</div>`).join("");
 
     let answerBlock = "";
     if (keyed) {
@@ -405,13 +405,17 @@
       <div class="sv-search">${icon("search")}<input type="search" placeholder="Szukaj w pytaniach, np. peering, Q120" aria-label="Szukaj w pytaniach" autocomplete="off"></div>
       <div class="xf-chips" role="group" aria-label="Zestaw">${sets.map(([k, l]) => `<button class="chip" data-set="${k}" aria-pressed="${sc.set === k}">${l}</button>`).join("")}</div>
       <div class="field"><label for="sv-dom">Domena</label><select class="select" id="sv-dom"><option value="">Wszystkie domeny</option>${P.domains.map(d => `<option value="${d.id}"${sc.domain === d.id ? " selected" : ""}>${esc(d.name)}</option>`).join("")}</select></div>
-      <div class="field"><span class="sv-label">Kolejność</span><div class="seg" role="radiogroup" aria-label="Kolejność">
-        <button role="radio" aria-checked="${S.order !== "bank"}" data-order="smart">Mądra kolejka</button>
-        <button role="radio" aria-checked="${S.order === "bank"}" data-order="bank">Jak w bazie</button></div></div>
-      ${Hub.shortcuts.html()}
       <p class="small muted" data-count></p>
       <ul class="xf-list sv-list" data-list></ul>
-      <button class="btn btn-quiet sv-reset" data-reset>Wyczyść postęp nauki</button>
+      <details class="sv-more"><summary>Więcej opcji</summary>
+        <div class="sv-more-in">
+          <div class="field"><span class="sv-label" id="sv-order-l">Kolejność</span><div class="seg" role="group" aria-labelledby="sv-order-l">
+            <button type="button" aria-pressed="${S.order !== "bank"}" data-order="smart">Mądra kolejka</button>
+            <button type="button" aria-pressed="${S.order === "bank"}" data-order="bank">Jak w bazie</button></div></div>
+          ${Hub.shortcuts.html()}
+          <button class="btn btn-quiet sv-reset" data-reset>Wyczyść postęp nauki</button>
+        </div>
+      </details>
     </div>`;
     root.appendChild(dlg);
     const input = dlg.querySelector("input");
@@ -422,7 +426,7 @@
       dlg.querySelector("[data-count]").textContent = `${ids.length} ${plural(ids.length, "pytanie", "pytania", "pytań")}`;
       dlg.querySelector("[data-list]").innerHTML = ids.slice(0, 300).map(id => {
         const q = questions[id], a = S.ans[id];
-        const st = !a ? `<span class="s s-lock">nowe</span>` : a.ok ? `<span class="s s-done">${icon("check")}${SRS.mastered(a) ? "opanowane" : "dobrze"}</span>` : `<span class="s s-open">${icon("x")}źle</span>`;
+        const st = !a ? `<span class="s s-lock">nowe</span>` : a.ok ? `<span class="s s-done">${icon("check")}${SRS.mastered(a) ? "opanowane" : "dobrze"}</span>` : `<span class="s s-bad">${icon("x")}źle</span>`;
         return `<li><button class="xf-row" data-jump="${id}"><span class="n">${esc(q.num.replace(/^Q/, ""))}</span><span class="t" lang="en">${esc(q.text.slice(0, 140))}</span>${st}<span class="time">${S.stars.includes(id) ? icon("star", "gwiazdka") : ""}</span></button></li>`;
       }).join("") || `<li class="note">${icon("info")}<span>Nic nie pasuje do wyszukiwania i filtrów.</span></li>`;
     };
@@ -434,7 +438,7 @@
       const set = e.target.closest("[data-set]");
       if (set) { session.scope.set = set.dataset.set; dlg.querySelectorAll("[data-set]").forEach(b => b.setAttribute("aria-pressed", String(b === set))); saveSession(); return fill(); }
       const ord = e.target.closest("[data-order]");
-      if (ord) { S.order = ord.dataset.order; save(); dlg.querySelectorAll("[data-order]").forEach(b => b.setAttribute("aria-checked", String(b === ord))); return; }
+      if (ord) { S.order = ord.dataset.order; save(); dlg.querySelectorAll("[data-order]").forEach(b => b.setAttribute("aria-pressed", String(b === ord))); return; }
       const jump = e.target.closest("[data-jump]");
       if (jump) { jumped = true; dlg.close(); return goTo(jump.dataset.jump); }
       if (e.target.closest("[data-reset]")) { dlg.close(); return confirmReset(); }

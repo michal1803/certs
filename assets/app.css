@@ -165,6 +165,9 @@ html { background: var(--ground); }
   font: 800 16px/1 var(--font); box-shadow: var(--shadow);
 }
 button.pill { cursor: pointer; }
+a.pill { text-decoration: none; }
+/* Break and Learn: labelled where there is room, icons on narrow phones. */
+@media (max-width: 429px) { .xf-top .right .pill:not(.xf-clock) { width: 44px; padding: 0; justify-content: center; } .xf-top .right .pill:not(.xf-clock) span { display: none; } }
 @media (hover: hover) { button.pill:hover { background: var(--surface); } }
 
 .card {
@@ -243,6 +246,7 @@ button.pill { cursor: pointer; }
 .hero h2 { font-size: 22px; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
 .hero > p { color: var(--text-2); max-width: 60ch; }
 .hero .btn-primary { margin-top: 4px; }
+.launcher .hero .btn { min-height: 52px; font-size: 16px; }
 .meter { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); font-size: 14px; font-weight: 700; color: var(--text-2); }
 .meter b { color: var(--text); }
 .bar { display: block; height: 6px; border-radius: 3px; background: var(--surface); overflow: hidden; }
@@ -325,8 +329,9 @@ a.row:focus-visible { outline-offset: -3px; }
 .set h3 { font-size: 17px; line-height: 1.2; font-weight: 800; }
 .set .seg { max-width: 420px; }
 .account { display: grid; gap: 12px; }
-.btn-gh { gap: 10px; justify-self: start; background: var(--text); border-color: var(--text); color: var(--ground); }
-@media (hover: hover) { .btn-gh:hover { background: var(--text); opacity: .9; } }
+/* GitHub's own near-black in both themes (a cream button would be the brightest thing at night). */
+.btn-gh { gap: 10px; justify-self: start; background: #24292f; border-color: #24292f; color: #fff; }
+@media (hover: hover) { .btn-gh:hover { background: #32383f; } }
 .btn-gh .icon { width: 20px; height: 20px; }
 .acct-who { display: flex; align-items: center; gap: 12px; }
 .acct-who img { width: 40px; height: 40px; border-radius: 50%; background: var(--surface); }
@@ -356,7 +361,7 @@ a.row:focus-visible { outline-offset: -3px; }
 .doc-table { overflow-x: auto; }
 
 /* study bits that used to sit with the launcher */
-.sv-guess-hint { color: var(--text-2); }
+.sv-guess-hint { color: var(--text-2); margin-top: 16px; font-weight: 600; }
 .sv-quick-list .xf-row { cursor: default; box-shadow: none; background: var(--surface); }
 @media (hover: hover) { .sv-quick-list .xf-row:hover { background: var(--surface); } }
 .sv-quick .btn-quiet { justify-self: start; color: var(--text-2); }
@@ -397,8 +402,12 @@ body.xf-active { overflow: hidden !important; }
 .xf-qtext img, .xf-exhibit img { max-width: 100%; height: auto; border-radius: 8px; }
 .xf-exhibit { margin-top: 12px; display: grid; gap: 8px; }
 .xf-exhibit figure { margin: 0; padding: 8px; border-radius: var(--radius-sm); background: var(--surface); }
+.xf-exhibit figure { position: relative; }
 .xf-exhibit a { display: block; cursor: zoom-in; }
-.xf-exhibit figcaption { font-size: 13px; color: var(--text-2); padding: 0 4px 6px; }
+/* Exhibits are screenshots, often unreadable at phone width: say they open full size. */
+.zoom { position: absolute; right: 8px; top: 4px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: var(--card); color: var(--text); font-size: 13px; font-weight: 700; }
+.zoom .icon { width: 14px; height: 14px; }
+.xf-exhibit figcaption { font-size: 13px; color: var(--text-2); padding: 0 96px 6px 4px; min-height: 26px; }
 .xf-imgfail { padding: 12px; font-size: 14px; color: var(--text-2); }
 .xf-imgfail a { color: var(--action-text); font-weight: 700; }
 .xf-hint { margin-top: 12px; font-weight: 700; font-size: 15px; }
@@ -461,7 +470,12 @@ body.xf-active { overflow: hidden !important; }
 .xf-facts span { font-size: 14px; color: var(--text-2); }
 .xf-rules { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
 .xf-keyrules { gap: 8px; }
-.xf-more summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+.xf-more summary, .xf-answers summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
+.xf-answers summary { flex-wrap: wrap; justify-content: flex-start; }
+.xf-answers summary::-webkit-details-marker { display: none; }
+.xf-answers summary::after { content: ""; margin-left: auto; width: 9px; height: 9px; margin-right: 4px; border: solid var(--text-2); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .2s var(--ease); }
+.xf-answers[open] summary::after { transform: rotate(-135deg); }
+.xf-answers:not([open]) { gap: 0; }
 .xf-more summary::-webkit-details-marker { display: none; }
 .xf-more summary::after { content: ""; width: 9px; height: 9px; margin-right: 4px; border: solid var(--text-2); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .2s var(--ease); }
 .xf-more[open] summary::after { transform: rotate(-135deg); }
@@ -479,7 +493,7 @@ body.xf-active { overflow: hidden !important; }
 
 .xf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
-  min-height: 40px; padding: 0 14px; border-radius: 999px;
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
   border: 1.5px solid var(--control-border); background: var(--card);
   font: 700 15px/1 var(--font); color: var(--text); cursor: pointer;
 }
@@ -499,6 +513,7 @@ body.xf-active { overflow: hidden !important; }
 .xf-row .time { grid-area: time; color: var(--text-2); font-weight: 600; text-align: right; min-width: 4ch; }
 .xf-row .s { grid-area: s; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; white-space: nowrap; }
 .s-open { color: var(--warn); }
+.s-bad { color: var(--bad); }
 .s-done { color: var(--text); }
 .s-lock { color: var(--text-2); }
 
@@ -616,7 +631,7 @@ body.xf-active { overflow: hidden !important; }
 .is-correct .sv-tag { color: var(--ok); }
 .is-wrong .sv-tag { color: var(--bad); }
 .sv-tag .icon { width: 16px; height: 16px; }
-.sv-result { margin-top: 12px; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius-sm); font-weight: 700; }
+.sv-result { margin-top: 16px; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius-sm); font-weight: 700; }
 .sv-result, .sv-self { scroll-margin: 16px 0 calc(96px + env(safe-area-inset-bottom)); }
 .sv-result.ok { background: var(--ok-tint); color: var(--ok); }
 .sv-result.bad { background: var(--bad-tint); color: var(--bad); }
@@ -643,7 +658,7 @@ body.xf-active { overflow: hidden !important; }
 .sv-search input { width: 100%; min-height: 48px; padding: 0 14px 0 44px; border-radius: var(--radius-sm); border: 1.5px solid var(--control-border); background: var(--card); font: 600 16px/1 var(--font); color: var(--text); }
 .sv-search input::placeholder { color: var(--text-2); font-weight: 500; }
 .sv-label { font-weight: 700; font-size: 14px; color: var(--text-2); }
-.sv-list { max-height: 45dvh; overflow-y: auto; padding: 2px; }
+.sv-list { padding: 2px; }
 .sv-list .time .icon { width: 16px; height: 16px; color: var(--text); fill: currentColor; }
 .sv-reset { justify-self: start; color: var(--bad); }
 
@@ -811,3 +826,10 @@ body.xf-active { overflow: hidden !important; }
   .xf-opt:active, .btn:active { transform: none; }
   .xf-progress i, .split .bar i { transition: none; }
 }
+
+/* study list sheet: rare options folded under the list */
+.sv-sheet .xf-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 2px 16px; }
+.sv-sheet .xf-chips::-webkit-scrollbar { display: none; }
+.sv-sheet .chip { flex: none; }
+.sv-more summary { min-height: 44px; display: flex; align-items: center; font-weight: 700; color: var(--text-2); cursor: pointer; }
+.sv-more-in { display: grid; gap: 14px; padding-top: 8px; }
