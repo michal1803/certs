@@ -1,7 +1,7 @@
 /* Theme: follows the system unless the viewer picks light or dark.
    Loaded in <head> so the first paint already has the right colours. */
 (() => {
-  // GitHub Pages cannot send frame-ancestors: refuse to be shown inside another site's frame.
+  // Refuse to be shown inside another site's frame (the Worker also sends frame-ancestors 'none').
   if (window.top !== window.self) {
     document.documentElement.style.display = "none";
     try { window.top.location = window.self.location.href; } catch (e) {}

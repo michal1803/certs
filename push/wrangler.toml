@@ -19,10 +19,22 @@ id = "c7707e2f99854759ac38f2e24dd04f70"
 # Public half of the VAPID key pair from `node scripts/gen-vapid.mjs`.
 # The private half is a secret: `npx wrangler secret put VAPID_PRIVATE_KEY`.
 VAPID_PUBLIC_KEY = "BBu3wf6Qcsa417hDEVniXWkLv3duN0hE8y7458FK_rA5SfM_YQTsAPzw0y6RbUxuTs5notAYnku4iSy9Cr_uhBA"
-VAPID_SUBJECT = "https://michal1803.github.io/certs/"
+VAPID_SUBJECT = "https://exam-hub-push.michaw49.workers.dev/certs/"
 # GitHub OAuth App client id (public). The client secret and SESSION_SECRET are secrets:
 # `npx wrangler secret put GITHUB_CLIENT_SECRET`, `npx wrangler secret put SESSION_SECRET`.
 GITHUB_CLIENT_ID = "Ov23lieJOmRhQHuCB0Nr"
+# The only GitHub account let through the site gate (src/gate.js): michal1803.
+OWNER_GITHUB_ID = "56799416"
+
+# The app itself, served behind the site gate at /certs/. `npm run build` copies
+# the repo's site files into dist/certs/; the Worker runs first on every request.
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = true
+# Serve files at their exact paths (index.html stays index.html; no pretty URLs).
+html_handling = "none"
+not_found_handling = "none"
 
 # Login sessions and synced progress. `npx wrangler d1 create exam-hub` prints the id.
 [[d1_databases]]
