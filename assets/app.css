@@ -402,13 +402,13 @@ a.row:focus-visible { outline-offset: -3px; }
 /* settings: a bottom sheet on phones, a centred dialog from 720px */
 .settings .xf-sheet-in { gap: 0; }
 @media (min-width: 720px) {
-  .xf-sheet.settings { margin: auto; width: min(560px, calc(100% - 48px)); max-height: min(86dvh, 800px); border-radius: var(--radius); box-shadow: var(--shadow-dialog); }
+  .xf-sheet.settings { margin: auto; width: min(620px, calc(100% - 48px)); max-height: min(86dvh, 800px); border-radius: var(--radius); box-shadow: var(--shadow-dialog); }
   .settings .xf-sheet-in { padding: 24px 28px 28px; }
 }
 /* Account: a summary row; its actions open as a subview (rare and destructive, so not on the main view). */
 .acct-row {
   display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 8px 0;
-  border: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: none;
+  border: 0; background: none;
   color: var(--text); font: inherit; text-align: left; cursor: pointer;
 }
 .acct-row > span { display: grid; flex: 1; min-width: 0; }
@@ -417,7 +417,7 @@ a.row:focus-visible { outline-offset: -3px; }
 @media (hover: hover) { .acct-row:hover b { color: var(--action-text); } }
 .settings.acct-detail .set:not(#konto), .settings.acct-detail #konto-h { display: none; }
 .acct-back { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 0; text-decoration: none; }
-.set { display: grid; gap: 12px; padding: 20px 0; border-top: 1px solid var(--border); }
+.set { display: grid; gap: 10px; padding: 16px 0; border-top: 1px solid var(--border); }
 .xf-sheet-head + .set { border-top: 0; padding-top: 12px; }
 .set h3 { font-size: 17px; line-height: 1.2; font-weight: 800; }
 .set .seg { max-width: 420px; }
@@ -437,8 +437,12 @@ a.row:focus-visible { outline-offset: -3px; }
 @media (hover: hover) { .acct-list button:hover { color: var(--action-text); } }
 .acct-list .acct-del { color: var(--bad); }
 .acct-msg { font-weight: 700; }
-.remind-time .select { background-image: none; padding-right: 14px; max-width: 200px; }
-.remind-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Time and both reminder actions on one row (wraps on narrow phones). */
+.remind-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.remind-actions .remind-time { width: 140px; flex: none; background-image: none; padding-right: 12px; }
+.remind-actions .btn { min-height: 48px; padding: 0 16px; }
+.vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.about { padding-bottom: 0; }
 .remind-actions [data-push] { display: contents; }
 .remind-actions [data-push][hidden] { display: none; }
 .remind [data-remind-status]:empty { display: none; }

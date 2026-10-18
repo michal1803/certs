@@ -41,15 +41,15 @@
     <div class="xf-sheet-head"><h2 id="settings-h" tabindex="-1" autofocus>Ustawienia</h2><button class="btn btn-quiet icon-btn" type="button" data-close aria-label="Zamknij"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
 
     <section class="set" id="konto" aria-labelledby="konto-h">
-      <h3 id="konto-h">Konto i synchronizacja</h3>
+      <h3 id="konto-h">Konto</h3>
       <div class="account" id="account"><p class="small muted">Postęp, gwiazdki i wyniki zapisują się w tej przeglądarce.</p></div>
     </section>
 
     <section class="set remind" id="remind" aria-labelledby="remind-h">
       <h3 id="remind-h">Codzienne przypomnienie</h3>
-      <p class="small muted">Kilka minut dziennie daje więcej niż jedna długa sesja raz w tygodniu. Przypomnienie otwiera szybką piątkę z pytań, które czekają na powtórkę.</p>
-      <div class="field remind-time"><label for="remind-time">Godzina</label><input class="select" type="time" id="remind-time" value="19:00" required></div>
+      <p class="small muted">Otwiera szybką piątkę z pytań, które czekają na powtórkę.</p>
       <div class="remind-actions">
+        <label class="vh" for="remind-time">Godzina przypomnienia</label><input class="select remind-time" type="time" id="remind-time" value="19:00" required>
         <div data-push hidden></div>
         <button class="btn" type="button" data-ics>Dodaj do kalendarza</button>
       </div>
@@ -67,9 +67,8 @@
     </section>
 
     <section class="set about" aria-labelledby="about-h">
-      <h3 id="about-h">O aplikacji</h3>
-      <p class="small muted">Nieoficjalne narzędzie do nauki, niezwiązane z Microsoft ani HashiCorp. Zasady egzaminów pochodzą z ich oficjalnych stron. Pytania i komentarze pochodzą od społeczności ExamTopics.</p>
-      <p class="small"><a href="privacy.html">Polityka prywatności</a></p>
+      <h3 id="about-h" class="vh">O aplikacji</h3>
+      <p class="small muted">Nieoficjalne narzędzie do nauki, niezwiązane z Microsoft ani HashiCorp. <a href="privacy.html">Polityka prywatności</a></p>
     </section>
   </div>
 </dialog>
