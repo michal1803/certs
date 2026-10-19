@@ -84,7 +84,7 @@
   }
   function mergeHistory(a, b) {
     const seen = new Set();
-    return [...cleanHistory(a), ...cleanHistory(b)].filter(h => !seen.has(h.at) && seen.add(h.at)).sort((x, y) => y.at - x.at).slice(0, 10);
+    return [...cleanHistory(a), ...cleanHistory(b)].filter(h => !seen.has(h.at) && seen.add(h.at)).sort((x, y) => y.at - x.at).slice(0, 30);
   }
   const merge = (key, a, b) => key.startsWith("study:") ? mergeStudy(a, b) : mergeHistory(a, b);
   const parse = s => { try { return JSON.parse(s); } catch (e) { return null; } };

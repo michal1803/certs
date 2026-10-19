@@ -99,6 +99,16 @@
     const drill = profile.exam.drill;
     return drill ? Math.ceil(n * drill.secondsPerQuestion / 60) : profile.exam.minutes;
   };
+  /* An exam draw: each domain's quota, preferring questions that were not in
+     the recent attempts (`recent`, a Set of ids), in random order otherwise.
+     When a domain has too few fresh ones, recent ones fill the rest. */
+  window.drawExam = function (byDomain, quotas, recent, shuffle) {
+    const seen = id => (recent.has(id) ? 1 : 0);
+    // shuffle first, then a stable sort: fresh before recent, random within each
+    return shuffle(Object.entries(quotas).flatMap(([d, n]) =>
+      shuffle(byDomain[d] || []).sort((a, b) => seen(a) - seen(b)).slice(0, n)));
+  };
+
   /* Points for one answer. Without partial credit: 1 for the exact set, else 0.
      With partial credit (AZ-104 multi-answer): one point per right choice, minus
      one per choice beyond the number asked for, never below 0. */

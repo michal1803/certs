@@ -17,13 +17,19 @@
 
   const scorable = Object.values(questions).filter(q => q.correct.length && q.options.length);
 
+  // The pools of the last attempts in this browser: the next draw prefers other questions,
+  // so a small bank does not hand out the same exam twice in a row.
+  const RECENT_KEY = `exam-recent:${EXAM_ID}:v1`;
+  const RECENT_ATTEMPTS = 2;
+  const recentIds = () => new Set([].concat(...load(RECENT_KEY, []).filter(Array.isArray)));
+
   function buildPool(count) {
     const byDomain = {};
     scorable.forEach(q => (byDomain[q.domain] ||= []).push(q.id));
     const available = {};
     Object.entries(byDomain).forEach(([d, ids]) => { available[d] = ids.length; });
     const quotas = window.examQuotas(P, count, available);
-    return shuffle(Object.entries(quotas).flatMap(([d, n]) => shuffle(byDomain[d] || []).slice(0, n)));
+    return window.drawExam(byDomain, quotas, recentIds(), shuffle);
   }
 
   /* ---------- attempt state ---------- */
@@ -39,6 +45,7 @@
 
   function startAttempt(count, untimed) {
     const pool = buildPool(count);
+    store(RECENT_KEY, [pool, ...load(RECENT_KEY, [])].slice(0, RECENT_ATTEMPTS));
     const now = Date.now();
     A = {
       v: 1, status: "running", count: pool.length, pool, current: 0,
@@ -176,6 +183,7 @@
           </div>
           <div><h3 class="small muted" style="margin-bottom:8px">Pytania z każdej domeny</h3><ul class="split" data-split></ul></div>
           ${P.weightsAreProxy ? `<p class="note">${icon("info")}<span>${esc(P.vendor)} nie publikuje wag domen ani progu. Proporcje liczymy z liczby celów egzaminacyjnych w każdej domenie.</span></p>` : ""}
+          <p class="small muted" data-repeat></p>
           <label class="switch"><span><b>Bez limitu czasu</b><br><span class="small muted">Dla nauki w swoim tempie.</span></span><input type="checkbox" id="xf-untimed"></label>
           ${Hub.shortcuts.html()}
         </section>
@@ -205,6 +213,11 @@
       const max = Math.max(...Object.values(q), 1);
       $("[data-split]", root).innerHTML = P.domains.map((d, k) => `<li style="--c:var(--l${k % 8 + 1})"><span>${esc(d.label)}</span><span class="bar" aria-hidden="true"><i style="width:${(q[d.id] / max) * 100}%"></i></span><b>${q[d.id]}</b></li>`).join("");
       $('[data-f="minutes"]', root).textContent = window.examMinutes(P, n);
+      // Repeats the draw cannot avoid: domains whose quota exceeds their fresh questions.
+      const recent = recentIds();
+      const repeats = P.domains.reduce((sum, d) => sum + Math.max(0, (q[d.id] || 0) - scorable.filter(x => x.domain === d.id && !recent.has(x.id)).length), 0);
+      $("[data-repeat]", root).textContent = recent.size && repeats
+        ? `${repeats} ${plural(repeats, "pytanie powtórzy", "pytania powtórzą", "pytań powtórzy")} się z ostatnich prób: w części domen baza ma za mało pytań z kluczem.` : "";
     };
     sel.addEventListener("change", renderSplit);
     renderSplit();
@@ -523,7 +536,7 @@
     A.pool.forEach(id => { const s = scoreQuestion(id); pts += s.pts; max += s.max; });
     const history = load(HISTORY_KEY, []);
     history.unshift({ at: A.finishedAt, count: A.count, pct: max ? Math.round(pts / max * 100) : 0, untimed: !A.deadline });
-    store(HISTORY_KEY, history.slice(0, 10));
+    store(HISTORY_KEY, history.slice(0, 30));
     window.HubSync?.schedule();
     save();
     showResults();

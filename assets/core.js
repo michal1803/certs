@@ -3,7 +3,19 @@
 (() => {
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const load = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch (e) { return fallback; } };
-  const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  // A failed write (storage full, private mode) is said once instead of losing progress silently.
+  let storeWarned = false;
+  const store = (k, v) => {
+    try { localStorage.setItem(k, JSON.stringify(v)); return true; }
+    catch (e) { if (!storeWarned) { storeWarned = true; setTimeout(storeFailed); } return false; }
+  };
+  function storeFailed() {
+    const n = document.createElement("div");
+    n.className = "store-warn"; n.setAttribute("role", "alert"); n.lang = "pl";
+    n.innerHTML = `<p>Ta przeglądarka nie zapisuje postępu (brak miejsca albo tryb prywatny). Zaloguj się albo zapisz kopię w ustawieniach na <a href="index.html#konto">stronie głównej</a>, żeby go nie stracić.</p><button type="button" aria-label="Zamknij">×</button>`;
+    n.querySelector("button").addEventListener("click", () => n.remove());
+    document.body.appendChild(n);
+  }
   const pad = n => String(n).padStart(2, "0");
   const clock = ms => {
     const s = Math.max(0, Math.round(ms / 1000));
