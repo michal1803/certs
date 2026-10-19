@@ -173,11 +173,11 @@
         <a class="btn btn-primary btn-block" href="${esc(p.href)}#egzamin=nowy">${drill ? "Przygotuj trening" : "Przygotuj egzamin"}</a>
         <p class="small muted">Liczbę pytań i tryb bez limitu czasu wybierzesz na następnym ekranie.</p>
       </section>`;
-    const pass = h => x.passing ? int(h.pct) / 100 >= x.passing.score / x.passing.scale : null;
+    const pass = h => x.passing ? int(h.pct) >= window.passPct(x.passing) : null;
     const hist = f.history.length ? `<ul class="rows plain">${f.history.map(h => {
       const ok = pass(h);
       return `<li><div class="row"><span class="row-t"><b>${int(h.pct)}%</b><span>${esc(date(int(h.at)))} · ${pytan(int(h.count))}${h.untimed ? " · bez limitu" : ""}</span></span>${ok === null ? "" : `<span class="tag ${ok ? "pass" : "fail"}">${icon(ok ? "check" : "x")}${ok ? "zdany" : "niezdany"}</span>`}</div></li>`;
-    }).join("")}</ul>${x.passing ? `<p class="small muted">Zdany lub niezdany to szacunek: ${esc(p.vendor)} skaluje wynik, więc próg ${x.passing.score} to nie to samo co ${Math.round(x.passing.score / x.passing.scale * 100)}%.</p>` : ""}`
+    }).join("")}</ul>${x.passing ? `<p class="small muted">Zdany lub niezdany to szacunek: ${esc(p.vendor)} skaluje wynik nieliniowo, więc „zdany” liczymy dopiero od ${window.passPct(x.passing)}% punktów.</p>` : ""}`
       : `<p class="empty">Tu pojawią się wyniki Twoich ${drill ? "treningów" : "egzaminów"}.</p>`;
     return `${header(drill ? "Trening na czas" : "Egzamin próbny", esc(p.title))}
       ${card}
@@ -340,6 +340,8 @@
       <ul class="acct-list">
         <li><button type="button" data-acct="logout">Wyloguj</button></li>
         <li><button type="button" data-acct="logout-all">Wyloguj na wszystkich urządzeniach</button></li>
+        <li><button type="button" data-acct="export">Zapisz kopię postępu do pliku</button></li>
+        <li><button type="button" data-acct="import">Wczytaj kopię z pliku</button></li>
         <li><button type="button" class="acct-del" data-acct="delete">Usuń konto i dane z serwera</button></li>
       </ul>
       <p class="small muted">Na serwerze jest tylko identyfikator, login, nazwa i avatar z GitHuba oraz postęp nauki. Bez dostępu do repozytoriów.</p>`
@@ -348,7 +350,8 @@
         ${avatar(u, 40)}<span><b>${esc(u.login)}</b><span class="small muted" data-acct-note>${esc(note)}</span></span>${icon("chev")}
       </button>`
       : `<p class="small muted">Zaloguj się, żeby mieć pytania i postęp na każdym urządzeniu.</p>
-         <button class="btn btn-gh" type="button" data-acct="login">${GH}Zaloguj przez GitHub</button>`;
+         <button class="btn btn-gh" type="button" data-acct="login">${GH}Zaloguj przez GitHub</button>
+         <p class="small acct-files">Kopia postępu: <button class="link" type="button" data-acct="export">zapisz do pliku</button> · <button class="link" type="button" data-acct="import">wczytaj z pliku</button></p>`;
     if (acctMsg) acct.insertAdjacentHTML("beforeend", `<p class="acct-msg" role="status">${esc(acctMsg)}</p>`);
   }
   window.addEventListener("hub:auth", () => { paintAccount(); if (!sheet.open) paint(); });
@@ -366,6 +369,8 @@
     }
     if (act === "login") return sync.login();
     if (act === "sync") return sync.sync();
+    if (act === "export") return exportFile();
+    if (act === "import") return importFile();
     if (act === "logout") return sync.logout();
     if (act === "logout-all") return sync.logout(true);
     if (act === "delete") {
@@ -384,6 +389,35 @@
       dlg.querySelector("[data-no]").focus();
     }
   });
+  /* Backup file: progress, stars and exam results of this browser. */
+  function exportFile() {
+    const data = window.HubSync.exportData();
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `exam-hub-postep-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    acctMsg = Object.keys(data.items).length ? "Zapisano plik z kopią postępu." : "Nie ma jeszcze postępu do zapisania.";
+    paintAccount();
+  }
+  function importFile() {
+    const input = document.createElement("input");
+    input.type = "file"; input.accept = ".json,application/json";
+    input.addEventListener("change", async () => {
+      const file = input.files[0];
+      if (!file) return;
+      try {
+        const n = window.HubSync.importData(JSON.parse(await file.text()));
+        acctMsg = n ? "Wczytano kopię. Postęp połączono z tym w przeglądarce." : "Ta kopia nie wnosi niczego nowego.";
+      } catch (e) {
+        acctMsg = "To nie jest plik kopii Exam Hub.";
+      }
+      paintAccount(); paint();
+    }, { once: true });
+    input.click();
+  }
+
   paintAccount();
   // After the account is drawn, so #konto can focus its sign-in button.
   if (location.hash === "#konto" || location.hash === "#przypomnienie") deepLink();

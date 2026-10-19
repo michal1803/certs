@@ -52,7 +52,9 @@
         minutes: 100,
         counts: [40, 50, 60],
         defaultCount: 50,
-        passing: { score: 700, scale: 1000, scaled: true },
+        // safePct: "pass (estimate)" only from this share of points, a margin over
+        // the linear 70% because the real 700/1000 scale is not linear.
+        passing: { score: 700, scale: 1000, scaled: true, safePct: 75 },
         // One point per correct selection on multi-answer questions.
         partialCredit: true,
         questionTypes: "jednokrotny i wielokrotny wybór, serie Tak/Nie, case study",
@@ -97,6 +99,7 @@
     const drill = profile.exam.drill;
     return drill ? Math.ceil(n * drill.secondsPerQuestion / 60) : profile.exam.minutes;
   };
+  window.passPct = passing => passing ? (passing.safePct ?? passing.score / passing.scale * 100) : null;
   window.examLabel = profile => profile.exam.drill ? "Trening na czas" : "Egzamin";
 
   /* Questions per domain for an exam of n questions (largest-remainder
@@ -174,7 +177,9 @@
   const studyOf = id => { try { return JSON.parse(localStorage.getItem(`study:${id}:v1`)); } catch (e) { return null; } };
   const duesOf = id => {
     const p = window.EXAM_PROFILES[id], st = studyOf(id);
-    return st?.ans ? Object.entries(st.ans).filter(([q]) => p.all.includes(q)).map(([, a]) => window.SRS.migrate(a).due) : [];
+    // Self-assessed answers (hotspot, drag & drop) come back in study, not in the quick five,
+    // so they stay out of the "due" count the launcher, the badge and the reminder show.
+    return st?.ans ? Object.entries(st.ans).filter(([q, a]) => p.all.includes(q) && !a?.self).map(([, a]) => window.SRS.migrate(a).due) : [];
   };
   window.HubDue = {
     count: (id, now = Date.now()) => duesOf(id).filter(d => d <= now).length,

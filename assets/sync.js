@@ -89,6 +89,31 @@
   const merge = (key, a, b) => key.startsWith("study:") ? mergeStudy(a, b) : mergeHistory(a, b);
   const parse = s => { try { return JSON.parse(s); } catch (e) { return null; } };
 
+  /* ---------- backup file ----------
+     The same keys sync carries. An import merges each item exactly like a
+     sync (newer answers win, star logs and exam history unite), so it never
+     loses newer progress already in this browser. */
+  function exportData() {
+    const items = {};
+    Object.keys(localStorage).filter(k => SYNCED.test(k)).forEach(k => { items[k] = localStorage.getItem(k); });
+    return { app: "exam-hub", v: 1, exported: Date.now(), items };
+  }
+  // Returns how many items changed; throws "format" for a file that is not an Exam Hub backup.
+  function importData(data) {
+    if (!data || data.app !== "exam-hub" || !data.items || typeof data.items !== "object") throw new Error("format");
+    const changed = [];
+    Object.entries(data.items).forEach(([k, raw]) => {
+      if (!SYNCED.test(k) || typeof raw !== "string" || raw.length > 2e6) return;
+      const localRaw = localStorage.getItem(k);
+      const merged = merge(k, parse(localRaw), parse(raw));
+      if (merged == null) return;
+      const out = JSON.stringify(merged);
+      if (out !== localRaw) { localStorage.setItem(k, out); changed.push(k); }
+    });
+    if (changed.length) { emit("hub:synced", { changed }); window.HubDue?.publish(); schedule(); }
+    return changed.length;
+  }
+
   /* ---------- sync ---------- */
   async function sync({ keepalive = false } = {}) {
     if (!auth || !API) return;
@@ -190,7 +215,9 @@
     // The session token, for the private question bank (assets/bank.js).
     get token() { return auth?.token || null; },
     get lastSync() { return auth?.lastSync || null; },
-    login, logout, deleteAccount, schedule, sync,
+    login, logout, deleteAccount, schedule, sync, exportData, importData,
+    // Pure merge and validation, exposed for the unit tests (tests/).
+    _merge: { mergeStudy, mergeHistory, cleanStudy, cleanHistory },
   };
   }
   publish();
