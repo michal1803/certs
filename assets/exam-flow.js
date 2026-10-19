@@ -264,9 +264,9 @@
           <h1 id="xf-qh" class="xf-qh" tabindex="-1">Pytanie ${i + 1} z ${A.count}</h1>
           ${q.series ? `<p class="note warn">${icon("lock")}<span>Pytanie z serii. Po przejściu dalej nie wrócisz do niego.</span></p>` : ""}
           ${parts}
-          ${multi ? `<p class="xf-hint" data-hint>Wybierz ${q.correct.length}. Zaznaczono ${chosen.length}.</p>` : ""}
+          ${multi ? `<p class="xf-hint" data-hint>${countHint(q, chosen.length)}</p>` : ""}
           <fieldset class="xf-opts">
-            <legend>Odpowiedzi do pytania ${i + 1}${multi ? `, wybierz ${q.correct.length}` : ""}</legend>
+            <legend>Odpowiedzi do pytania ${i + 1}${multi ? (q.pickAll ? ", zaznacz wszystkie poprawne" : `, wybierz ${q.correct.length}`) : ""}</legend>
             ${q.options.map((o, k) => `
               <label class="xf-opt">
                 <input type="${multi ? "checkbox" : "radio"}" name="xf-ans" value="${esc(o.val)}"${chosen.includes(o.val) ? " checked" : ""}>
@@ -296,13 +296,15 @@
     announce(`Pytanie ${i + 1} z ${A.count}${q.series ? ", pytanie z serii, bez powrotu" : ""}`);
   }
 
+  // "Choose all that apply" gives no count and no cap: both would give the answer away.
+  const countHint = (q, n) => q.pickAll ? `Zaznacz wszystkie poprawne. Zaznaczono ${n}.` : `Wybierz ${q.correct.length}. Zaznaczono ${n}.`;
   function applyLimit(q) {
     if (q.correct.length < 2) return;
     const boxes = Array.from(root.querySelectorAll('.xf-opts input'));
     const n = boxes.filter(b => b.checked).length;
-    boxes.forEach(b => { b.disabled = !b.checked && n >= q.correct.length; });
+    if (!q.pickAll) boxes.forEach(b => { b.disabled = !b.checked && n >= q.correct.length; });
     const hint = $("[data-hint]", root);
-    if (hint) hint.textContent = `Wybierz ${q.correct.length}. Zaznaczono ${n}.`;
+    if (hint) hint.textContent = countHint(q, n);
   }
 
   function onAnswerChange() {
@@ -584,7 +586,8 @@
               <summary><span class="n"><b>${r.i + 1}</b></span>${r.s.exact ? `<span class="ok">${icon("check", "poprawnie")}</span>` : !r.s.chosen.length ? `<span class="skip" role="img" aria-label="bez odpowiedzi">–</span>` : `<span class="bad">${icon("x", r.s.pts ? "częściowo" : "błędnie")}</span>`}<span class="t" lang="en">${esc(Hub.preview(r.q))}</span><span class="time">${clock(A.spent[r.id] || 0)}</span></summary>
               <div class="body">
                 <p class="small muted">${esc(domainOf(r.q.domain).name)}${r.s.max > 1 ? ` · ${r.s.pts}/${r.s.max} pkt` : ""}${!r.s.chosen.length ? " · bez odpowiedzi" : ""}</p>
-                ${r.q.parts.filter(p => p.kind === "text").map(p => `<div class="xf-qtext" lang="en">${p.html}</div>`).join("")}
+                ${r.q.parts.map(p => p.kind === "text" ? `<div class="xf-qtext" lang="en">${p.html}</div>`
+                  : `<div class="xf-exhibit">${p.srcs.map(src => `<figure><figcaption>${esc(p.label)}</figcaption><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="${esc(p.label)}" loading="lazy"><span class="zoom" aria-hidden="true">${icon("search")}Powiększ</span></a></figure>`).join("")}</div>`).join("")}
                 ${r.q.options.map(o => {
                   const isC = r.q.correct.includes(o.val), mine = r.s.chosen.includes(o.val);
                   const cls = isC ? "correct" : mine ? "wrong" : "";

@@ -284,9 +284,9 @@
     if (keyed) {
       answerBlock = `
         ${!checked && Object.keys(S.ans).length < 5 ? `<p class="xf-hint sv-guess-hint">Nie masz pewności? Po wyborze odpowiedzi wybierz „Strzelam”. Trafienie na strzał wróci jutro, zamiast przesunąć pytanie dalej.</p>` : ""}
-        ${multi && !checked ? `<p class="xf-hint" data-hint>Wybierz ${q.correct.length}. Zaznaczono ${chosen.length}.</p>` : ""}
+        ${multi && !checked ? `<p class="xf-hint" data-hint>${countHint(q, chosen.length)}</p>` : ""}
         <fieldset class="xf-opts"${checked ? " disabled" : ""}>
-          <legend>Odpowiedzi${multi ? `, wybierz ${q.correct.length}` : ""}</legend>
+          <legend>Odpowiedzi${multi ? (q.pickAll ? ", zaznacz wszystkie poprawne" : `, wybierz ${q.correct.length}`) : ""}</legend>
           ${q.options.map(o => {
             const isC = q.correct.includes(o.val), mine = chosen.includes(o.val);
             const state = !checked ? "" : isC ? " is-correct" : mine ? " is-wrong" : " is-dim";
@@ -312,13 +312,17 @@
       }
     } else {
       // Hotspot / drag & drop: no answer key in the bank.
+      // The card's own answer area (or its "no options" note), as the original showed it.
+      const area = q.answerBlock ? `<section class="answer-block" lang="en">
+          <h3>${esc(q.answerBlock.title)}</h3>${q.answerBlock.note ? `<p>${esc(q.answerBlock.note)}</p>` : ""}
+          ${q.answerArea.length ? `<div class="xf-exhibit">${q.answerArea.map(src => `<figure><a href="${esc(src)}" target="_blank" rel="noopener" title="Otwórz obrazek w pełnym rozmiarze"><img src="${esc(src)}" alt="Answer Area" loading="lazy" data-src="${esc(src)}"><span class="zoom" aria-hidden="true">${icon("search")}Powiększ</span></a></figure>`).join("")}</div>` : ""}
+        </section>`
+        : q.emptyNote ? `<p class="note" lang="en">${icon("info")}<span>${esc(q.emptyNote)}</span></p>` : "";
       if (!checked) {
-        answerBlock = `<p class="note">${icon("info")}<span>To pytanie jest typu hotspot lub drag &amp; drop. Rozwiąż je w głowie albo na kartce, potem porównaj z komentarzami.</span></p>
-          <div class="sv-after"><button class="btn btn-block" data-act="reveal">${icon("eye")}Pokaż pole i komentarze</button></div>`;
+        answerBlock = `${area}
+          <div class="sv-after"><button class="btn btn-block" data-act="reveal">${icon("chat")}Pokaż komentarze i oceń się</button></div>`;
       } else {
-        answerBlock = `
-          <p class="note warn">${icon("info")}<span>Baza nie ma oficjalnego rozwiązania tego pytania. Porównaj swoją odpowiedź z komentarzami społeczności i dyskusją.</span></p>
-          ${q.answerArea.length ? `<div class="xf-exhibit">${q.answerArea.map(src => `<figure><figcaption>Pole odpowiedzi z pytania (bez rozwiązania)</figcaption><img src="${esc(src)}" alt="Pole odpowiedzi" loading="lazy" data-src="${esc(src)}"></figure>`).join("")}</div>` : ""}
+        answerBlock = `${area}
           ${rec.kind === "self"
             ? `<p class="sv-result ${rec.ok ? "ok" : "bad"}">${icon(rec.ok ? "check" : "x")}<span>${rec.ok ? `Oznaczone: wiem. ${nextLine(rec)}` : "Oznaczone: nie wiem. Wróci w kolejce."}</span></p>`
             : `<div class="sv-self"><p><b>Jak poszło?</b></p><div class="sv-self-btns"><button class="btn" data-self="0">${icon("x")}Nie wiem</button><button class="btn" data-self="1">${icon("check")}Wiem</button></div></div>`}
@@ -350,13 +354,15 @@
     $("#sv-qh").focus({ preventScroll: true });
   }
 
+  // "Choose all that apply" gives no count and no cap: both would give the answer away.
+  const countHint = (q, n) => q.pickAll ? `Zaznacz wszystkie poprawne. Zaznaczono ${n}.` : `Wybierz ${q.correct.length}. Zaznaczono ${n}.`;
   function applyLimit(q, checked) {
     if (checked || q.correct.length < 2) return;
     const boxes = Array.from(root.querySelectorAll(".xf-opts input"));
     const n = boxes.filter(b => b.checked).length;
-    boxes.forEach(b => { b.disabled = !b.checked && n >= q.correct.length; });
+    if (!q.pickAll) boxes.forEach(b => { b.disabled = !b.checked && n >= q.correct.length; });
     const hint = $("[data-hint]");
-    if (hint) hint.textContent = `Wybierz ${q.correct.length}. Zaznaczono ${n}.`;
+    if (hint) hint.textContent = countHint(q, n);
   }
 
   /* Bottom bar: Wstecz + Pomiń, or once an answer is chosen Wstecz +
@@ -428,7 +434,7 @@
     let jumped = false;
     const fill = () => {
       const term = input.value.trim().toLowerCase();
-      const ids = order.filter(inScope).filter(id => !term || questions[id].num.toLowerCase() === term || questions[id].text.toLowerCase().includes(term));
+      const ids = order.filter(inScope).filter(id => !term || questions[id].num.toLowerCase() === term || questions[id].search.includes(term));
       dlg.querySelector("[data-count]").textContent = `${ids.length} ${plural(ids.length, "pytanie", "pytania", "pytań")}`;
       dlg.querySelector("[data-list]").innerHTML = ids.slice(0, 300).map(id => {
         const q = questions[id], a = S.ans[id];

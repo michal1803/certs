@@ -521,6 +521,11 @@ body.xf-active { overflow: hidden !important; }
 .zoom { position: absolute; right: 8px; top: 4px; display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: var(--card); color: var(--text); font-size: 13px; font-weight: 700; }
 .zoom .icon { width: 14px; height: 14px; }
 .xf-exhibit figcaption { font-size: 13px; color: var(--text-2); padding: 0 96px 6px 4px; min-height: 26px; }
+/* Hotspot / drag & drop: the card's own answer area, framed as in the original. */
+.answer-block { margin-top: 16px; padding: 14px; border: 1.5px solid var(--warn); border-radius: var(--radius-sm); display: grid; gap: 8px; }
+.xf .answer-block h3 { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--warn); }
+.answer-block > p { font-size: 14px; color: var(--text-2); }
+.answer-block .xf-exhibit { margin-top: 4px; }
 .xf-imgfail { padding: 12px; font-size: 14px; color: var(--text-2); }
 .xf-imgfail a { color: var(--action-text); font-weight: 700; }
 .xf-hint { margin-top: 12px; font-weight: 700; font-size: 15px; }
