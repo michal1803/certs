@@ -17,13 +17,21 @@
     const isDark = choice === "dark" || (choice === "system" && dark.matches);
     let meta = document.querySelector('meta[name="theme-color"]');
     if (!meta) { meta = document.createElement("meta"); meta.name = "theme-color"; document.head.appendChild(meta); }
-    meta.content = isDark ? "#0a0b0f" : "#f3f4f7";
+    meta.content = isDark ? "#111216" : "#f3f4f7";
   }
 
   apply(read());
+
+  // Reading text size: standard, large or extra large (CSS --read).
+  const TEXT_KEY = "exam-hub:text";
+  const readText = () => { try { return localStorage.getItem(TEXT_KEY) || "normal"; } catch (e) { return "normal"; } };
+  const applyText = v => { if (v === "large" || v === "xlarge") root.dataset.text = v; else delete root.dataset.text; };
+  applyText(readText());
   dark.addEventListener("change", () => apply(read()));
 
   window.HubTheme = {
+    text: readText,
+    setText(v) { try { localStorage.setItem(TEXT_KEY, v); } catch (e) {} applyText(v); },
     get: read,
     set(choice) {
       try { localStorage.setItem(KEY, choice); } catch (e) {}

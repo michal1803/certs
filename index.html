@@ -58,10 +58,17 @@
 
     <section class="set" aria-labelledby="look-h">
       <h3 id="look-h">Wygląd</h3>
-      <div class="seg" role="group" aria-label="Motyw" data-theme-pick>
-        <button type="button" data-theme-choice="system">Systemowy</button>
-        <button type="button" data-theme-choice="light">Jasny</button>
-        <button type="button" data-theme-choice="dark">Ciemny</button>
+      <div class="look-row">
+        <div class="seg" role="group" aria-label="Motyw" data-theme-pick>
+          <button type="button" data-theme-choice="system">Systemowy</button>
+          <button type="button" data-theme-choice="light">Jasny</button>
+          <button type="button" data-theme-choice="dark">Ciemny</button>
+        </div>
+        <div class="seg seg-text" role="group" aria-label="Rozmiar tekstu pytań" data-text-pick>
+          <button type="button" data-text-choice="normal" aria-label="Tekst standardowy" title="Tekst standardowy">A</button>
+          <button type="button" data-text-choice="large" aria-label="Tekst duży" title="Tekst duży">A</button>
+          <button type="button" data-text-choice="xlarge" aria-label="Tekst bardzo duży" title="Tekst bardzo duży">A</button>
+        </div>
       </div>
       <div data-shortcuts-slot></div>
     </section>
