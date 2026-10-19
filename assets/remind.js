@@ -75,7 +75,12 @@
   const current = async () => (await navigator.serviceWorker.ready).pushManager.getSubscription();
   const register = sub => call("/subscribe", { subscription: sub.toJSON(), time: st.time, tz: tz() });
 
+  // The launcher's install band and first-open prompt use the same flow (window.HubRemind).
+  let onNow = false;
+  window.HubRemind = { on: () => onNow, time: () => st.time, enable: () => enable().catch(e => { say("Nie udało się połączyć z serwerem powiadomień. Spróbuj później albo użyj kalendarza."); throw e; }).then(() => onNow) };
   function paint(on) {
+    onNow = !!on;
+    window.dispatchEvent(new Event("hub:remind"));
     slot.hidden = false;
     slot.innerHTML = on
       ? `<button class="btn" type="button" data-push-off>Wyłącz powiadomienia</button><button class="btn btn-quiet" type="button" data-push-test>Wyślij próbne</button>`
