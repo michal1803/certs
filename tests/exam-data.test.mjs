@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import { load, memoryStorage } from "./load.mjs";
 
 const { win } = load(["assets/exam-data.js"]);
-const { EXAM_PROFILES: P, examQuotas, examMinutes, scoreAnswer, passPct, SRS } = win;
+const { EXAM_PROFILES: P, examQuotas, examMinutes, scoreAnswer, passPct, SRS, drawExam } = win;
+const shuffle = list => list.slice().reverse();   // deterministic stand-in
 const DAY = 864e5;
 const sum = o => Object.values(o).reduce((s, n) => s + n, 0);
 
@@ -92,4 +93,14 @@ test("due count leaves out self-assessed answers the quick five cannot serve", (
   } };
   const { win: w } = load(["assets/exam-data.js"], { storage: memoryStorage({ "study:az104:v1": JSON.stringify(study) }) });
   assert.equal(w.HubDue.count("az104", now), 1);
+});
+
+test("exam draw: quotas per domain, questions from recent attempts only when needed", () => {
+  const byDomain = { a: ["a1", "a2", "a3", "a4"], b: ["b1", "b2"] };
+  const pool = [...drawExam(byDomain, { a: 2, b: 1 }, new Set(["a4", "a3", "b2"]), shuffle)];
+  assert.deepEqual(pool.filter(id => id.startsWith("a")).sort(), ["a1", "a2"]);
+  assert.deepEqual(pool.filter(id => id.startsWith("b")), ["b1"]);
+  const tight = [...drawExam(byDomain, { a: 3, b: 2 }, new Set(["a1", "a2", "a3", "b1"]), shuffle)];
+  assert.equal(tight.length, 5);
+  assert.ok(tight.includes("a4") && tight.includes("b2"), "fresh questions are always taken first");
 });

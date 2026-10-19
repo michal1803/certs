@@ -526,6 +526,9 @@ body.xf-active { overflow: hidden !important; }
 .xf .answer-block h3 { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--warn); }
 .answer-block > p { font-size: 14px; color: var(--text-2); }
 .answer-block .xf-exhibit { margin-top: 4px; }
+.store-warn { position: fixed; z-index: 3000; left: 12px; right: 12px; top: calc(12px + env(safe-area-inset-top)); max-width: 640px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--warn-tint); color: var(--text); box-shadow: var(--shadow-dialog); font: 600 15px/1.4 var(--font); }
+.store-warn a { color: var(--action-text); }
+.store-warn button { flex: none; width: 32px; height: 32px; border: 0; background: none; font-size: 20px; color: var(--text); cursor: pointer; }
 .xf-imgfail { padding: 12px; font-size: 14px; color: var(--text-2); }
 .xf-imgfail a { color: var(--action-text); font-weight: 700; }
 .xf-hint { margin-top: 12px; font-weight: 700; font-size: 15px; }

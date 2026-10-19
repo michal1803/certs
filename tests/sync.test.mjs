@@ -22,12 +22,12 @@ test("stars merge by their change log: the later star or unstar wins", () => {
   assert.deepEqual([...m.stars].sort(), ["q3"]);
 });
 
-test("exam history unites both sides, newest first, without duplicates, at most 10", () => {
+test("exam history unites both sides, newest first, without duplicates, at most 30", () => {
   const left = [{ at: 3, count: 50, pct: 70 }, { at: 1, count: 40, pct: 60 }];
   const right = [{ at: 2, count: 50, pct: 65 }, { at: 3, count: 50, pct: 70 }];
   assert.deepEqual([...mergeHistory(left, right).map(h => h.at)], [3, 2, 1]);
-  const many = Array.from({ length: 15 }, (_, i) => ({ at: i + 1, count: 10, pct: 50 }));
-  assert.equal(mergeHistory(many, []).length, 10);
+  const many = Array.from({ length: 40 }, (_, i) => ({ at: i + 1, count: 10, pct: 50 }));
+  assert.equal(mergeHistory(many, []).length, 30);
 });
 
 test("untrusted study data keeps only known fields with the right types", () => {
