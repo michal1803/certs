@@ -99,6 +99,16 @@
     const drill = profile.exam.drill;
     return drill ? Math.ceil(n * drill.secondsPerQuestion / 60) : profile.exam.minutes;
   };
+  /* Points for one answer. Without partial credit: 1 for the exact set, else 0.
+     With partial credit (AZ-104 multi-answer): one point per right choice, minus
+     one per choice beyond the number asked for, never below 0. */
+  window.scoreAnswer = function (correct, chosen, partialCredit) {
+    const hits = chosen.filter(v => correct.includes(v)).length;
+    const exact = hits === correct.length && chosen.length === correct.length;
+    if (!partialCredit) return { pts: exact ? 1 : 0, max: 1, exact };
+    return { pts: Math.max(0, hits - Math.max(0, chosen.length - correct.length)), max: correct.length, exact };
+  };
+
   window.passPct = passing => passing ? (passing.safePct ?? passing.score / passing.scale * 100) : null;
   window.examLabel = profile => profile.exam.drill ? "Trening na czas" : "Egzamin";
 
