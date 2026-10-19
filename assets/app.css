@@ -361,6 +361,10 @@ a.row:focus-visible { outline-offset: -3px; }
 .launcher .device-band h2 { font-size: 17px; font-weight: 800; }
 .device-band p { color: var(--text-2); font-size: 15px; max-width: 60ch; }
 .device-band .btn { flex: none; }
+.device-band.ios > div { flex-basis: 100%; }
+.device-band .link { flex: none; }
+.device-band .share { white-space: nowrap; }
+.device-band .share .icon { width: 1.1em; height: 1.1em; vertical-align: -0.15em; margin-right: 2px; }
 .launcher .status-lines { margin-top: 28px; display: grid; gap: 4px; }
 .status { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; color: var(--text-2); font-size: 15px; }
 .status > span { flex: 1 1 14ch; }
