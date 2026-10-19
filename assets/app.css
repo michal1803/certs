@@ -355,6 +355,12 @@ a.row:focus-visible { outline-offset: -3px; }
 }
 .last-exam b { font-weight: 800; }
 
+/* Install / reminder band (Nauka): a ruled strip, not a card. */
+.device-band { margin-top: 28px; padding: 16px 0; border-top: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.device-band > div { flex: 1 1 260px; display: grid; gap: 4px; }
+.launcher .device-band h2 { font-size: 17px; font-weight: 800; }
+.device-band p { color: var(--text-2); font-size: 15px; max-width: 60ch; }
+.device-band .btn { flex: none; }
 .launcher .status-lines { margin-top: 28px; display: grid; gap: 4px; }
 .status { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; color: var(--text-2); font-size: 15px; }
 .status > span { flex: 1 1 14ch; }

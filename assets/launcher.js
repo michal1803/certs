@@ -19,10 +19,20 @@
   window.addEventListener("hashchange", () => { if (location.hash === "#szybkie") quick(); });
   if (location.hash === "#szybkie") return quick();
 
+  /* Add to home screen, as an app: where the browser offers installing
+     (Android, Chrome and Edge on a computer) it is one button; opened from the
+     icon, the next step is the daily reminder. iPhone offers no install
+     prompt to pages, so nothing is shown there in Safari. */
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  let installEvent = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvent = e; paint(); });
+  window.addEventListener("appinstalled", () => { installEvent = null; paint(); });
+
   const ICONS = {
     chev: '<path d="m9 18 6-6-6-6"/>',
     back: '<path d="m15 18-6-6 6-6"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    download: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/>',
     bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
     cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
@@ -138,7 +148,22 @@
       <p class="small muted list-note">Linia to domena, stacje świecą, gdy pytania są opanowane. Dotknij linii, żeby uczyć się tylko jej.</p>
       <h2 class="list-h">Inne trasy</h2>
       <ul class="rows">${rows}</ul>
+      ${deviceBand()}
       ${statusLines(f)}`;
+  }
+
+  // Install (browser that offers it) or, opened from the icon, turn on the reminder.
+  const notifyOffer = () => standalone && window.HubRemind && !window.HubRemind.on() && "Notification" in window && Notification.permission !== "denied";
+  function deviceBand() {
+    if (!standalone && installEvent) return `<section class="device-band" aria-labelledby="band-h">
+        <div><h2 id="band-h">Dodaj Exam Hub do ekranu</h2><p>Otwierasz go jedną ikoną, na pełnym ekranie, a codzienne przypomnienie przychodzi jak z aplikacji.</p></div>
+        <button class="btn" type="button" data-install>${icon("download")}Zainstaluj aplikację</button>
+      </section>`;
+    if (notifyOffer()) return `<section class="device-band" aria-labelledby="band-h">
+        <div><h2 id="band-h">Wszystko gotowe</h2><p>Exam Hub działa jak aplikacja na tym urządzeniu. Włącz przypomnienie, a codziennie o ${esc(window.HubRemind.time())} dostaniesz szybką piątkę.</p></div>
+        <button class="btn" type="button" data-notify>${icon("bell")}Włącz powiadomienia</button>
+      </section>`;
+    return "";
   }
 
   // Quiet lines under Nauka: the reminder, and (once there is something to lose) sync.
@@ -146,7 +171,7 @@
     const r = load("exam-hub:remind", {});
     const time = /^\d\d:\d\d$/.test(r.time || "") ? r.time : "19:00";
     const lines = [];
-    lines.push(r.push
+    if (!notifyOffer()) lines.push(r.push
       ? `<p class="status">${icon("bell")}<span>Przypomnienie codziennie o ${esc(time)}</span><button class="link" type="button" data-open="remind">Zmień</button></p>`
       : `<p class="status">${icon("bell")}<span>Kilka minut dziennie wystarczy.</span><button class="link" type="button" data-open="remind">Ustaw przypomnienie</button></p>`);
     const sync = window.HubSync;
@@ -250,6 +275,14 @@
     if (t && t.getAttribute("href").slice(1) in TABS) { e.preventDefault(); return go(t.getAttribute("href").slice(1)); }
     const o = e.target.closest("[data-open]");
     if (o) return openSettings(o.dataset.open);
+    if (e.target.closest("[data-install]") && installEvent) {
+      const ev = installEvent;
+      ev.prompt();
+      ev.userChoice.finally(() => { installEvent = null; paint(); });
+      return;
+    }
+    const n = e.target.closest("[data-notify]");
+    if (n) { n.disabled = true; turnOn(); return; }
     if (e.target.closest("[data-dismiss-sync]")) { store("exam-hub:nudge-sync", true); paint(); view.querySelector("h1").focus({ preventScroll: true }); }
   });
   window.addEventListener("hashchange", () => {
@@ -428,6 +461,32 @@
   if (location.hash === "#konto" || location.hash === "#przypomnienie") deepLink();
 
   window.HubDue.publish();
+
+  // Turn the reminder on; if it did not happen (no permission, no network) the settings say why.
+  const turnOn = () => window.HubRemind.enable().catch(() => false).then(on => { paint(); if (!on) openSettings("remind"); });
+
+  // Repaint when the reminder state is known (remind.js loads after this file).
+  window.addEventListener("hub:remind", () => { if (tab === "nauka" && !sheet.open) paint(); });
+
+  // First time opened from the icon: ask once, softly, before the browser's own permission prompt.
+  window.addEventListener("load", () => setTimeout(() => {
+    if (!notifyOffer() || Notification.permission !== "default" || load("exam-hub:standalone-seen", false)) return;
+    store("exam-hub:standalone-seen", true);
+    const dlg = document.createElement("dialog");
+    dlg.className = "xf-dialog";
+    dlg.setAttribute("aria-labelledby", "first-h");
+    dlg.innerHTML = `<h2 id="first-h">Włączyć codzienne przypomnienie?</h2>
+      <p>Raz dziennie o ${esc(window.HubRemind.time())} przypomnimy o szybkiej piątce z pytań, które czekają na powtórkę. Godzinę zmienisz w ustawieniach.</p>
+      <div class="xf-actions"><button class="btn" data-no>Nie teraz</button><button class="btn btn-primary" data-yes>Włącz powiadomienia</button></div>`;
+    document.body.appendChild(dlg);
+    dlg.addEventListener("click", ev => {
+      if (ev.target.closest("[data-yes]")) { dlg.close(); turnOn(); }
+      else if (ev.target.closest("[data-no]") || ev.target === dlg) dlg.close();
+    });
+    dlg.addEventListener("close", () => setTimeout(() => dlg.remove(), 260));
+    dlg.showModal();
+    dlg.querySelector("[data-yes]").focus();
+  }, 1200));
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     // Once a worker is active, ask it to cache the exam pages for offline use.
