@@ -21,13 +21,10 @@
 
   /* Add to home screen, as an app: where the browser offers installing
      (Android, Chrome and Edge on a computer) it is one button; opened from the
-     icon, the next step is the daily reminder. iPhone offers no install
-     prompt to pages: there the band points at Safari's own Share menu. */
+     icon, the next step is the daily reminder. On iPhone adding is done
+     from Safari's own menu (Udostępnij > Do ekranu początkowego): the page
+     shows nothing for it. */
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  // Opened inside another app (Messenger, Instagram, Gmail, Google app): adding happens in Safari.
-  const inApp = /FBAN|FBAV|Instagram|Line\/|GSA\/|Messenger|Gmail/i.test(navigator.userAgent);
-  const BAND_HIDDEN = "exam-hub:install-band-hidden";
   let installEvent = null;
   window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvent = e; paint(); });
   window.addEventListener("appinstalled", () => { installEvent = null; paint(); });
@@ -36,7 +33,6 @@
     chev: '<path d="m9 18 6-6-6-6"/>',
     back: '<path d="m15 18-6-6 6-6"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
-    share: '<path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11v9h12v-9"/>',
     bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
     cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9z"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
@@ -170,11 +166,6 @@
         <div><h2 id="band-h">Dodaj Exam Hub do ekranu</h2><p>Otwierasz go jedną ikoną, na pełnym ekranie, a codzienne przypomnienie przychodzi jak z aplikacji.</p></div>
         <button class="btn" type="button" data-install>Zainstaluj aplikację</button>
       </section>`;
-    if (!standalone && ios && !load(BAND_HIDDEN, false)) return `<section class="device-band ios" aria-labelledby="band-h">
-        <div><h2 id="band-h">Dodaj Exam Hub do ekranu</h2>
-        <p>${inApp ? "Otwórz tę stronę w Safari, potem stuknij" : "Stuknij"} <b class="share">${icon("share")}Udostępnij</b> na pasku Safari i wybierz <b>Do ekranu początkowego</b>. Z ikony Exam Hub otwiera się jak aplikacja i działa codzienne przypomnienie.</p></div>
-        <button class="link" type="button" data-band-hide>Nie teraz</button>
-      </section>`;
     if (notifyOffer()) return `<section class="device-band" aria-labelledby="band-h">
         <div><h2 id="band-h">Wszystko gotowe</h2><p>Exam Hub działa jak aplikacja na tym urządzeniu. Włącz przypomnienie, a codziennie o ${esc(window.HubRemind.time())} dostaniesz szybką piątkę.</p></div>
         <button class="btn" type="button" data-notify>${icon("bell")}Włącz powiadomienia</button>
@@ -297,7 +288,6 @@
       ev.userChoice.finally(() => { installEvent = null; paint(); });
       return;
     }
-    if (e.target.closest("[data-band-hide]")) { store(BAND_HIDDEN, true); paint(); return; }
     const n = e.target.closest("[data-notify]");
     if (n) { n.disabled = true; turnOn(); return; }
     if (e.target.closest("[data-dismiss-sync]")) { store("exam-hub:nudge-sync", true); paint(); view.querySelector("h1").focus({ preventScroll: true }); }
