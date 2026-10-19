@@ -283,7 +283,6 @@
     let answerBlock = "";
     if (keyed) {
       answerBlock = `
-        ${!checked && Object.keys(S.ans).length < 5 ? `<p class="xf-hint sv-guess-hint">Nie masz pewności? Po wyborze odpowiedzi wybierz „Strzelam”. Trafienie na strzał wróci jutro, zamiast przesunąć pytanie dalej.</p>` : ""}
         ${multi && !checked ? `<p class="xf-hint" data-hint>${countHint(q, chosen.length)}</p>` : ""}
         <fieldset class="xf-opts"${checked ? " disabled" : ""}>
           <legend>Odpowiedzi${multi ? (q.pickAll ? ", zaznacz wszystkie poprawne" : `, wybierz ${q.correct.length}`) : ""}</legend>
@@ -303,10 +302,10 @@
         const ok = rec.kind === "answer" && rec.ok;
         answerBlock += rec.kind === "peek"
           ? `<p class="sv-result neutral">${icon("eye")}<span>Podejrzana odpowiedź: <b>${q.correct.join(", ")}</b>. Nie liczy się do postępu.</span></p>`
-          : `<p class="sv-result ${ok ? "ok" : "bad"}">${icon(ok ? "check" : "x")}<span>${ok ? `Dobrze. ${nextLine(rec)}` : `Źle. Poprawna odpowiedź: <b>${q.correct.join(", ")}</b>.${rec.sure ? " Komentarze są otwarte poniżej: błąd bez strzelania najlepiej wyjaśnić od razu." : ""}`}</span></p>`;
+          : `<p class="sv-result ${ok ? "ok" : "bad"}">${icon(ok ? "check" : "x")}<span>${ok ? `Dobrze. ${nextLine(rec)}` : `Źle. Poprawna odpowiedź: <b>${q.correct.join(", ")}</b>. Komentarze są otwarte poniżej: błąd najlepiej wyjaśnić od razu.`}</span></p>`;
         answerBlock += `<div class="sv-after"><button class="btn btn-quiet" data-act="retry">${icon("undo")}Odpowiedz jeszcze raz</button></div>`;
         // A confident miss is the error people remember best once corrected: open the explanation.
-        answerBlock += communityHTML(q, rec.kind === "answer" && !rec.ok && !!rec.sure);
+        answerBlock += communityHTML(q, rec.kind === "answer" && !rec.ok);
       } else {
         answerBlock += `<div class="sv-after"><button class="btn btn-quiet" data-act="peek">${icon("eye")}Pokaż odpowiedź</button></div>`;
       }
@@ -366,38 +365,35 @@
   }
 
   /* Bottom bar: Wstecz + Pomiń, or once an answer is chosen Wstecz +
-     Strzelam + Sprawdź (the primary, last, is what Enter presses). */
+     Sprawdź (the primary, last, is what Enter presses). */
   function barHTML(id, checked, keyedQ) {
     const back = `<button class="btn" data-act="back"${session.pos > 0 ? "" : " disabled"}>${icon("left")}Wstecz</button>`;
     const parts = checked ? [back, `<button class="btn btn-primary" data-act="next">Dalej${icon("right")}</button>`]
-      : keyedQ && (draft[id] || []).length ? [back, `<button class="btn" data-act="guess" title="Nie masz pewności? Trafienie na strzał nie przesuwa pytania dalej.">Strzelam</button>`, `<button class="btn btn-primary" data-act="check">Sprawdź</button>`]
+      : keyedQ && (draft[id] || []).length ? [back, `<button class="btn btn-primary" data-act="check">Sprawdź</button>`]
       : [back, `<button class="btn" data-act="next">Pomiń${icon("right")}</button>`];
-    return `<div class="xf-bar-inner" style="grid-template-columns:${parts.length === 3 ? "1fr 1fr 1.5fr" : "1fr 1.5fr"}">${parts.join("")}</div>`;
+    return `<div class="xf-bar-inner" style="grid-template-columns:1fr 1.5fr">${parts.join("")}</div>`;
   }
 
   // Returns what the result line needs: next due date and whether it moved.
-  function record(id, ok, sel, kind, guess = false) {
+  function record(id, ok, sel, kind) {
     const prev = S.ans[id], now = Date.now();
-    const { box, due } = SRS.step(prev, ok, now, guess);
-    S.ans[id] = { sel, ok, at: now, n: (prev?.n || 0) + 1, streak: ok && !guess ? (prev?.ok ? prev.streak + 1 : 1) : 0, box, due, d: questions[id].domain };
-    if (guess) S.ans[id].guess = true;
+    const { box, due } = SRS.step(prev, ok, now);
+    S.ans[id] = { sel, ok, at: now, n: (prev?.n || 0) + 1, streak: ok ? (prev?.ok ? prev.streak + 1 : 1) : 0, box, due, d: questions[id].domain };
     if (kind === "self") S.ans[id].self = true;
     if (session.quick && !session.quick.done.includes(id)) session.quick.done.push(id);
     save();
-    return { due, early: !guess && !!prev && prev.ok && due === prev.due };
+    return { due, early: !!prev && prev.ok && due === prev.due };
   }
-  const nextLine = rec => !rec.due ? "" : rec.guess
-    ? `Trafione na strzał, więc pytanie wróci ${SRS.when(rec.due, Date.now())}.`
-    : rec.early
+  const nextLine = rec => !rec.due ? "" : rec.early
     ? `Termin powtórki jeszcze nie minął, więc poziom się nie zmienia (powtórka ${SRS.when(rec.due, Date.now())}).`
     : `Następna powtórka ${SRS.when(rec.due, Date.now())}.`;
 
-  function check(guess = false) {
+  function check() {
     const id = session.history[session.pos], q = questions[id];
     const sel = draft[id] || [];
     if (!sel.length) return;
     const ok = sel.length === q.correct.length && sel.every(v => q.correct.includes(v));
-    session.revealed[id] = { kind: "answer", ok, sel, guess, sure: !guess, ...record(id, ok, sel, "answer", guess) };
+    session.revealed[id] = { kind: "answer", ok, sel, ...record(id, ok, sel, "answer") };
     revealPending = id;
     delete draft[id];
     saveSession();
@@ -495,7 +491,6 @@
     }
     switch (t.dataset.act) {
       case "check": return check();
-      case "guess": return check(true);
       case "next": return next();
       case "back": return back();
       case "list": return openList();
@@ -526,7 +521,7 @@
     const id = session.history[session.pos];
     draft[id] = Array.from(root.querySelectorAll(".xf-opts input:checked")).map(b => b.value);
     applyLimit(questions[id], false);
-    // Swap Pomiń ↔ Strzelam + Sprawdź without re-rendering the card.
+    // Swap Pomiń ↔ Sprawdź without re-rendering the card.
     const bar = root.querySelector(".xf-bar-inner");
     const want = draft[id].length ? "check" : "next";
     if (bar.lastElementChild.dataset.act !== want) bar.outerHTML = barHTML(id, false, true);

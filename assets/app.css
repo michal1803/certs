@@ -477,7 +477,6 @@ a.row:focus-visible { outline-offset: -3px; }
 .doc-table { overflow-x: auto; }
 
 /* study bits that used to sit with the launcher */
-.sv-guess-hint { color: var(--text-2); margin-top: 16px; font-weight: 600; }
 .sv-quick-list .xf-row { cursor: default; box-shadow: none; background: var(--surface); }
 @media (hover: hover) { .sv-quick-list .xf-row:hover { background: var(--surface); } }
 .sv-quick .btn-quiet { justify-self: start; color: var(--text-2); }
