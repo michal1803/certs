@@ -544,13 +544,13 @@
       const p = rs.reduce((s, r) => s + r.s.pts, 0), m = rs.reduce((s, r) => s + r.s.max, 0);
       return { d, p, m, n: rs.length };
     }).filter(x => x.n);
-    const pass = P.exam.passing ? pct >= P.exam.passing.score / P.exam.passing.scale : null;
+    const pass = P.exam.passing ? pct * 100 >= window.passPct(P.exam.passing) : null;
     const tag = pass === null
       ? `<span class="tag neutral">${icon("info")}Brak oficjalnego progu</span>`
       : pass ? `<span class="tag pass">${icon("check")}Zdany (szacunek)</span>` : `<span class="tag fail">${icon("x")}Niezdany (szacunek)</span>`;
     const scoreLine = P.exam.passing
       ? `<p class="xf-score">≈ <span data-count="${Math.round(pct * P.exam.passing.scale)}">${Math.round(pct * P.exam.passing.scale)}</span> <small>/ ${P.exam.passing.scale}</small></p>
-         <p class="muted">${pts} z ${max} pkt (${Math.round(pct * 100)}%). Prawdziwy wynik ${esc(P.vendor)} jest skalowany: próg ${P.exam.passing.score} to nie to samo co ${Math.round(P.exam.passing.score / P.exam.passing.scale * 100)}%, więc to tylko przybliżenie.</p>`
+         <p class="muted">${pts} z ${max} pkt (${Math.round(pct * 100)}%). Prawdziwy wynik ${esc(P.vendor)} jest skalowany, więc próg ${P.exam.passing.score} to nie to samo co ${Math.round(P.exam.passing.score / P.exam.passing.scale * 100)}%. „Zdany” pokazujemy dopiero od ${window.passPct(P.exam.passing)}% punktów, z zapasem.</p>`
       : `<p class="xf-score"><span data-count="${Math.round(pct * 100)}">${Math.round(pct * 100)}</span><small>%</small></p>
          <p class="muted">${pts} z ${max} pytań. ${esc(P.vendor)} nie publikuje progu zaliczenia.</p>`;
     const list = rows.filter(r => resultsFilter === "wrong" ? !r.s.exact : resultsFilter === "flag" ? A.flags.includes(r.id) : true);

@@ -437,6 +437,7 @@ a.row:focus-visible { outline-offset: -3px; }
 @media (hover: hover) { .acct-list button:hover { color: var(--action-text); } }
 .acct-list .acct-del { color: var(--bad); }
 .acct-msg { font-weight: 700; }
+.acct-files .link { min-height: 32px; font-size: 14px; }
 /* Time and both reminder actions on one row (wraps on narrow phones). */
 .remind-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .remind-actions .remind-time { width: 140px; flex: none; background-image: none; padding-right: 12px; }
