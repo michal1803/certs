@@ -107,12 +107,18 @@
     </section>`;
   }
 
+  // Nauka keeps its own step on top; an unfinished exam waits as the first row.
+  function resumeRow(f) {
+    const a = f.running, left = a.deadline ? a.deadline - Date.now() : null;
+    const sub = `Pytanie ${int(a.current) + 1} z ${int(a.count)}${left === null ? " · bez limitu czasu" : left > 0 ? ` · zostało ${clock(left)}` : " · czas minął, wynik czeka"}`;
+    return row(`${f.p.href}#egzamin`, `Niedokończony ${f.p.exam.drill ? "trening" : "egzamin"}`, sub);
+  }
+
   /* ---------- Nauka: one next step ---------- */
   function nauka(f) {
     const p = f.p, href = p.href;
     let hero, heroIs;
-    if (f.running) { hero = resumeCard(f); heroIs = "resume"; }
-    else if (f.due) {
+    if (f.due) {
       heroIs = "quick";
       hero = `<section class="hero" aria-labelledby="hero-h">
         <h2 id="hero-h" class="due"><b>${f.due}</b> <span>${plural(f.due, "pytanie czeka", "pytania czekają", "pytań czeka")} na powtórkę</span></h2>
@@ -135,6 +141,7 @@
       </section>`;
     }
     const rows = [
+      f.running ? resumeRow(f) : "",
       heroIs !== "quick" ? row(`${href}#szybkie`, "Szybka piątka", f.due ? `${f.due} do powtórki · ok. 3 min` : "5 pytań · ok. 3 min") : "",
       heroIs !== "all" ? row(`${href}#nauka:wszystkie`, "Wszystkie pytania", "Najpierw błędne i zaległe, potem nowe", "") : "",
       f.wrong ? row(`${href}#nauka:bledne`, "Błędne odpowiedzi", "Ostatnia odpowiedź była błędna", f.wrong) : "",
