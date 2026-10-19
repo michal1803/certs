@@ -62,6 +62,10 @@
       if (res.status === 403) return show("forbidden");
       if (!res.ok) throw new Error(String(res.status));
       list.innerHTML = await res.text();
+      // Comments (most of the bank's weight) follow in the background; study
+      // shows them when they land (core.js: Hub.commentsReady).
+      window.HubBankComments = fetch(`${API}/bank/${encodeURIComponent(examId)}/comments`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
       start();
     } catch (e) {
       show("error");

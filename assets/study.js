@@ -237,6 +237,11 @@
   }
 
   function communityHTML(q, open) {
+    // Still on their way from the private bank (assets/bank.js): a placeholder that hub:comments replaces.
+    if (q.comments === null) return `<details class="sv-comments" data-cq="${q.id}"${open ? " open" : ""}>
+        <summary>${icon("chat")}<span>Komentarze społeczności</span></summary>
+        <div class="sv-comments-body"><p class="muted">Wczytuję komentarze…</p></div>
+      </details>`;
     const votes = {};
     q.comments.forEach(c => { const a = String(c.answer || "").toUpperCase().trim(); if (a) votes[a] = (votes[a] || 0) + 1; });
     const voteLine = Object.entries(votes).sort((a, b) => b[1] - a[1]).map(([a, n]) => `<span class="sv-vote"><b>${esc(a)}</b> ${n}</span>`).join("");
@@ -545,6 +550,14 @@
     } else if (e.key === "ArrowRight") { e.preventDefault(); next(); }
     else if (e.key === "ArrowLeft") { e.preventDefault(); back(); }
     else if (k === "s" && keys) { e.preventDefault(); root.querySelector('[data-act="star"]')?.click(); }
+  });
+
+  // Comments landed after the question was drawn: swap in the real panel, keeping it open or shut.
+  window.addEventListener("hub:comments", () => {
+    root.querySelectorAll("details[data-cq]").forEach(d => {
+      const q = questions[d.dataset.cq];
+      if (q && q.comments !== null) d.outerHTML = communityHTML(q, d.open);
+    });
   });
 
   /* ---------- start ---------- */

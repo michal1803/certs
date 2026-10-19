@@ -244,18 +244,23 @@ const LIMITS = {
   "DELETE /account": "RL_API",
   "GET /bank/az104": "RL_API",
   "GET /bank/terraform": "RL_API",
+  "GET /bank/az104/comments": "RL_API",
+  "GET /bank/terraform/comments": "RL_API",
 };
 
-/* The private question bank (push/bank/*.html, deployed as assets under
-   /bank/): only the owner's signed-in session gets it. The pages put it back
-   in place of their empty question list (assets/bank.js). */
+/* The private question bank (built by scripts/build-bank.mjs into assets under
+   /bank/): only the owner's signed-in session gets it. /bank/<exam> is the
+   question cards, /bank/<exam>/comments their community comments; the pages
+   put both back in place (assets/bank.js). */
 async function bank(req, env) {
   const { user } = await authenticate(req, env);
   if (String(user.id) !== String(env.OWNER_GITHUB_ID)) throw new HttpError(403, "forbidden");
-  const id = new URL(req.url).pathname.split("/")[2];
-  const res = await env.ASSETS.fetch(new Request(new URL(`/bank/${id}.html`, req.url)));
+  const [, , id, part] = new URL(req.url).pathname.split("/");
+  const file = part === "comments" ? `${id}.comments.json` : `${id}.html`;
+  const res = await env.ASSETS.fetch(new Request(new URL(`/bank/${file}`, req.url)));
   if (!res.ok) throw new HttpError(404, "not found");
-  return new Response(res.body, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", ...corsHeaders(req, env) } });
+  const type = part === "comments" ? "application/json" : "text/html; charset=utf-8";
+  return new Response(res.body, { headers: { "Content-Type": type, "Cache-Control": "no-store", ...corsHeaders(req, env) } });
 }
 
 const routes = {
@@ -267,6 +272,8 @@ const routes = {
   "GET /vapid": (req, env) => ({ publicKey: env.VAPID_PUBLIC_KEY }),
   "GET /bank/az104": bank,
   "GET /bank/terraform": bank,
+  "GET /bank/az104/comments": bank,
+  "GET /bank/terraform/comments": bank,
 };
 
 export default {

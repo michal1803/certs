@@ -109,8 +109,10 @@
         }
       });
       const text = card.querySelector(".q-text")?.textContent || "";
-      let comments = [];
-      try { comments = JSON.parse(card.dataset.comments || "[]"); } catch (e) {}
+      // In the card (a page that carries its bank) or, from the private bank, later:
+      // null until assets/bank.js delivers them.
+      let comments = card.dataset.comments === undefined && window.HubBankComments ? null : [];
+      if (comments) try { comments = JSON.parse(card.dataset.comments || "[]"); } catch (e) {}
       questions[card.id] = {
         id: card.id,
         num: card.querySelector(".q-number")?.textContent || card.id.toUpperCase(),
@@ -185,8 +187,14 @@
   // Let a closing <dialog> play its exit before it leaves the DOM.
   const removeAfterClose = dlg => dlg.addEventListener("close", () => setTimeout(() => dlg.remove(), 260));
 
+  // Comments that arrive after the cards: fill them in, then tell study.
+  const commentsReady = !window.HubBankComments ? Promise.resolve() : window.HubBankComments.then(map => {
+    order.forEach(id => { if (questions[id].comments === null) questions[id].comments = Array.isArray(map?.[id]) ? map[id] : []; });
+    window.dispatchEvent(new Event("hub:comments"));
+  });
+
   window.EXAM_PROFILE = profile;
-  window.Hub = { preview, examHash, shortcuts, eagerFirstImage, motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
+  window.Hub = { commentsReady, preview, examHash, shortcuts, eagerFirstImage, motion, pop, countUp, removeAfterClose, reduced, tidyText, esc, load, store, clock, plural, shuffle, icon, getCorrectAnswers, examId, profile, questions, order, domainOf };
 
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     // Once a worker is active, ask it to cache the exam pages for offline use.

@@ -10,7 +10,7 @@
    - Push: the daily reminder from the push Worker (push/), worded here with
      the due counts the pages copy to IndexedDB.
    Bump VERSION when shipping changes to the precached files. */
-const VERSION = "v24";
+const VERSION = "v25";
 const CORE = `exam-hub-core-${VERSION}`;
 const IMAGES = "exam-hub-images";
 // Cross-origin images are opaque, and Chrome counts each one as ~7 MB of
@@ -133,7 +133,7 @@ self.addEventListener("fetch", event => {
 
   // The private question bank (push Worker /bank/<exam>, fetched with the
   // session token): network first, the last copy offline.
-  if (!sameOrigin && /^\/bank\/[a-z0-9-]+$/.test(url.pathname)) {
+  if (!sameOrigin && /^\/bank\/[a-z0-9-]+(\/comments)?$/.test(url.pathname)) {
     event.respondWith(fetch(req).then(res => {
       if (res.ok) { const copy = res.clone(); event.waitUntil(caches.open(CORE).then(c => c.put(url.href, copy)).catch(() => {})); }
       return res;
