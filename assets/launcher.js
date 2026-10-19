@@ -297,6 +297,11 @@
   const markTheme = () => themePick.querySelectorAll("[data-theme-choice]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themeChoice === window.HubTheme.get())));
   markTheme();
   themePick.addEventListener("click", e => { const b = e.target.closest("[data-theme-choice]"); if (b) { window.HubTheme.set(b.dataset.themeChoice); markTheme(); } });
+  // Text size of questions, answers and comments.
+  const textPick = sheet.querySelector("[data-text-pick]");
+  const markText = () => textPick.querySelectorAll("[data-text-choice]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.textChoice === window.HubTheme.text())));
+  markText();
+  textPick.addEventListener("click", e => { const b = e.target.closest("[data-text-choice]"); if (b) { window.HubTheme.setText(b.dataset.textChoice); markText(); } });
 
   // Single-key shortcuts in study and exam (WCAG 2.1.4); only offered with a keyboard and mouse.
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
