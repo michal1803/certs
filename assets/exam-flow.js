@@ -504,13 +504,8 @@
 
   /* ---------- scoring + results ---------- */
   function scoreQuestion(id) {
-    const q = questions[id];
     const chosen = A.answers[id] || [];
-    const hits = chosen.filter(v => q.correct.includes(v)).length;
-    const exact = hits === q.correct.length && chosen.length === q.correct.length;
-    const max = P.exam.partialCredit ? q.correct.length : 1;
-    const pts = P.exam.partialCredit ? Math.max(0, hits - Math.max(0, chosen.length - q.correct.length)) : (exact ? 1 : 0);
-    return { pts, max, exact, chosen };
+    return { ...window.scoreAnswer(questions[id].correct, chosen, P.exam.partialCredit), chosen };
   }
 
   function finish(timeUp) {

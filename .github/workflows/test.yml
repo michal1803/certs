@@ -1,0 +1,18 @@
+# Unit tests for the exam, study and sync logic (no dependencies), plus a
+# syntax check of every script, on each push and pull request.
+name: test
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Syntax check
+        run: for f in assets/*.js sw.js push/src/*.js push/scripts/*.mjs; do node --check "$f"; done
+      - name: Unit tests
+        run: node --test "tests/*.test.mjs"
