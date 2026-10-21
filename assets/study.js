@@ -1,6 +1,6 @@
 /* Study mode: one question per screen with instant feedback, community
-   comments after answering, stars, and a smart queue (wrong and new
-   questions first, mastered ones later). Questions come from Hub (core.js);
+   comments after answering, stars, and a smart queue (missed, due and new
+   questions in turn, see SRS.MIX; the rest later). Questions come from Hub (core.js);
    their markup is never changed. Progress is per browser. */
 (() => {
   const { esc, load, store, plural, shuffle, icon, profile: P, questions, order, domainOf, examId, motion, pop, removeAfterClose, reduced } = Hub;
@@ -103,16 +103,13 @@
     const list = candidates.length ? candidates : pool.filter(id => id !== cur);
     if (!list.length) return pool[0];
     const now = Date.now();
-    const score = id => {
-      const a = S.ans[id];
-      if (!a.ok) return 0;                   // missed: soonest
-      if (a.due <= now) return 1 - Math.min(0.2, (now - a.due) / 864e5 / 30); // due review, most overdue first
-      return 3 + Math.min(1, (a.due - now) / 864e5 / 30);                     // not due yet: soonest first
-    };
-    const scoreOf = id => S.ans[id] ? score(id) : 2; // new: after due reviews
-
-    const best = Math.min(...list.map(scoreOf));
-    const top = list.filter(id => scoreOf(id) - best < 0.25);
+    const byKind = { missed: [], due: [], new: [], later: [] };
+    list.forEach(id => byKind[SRS.kind(S.ans[id], now)].push(id));
+    const have = {};
+    Object.keys(byKind).forEach(k => { have[k] = byKind[k].length > 0; });
+    if (!session.mix) session.mix = {};
+    const kind = SRS.nextKind(session.mix, have);
+    const top = SRS.urgent(byKind[kind], S.ans, kind);
     // Mix domains: avoid the domain you just saw when another is as urgent.
     const other = cur ? top.filter(id => questions[id].domain !== questions[cur].domain) : [];
     return shuffle(other.length ? other : top)[0];

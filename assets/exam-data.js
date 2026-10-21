@@ -184,6 +184,30 @@
     },
     isDue: (a, now) => !!a && a.due <= now,
     mastered: a => !!a && a.ok && a.box >= MASTERED,
+    kind: (a, now) => !a ? "new" : !a.ok ? "missed" : a.due <= now ? "due" : "later",
+    /* Smart queue: while each kind has questions, out of every 10 picks 3 are
+       missed, 2 due and 5 new, so misses come back often without crowding out
+       the rest of the bank. "later" only when nothing else is left. */
+    MIX: { missed: 3, due: 2, new: 5 },
+    // Smooth weighted round-robin: credit carries over between picks (the
+    // caller keeps it), so the kinds take turns evenly instead of at random.
+    nextKind(credit, have) {
+      const kinds = Object.keys(this.MIX).filter(k => have[k]);
+      Object.keys(this.MIX).forEach(k => { if (!have[k]) credit[k] = 0; });
+      if (!kinds.length) return have.later ? "later" : null;
+      const total = kinds.reduce((s, k) => s + this.MIX[k], 0);
+      kinds.forEach(k => { credit[k] = (credit[k] || 0) + this.MIX[k]; });
+      const pick = kinds.reduce((b, k) => credit[k] > credit[b] ? k : b);
+      credit[pick] -= total;
+      return pick;
+    },
+    // The most urgent few of one kind: missed longest ago, most overdue,
+    // soonest due; new ones all alike.
+    urgent(ids, ans, kind, n = 3) {
+      if (kind === "new") return ids;
+      const key = id => kind === "missed" ? ans[id].at : ans[id].due;
+      return ids.slice().sort((x, y) => key(x) - key(y)).slice(0, n);
+    },
     // "dziś", "jutro", "za 3 dni"
     when(due, now) {
       const days = Math.ceil((due - now) / DAY);
