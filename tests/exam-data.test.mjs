@@ -104,3 +104,35 @@ test("exam draw: quotas per domain, questions from recent attempts only when nee
   assert.equal(tight.length, 5);
   assert.ok(tight.includes("a4") && tight.includes("b2"), "fresh questions are always taken first");
 });
+
+test("smart queue: missed, due and new take turns 3:2:5, misses never crowd out the rest", () => {
+  const credit = {}, seen = { missed: 0, due: 0, new: 0 };
+  let run = 0, longest = 0;
+  for (let i = 0; i < 100; i++) {
+    const k = SRS.nextKind(credit, { missed: true, due: true, new: true, later: true });
+    seen[k]++;
+    run = k === "missed" ? run + 1 : 0; longest = Math.max(longest, run);
+  }
+  assert.deepEqual(seen, { missed: 30, due: 20, new: 50 });
+  assert.equal(longest, 1, "never two missed in a row");
+});
+
+test("smart queue: shares adjust to the kinds left, later only when nothing else", () => {
+  const credit = {}, seen = { missed: 0, new: 0 };
+  for (let i = 0; i < 80; i++) seen[SRS.nextKind(credit, { missed: true, due: false, new: true })]++;
+  assert.deepEqual(seen, { missed: 30, new: 50 });
+  assert.equal(SRS.nextKind({}, { missed: true }), "missed");
+  assert.equal(SRS.nextKind({}, { later: true }), "later");
+  assert.equal(SRS.nextKind({}, {}), null);
+});
+
+test("smart queue: the longest-missed and most overdue come first", () => {
+  const ans = { a: { at: 30, due: 5 }, b: { at: 10, due: 9 }, c: { at: 20, due: 1 }, d: { at: 40, due: 2 } };
+  assert.deepEqual(SRS.urgent(["a", "b", "c", "d"], ans, "missed", 2), ["b", "c"]);
+  assert.deepEqual(SRS.urgent(["a", "b", "c", "d"], ans, "due", 2), ["c", "d"]);
+  assert.deepEqual(SRS.urgent(["x", "y"], {}, "new"), ["x", "y"]);
+  assert.equal(SRS.kind(undefined, 5), "new");
+  assert.equal(SRS.kind({ ok: false, due: 0 }, 5), "missed");
+  assert.equal(SRS.kind({ ok: true, due: 5 }, 5), "due");
+  assert.equal(SRS.kind({ ok: true, due: 6 }, 5), "later");
+});

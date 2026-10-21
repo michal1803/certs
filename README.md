@@ -12,4 +12,3 @@ Pliki strony:
 - `index.html` — ekran startowy (Nauka, Egzamin, Postęp)
 - `terraform.html` — HashiCorp Terraform Associate 004
 - `az104.html` — Microsoft AZ-104
-- `privacy.html` — polityka prywatności

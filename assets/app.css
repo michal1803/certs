@@ -460,21 +460,6 @@ a.row:focus-visible { outline-offset: -3px; }
 .remind-actions [data-push] { display: contents; }
 .remind-actions [data-push][hidden] { display: none; }
 .remind [data-remind-status]:empty { display: none; }
-.about a { font-weight: 700; }
-
-/* privacy policy and other documents */
-.doc-main { width: min(720px, 100%); margin: 0 auto; padding: calc(16px + env(safe-area-inset-top)) 16px 64px; }
-.doc-back { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; font-weight: 800; text-decoration: none; color: var(--action-text); }
-.doc h1 { margin: 12px 0 16px; font-size: 34px; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }
-.doc h2 { margin: 36px 0 10px; font-size: 21px; line-height: 1.25; font-weight: 700; }
-.doc h3 { margin: 20px 0 6px; font-size: 17px; font-weight: 800; }
-.doc p, .doc li { max-width: 68ch; }
-.doc p + p, .doc p + ul, .doc ul + p { margin-top: 10px; }
-.doc ul, .doc ol { margin: 8px 0 0; padding-left: 22px; display: grid; gap: 6px; }
-.doc table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 15px; }
-.doc th, .doc td { padding: 10px 8px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
-.doc th { font-weight: 800; }
-.doc-table { overflow-x: auto; }
 
 /* study bits that used to sit with the launcher */
 .sv-quick-list .xf-row { cursor: default; box-shadow: none; background: var(--surface); }
